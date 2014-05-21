@@ -1,0 +1,23 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/Fixtures.html
+
+one:
+  urn: MyString
+  textgroup: MyString
+  groupname_eng: MyString
+  has_mads: MyString
+  mads_possible: MyString
+  notes: MyText
+  urn_status: MyString
+  created_by: MyString
+  edited_by: MyString
+
+two:
+  urn: MyString
+  textgroup: MyString
+  groupname_eng: MyString
+  has_mads: MyString
+  mads_possible: MyString
+  notes: MyText
+  urn_status: MyString
+  created_by: MyString
+  edited_by: MyString

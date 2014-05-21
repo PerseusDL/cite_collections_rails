@@ -1,0 +1,53 @@
+<%= form_for(@textgroup) do |f| %>
+  <% if @textgroup.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(@textgroup.errors.count, "error") %> prohibited this textgroup from being saved:</h2>
+
+      <ul>
+      <% @textgroup.errors.full_messages.each do |msg| %>
+        <li><%= msg %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= f.label :urn %><br>
+    <%= f.text_field :urn %>
+  </div>
+  <div class="field">
+    <%= f.label :textgroup %><br>
+    <%= f.text_field :textgroup %>
+  </div>
+  <div class="field">
+    <%= f.label :groupname_eng %><br>
+    <%= f.text_field :groupname_eng %>
+  </div>
+  <div class="field">
+    <%= f.label :has_mads %><br>
+    <%= f.text_field :has_mads %>
+  </div>
+  <div class="field">
+    <%= f.label :mads_possible %><br>
+    <%= f.text_field :mads_possible %>
+  </div>
+  <div class="field">
+    <%= f.label :notes %><br>
+    <%= f.text_area :notes %>
+  </div>
+  <div class="field">
+    <%= f.label :urn_status %><br>
+    <%= f.text_field :urn_status %>
+  </div>
+  <div class="field">
+    <%= f.label :created_by %><br>
+    <%= f.text_field :created_by %>
+  </div>
+  <div class="field">
+    <%= f.label :edited_by %><br>
+    <%= f.text_field :edited_by %>
+  </div>
+  <div class="actions">
+    <%= f.submit %>
+  </div>
+<% end %>

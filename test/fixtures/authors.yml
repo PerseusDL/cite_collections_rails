@@ -1,0 +1,25 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/Fixtures.html
+
+one:
+  urn: MyString
+  authority_name: MyString
+  canonical_id: MyString
+  mads_file: MyString
+  alt_ids: MyString
+  related_works: MyString
+  urn_status: MyString
+  redirect_to: MyString
+  created_by: MyString
+  edited_by: MyString
+
+two:
+  urn: MyString
+  authority_name: MyString
+  canonical_id: MyString
+  mads_file: MyString
+  alt_ids: MyString
+  related_works: MyString
+  urn_status: MyString
+  redirect_to: MyString
+  created_by: MyString
+  edited_by: MyString

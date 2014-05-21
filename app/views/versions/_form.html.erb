@@ -1,0 +1,61 @@
+<%= form_for(@version) do |f| %>
+  <% if @version.errors.any? %>
+    <div id="error_explanation">
+      <h2><%= pluralize(@version.errors.count, "error") %> prohibited this version from being saved:</h2>
+
+      <ul>
+      <% @version.errors.full_messages.each do |msg| %>
+        <li><%= msg %></li>
+      <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="field">
+    <%= f.label :urn %><br>
+    <%= f.text_field :urn %>
+  </div>
+  <div class="field">
+    <%= f.label :version %><br>
+    <%= f.text_field :version %>
+  </div>
+  <div class="field">
+    <%= f.label :label_eng %><br>
+    <%= f.text_area :label_eng %>
+  </div>
+  <div class="field">
+    <%= f.label :desc_eng %><br>
+    <%= f.text_area :desc_eng %>
+  </div>
+  <div class="field">
+    <%= f.label :type %><br>
+    <%= f.text_field :type %>
+  </div>
+  <div class="field">
+    <%= f.label :has_mods %><br>
+    <%= f.text_field :has_mods %>
+  </div>
+  <div class="field">
+    <%= f.label :urn_status %><br>
+    <%= f.text_field :urn_status %>
+  </div>
+  <div class="field">
+    <%= f.label :redirect_to %><br>
+    <%= f.text_field :redirect_to %>
+  </div>
+  <div class="field">
+    <%= f.label :member_of %><br>
+    <%= f.text_field :member_of %>
+  </div>
+  <div class="field">
+    <%= f.label :created_by %><br>
+    <%= f.text_field :created_by %>
+  </div>
+  <div class="field">
+    <%= f.label :edited_by %><br>
+    <%= f.text_field :edited_by %>
+  </div>
+  <div class="actions">
+    <%= f.submit %>
+  </div>
+<% end %>

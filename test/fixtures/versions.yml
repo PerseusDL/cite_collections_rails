@@ -1,0 +1,27 @@
+# Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/Fixtures.html
+
+one:
+  urn: MyString
+  version: MyString
+  label_eng: MyText
+  desc_eng: MyText
+  type: 
+  has_mods: MyString
+  urn_status: MyString
+  redirect_to: MyString
+  member_of: MyString
+  created_by: MyString
+  edited_by: MyString
+
+two:
+  urn: MyString
+  version: MyString
+  label_eng: MyText
+  desc_eng: MyText
+  type: 
+  has_mods: MyString
+  urn_status: MyString
+  redirect_to: MyString
+  member_of: MyString
+  created_by: MyString
+  edited_by: MyString

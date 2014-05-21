@@ -1,0 +1,310 @@
+module ApplicationHelper
+
+  #Helper methods
+
+
+#create directory path
+  def create_path(type, ctsurn)  
+    path_name = "#{ENV['HOME']}/catalog_data/#{type}/"
+    ctsmain = ctsurn[/(greekLit|latinLit).+/]
+    path_name << "#{ctsmain.gsub(/:|\./, "/")}"
+    unless File.exists?(path_name)
+      FileUtils.mkdir_p(path_name)
+    end
+    if File.exists?(path_name)
+      Dir.chdir(path_name)
+      sansgl = ctsmain.gsub(/greekLit:|latinLit:/, "")
+      mods = Dir["#{sansgl}.*"]
+      mods_num = 0
+      mods.each {|x| mods_num = mods_num < x[/\d+\.xml/].chr.to_i ? x[/\d+\.xml/].chr.to_i : mods_num}
+      modspath = "#{path_name}/#{sansgl}.mods#{mods_num + 1}.xml"
+    end
+    return modspath
+  end  
+
+  def move_file(path, xml)
+    fl = File.new(modspath, "w")
+    fl << xml
+    fl.close
+  end
+
+#find things in the XML
+
+  def find_basic_info(xml_record, file_path)
+    begin
+      #a regex ugly enough that only its mother could love it, 
+      #all to get a file name that I had earlier but cleverly turned into the path that I needed then...
+      f_n = file_path[/(\/[a-zA-Z0-9\.\(\)-]+)?\.xml/] 
+      id, alt_ids = find_rec_id(xml_record, file_path, f_n)
+      #for mads the w_id and a_id will be the same
+      w_id = id =~ /tlg/ ? "urn:cts:greekLit:#{id}" : "urn:cts:latinLit:#{id}"
+      a_id = w_id[/urn:cts:\w+:\w+\d+[a-z]*/]
+      canon_id = a_id[/\w+\d+[a-z]*$/]
+      if id
+        #search for and compare author values
+        auth_name = find_rec_author(xml_record, file_path, f_n)
+        auth_nset = Author.find_by_id(canon_id)      
+        tg_nset = Textgroup.find_by_id(a_id)   
+        
+        info_hash = { :file_name => f_n,
+                      :path => file_path,
+                      :canon_id => canon_id,
+                      :a_name => auth_name,
+                      :a_id => a_id,
+                      :alt_ids => alt_ids,
+                      :cite_auth => auth_nset,
+                      :cite_tg => tg_nset}
+
+        if f_n =~ /mods/
+          work_title = nil
+          xml_record.search("/mods:mods/mods:titleInfo").each do |title_node|
+            #take uniform if it exists
+            type = title_node.attribute("type")
+            if type && type.value == "uniform"
+              work_title = title_node.search("./mods:title").inner_text
+            end
+            unless work_title && type
+              work_title = title_node.search("./mods:title").inner_text
+            end
+            unless work_title
+              work_title = title_node.search("./mods:title").inner_text
+            end
+          end
+
+          work_nset = Work.find_by_id(w_id)
+         
+          orig_lang = xml_record.search("/mods:mods/mods:language/mods:languageTerm")
+          info_hash.merge!(:w_title => work_title,
+                        :w_id => w_id,
+                        :cite_work => work_nset,
+                        :w_lang => orig_lang)
+        else
+          #related works, easy, find <mads:description>List of related work identifiers and grab siblings
+          extensions = xml_record.search("/mads:mads/mads:extension/mads:description")
+          extensions.each do |ex|
+            if ex.inner_text == "List of related work identifiers"
+              related_works = []
+              ex.parent.children.each {|x| related_works << clean_id(x) if x.name == "identifier"}
+              info_hash.merge!(:related_works => related_works.join(';'))
+              break
+            end
+          end
+        end
+        
+        return info_hash       
+      end
+    rescue
+      file_name = file_path[/(\/[a-zA-Z0-9\.\(\)]+)?\.xml/]
+      message = "For file #{file_name}: something went wrong, #{$!}"
+      error_handler(message, file_path, file_name)
+      return nil
+    end
+  end
+
+  def find_rec_author(xml_record, file_path, f_n)
+    begin
+      #grab mads authority name
+      if f_n =~ /mads/ 
+        name_ns = xml_record.search("/mads:mads/mads:authority/mads:name/mads:namePart")
+        n = [] 
+        unless name_ns.empty?
+          name_ns.each {|x| n << x.inner_text}
+          a_name = n.join(" ")
+        else
+          message = "For file #{f_n} : Could not find an authority name, please check the record."
+          error_handler(message, file_path, f_n)
+          return
+        end
+      else   
+
+      #grab the name with the "creator" role      
+        names = []
+     
+        name_ns = xml_record.search("/mods:mods/mods:name")
+        unless name_ns.empty?
+          name_ns.each do |node|
+            if node.search("./mods:role/mods:roleTerm").inner_text == "creator"
+              n = []
+              node.search("./mods:namePart").each {|x| n << x.inner_text}
+              names << n.join(" ")             
+            end
+          end
+          if names.empty?
+            message = "For file #{f_n} : Could not find an author name, please check the record."
+            error_handler(message, file_path, f_n)
+            return
+          else
+            a_name = names[0] if names.length == 1
+            error_handler("For #{f_n} : should we worry about multiple creators in a record?", file_path, f_n) if names.length > 1
+          end
+        else
+          message = "For file #{f_n} : Could not find an author name, please check the record."
+          error_handler(message, file_path, f_n)
+          return
+        end
+      end
+      return a_name
+    rescue
+      message = "For file #{f_n} : There was an error while trying to find the author, error message was #{$!}."
+      error_handler(message, file_path, f_n)
+    end
+  end
+
+
+  def find_rec_id(xml_record, file_path, f_n)
+    begin
+      ids = f_n =~ /mads/ ? xml_record.search("/mads:mads/mads:identifier") : xml_record.search("/mods:mods/mods:identifier")
+      found_id = nil
+      alt_ids = []
+
+      #parsing found ids, take tlg or phi over stoa unless there is an empty string or "none"
+      ids.each do |node|
+        id = clean_id(node)
+
+        unless id == "none" || id == "" 
+          alt_ids << id
+
+          if id =~ /tlg|phi|stoa|lccn/i #might need to expand this for LCCN, VIAF, etc. if we start using them
+            if found_id =~ /tlg|phi|stoa/
+              #skip, having a hell of a time making it work with unless
+            else
+              found_id = id 
+            end
+          end         
+        end
+      end
+      #if no id found throw an error   
+      unless found_id    
+        message = "For file #{f_n} : Could not find a suitable id, please check 
+        that there is a tlg, phi, or stoa id or that, if a mads, the mads namespace is present."
+        error_handler(message, file_path, f_n)
+        return
+      else
+        alt_ids.delete(found_id)
+        return found_id, alt_ids.join(';')
+      end
+    rescue 
+      message = "For file #{f_n} : There was an error while trying to find an id, error message was #{$!}."
+      error_handler(message, file_path, f_n)
+      return
+    end
+  end
+
+  def create_label_desc(info_hash, mods_xml)
+    ns = mods_xml.collect_namespaces
+    if !mods_xml.search('//mods:relatedItem[@type="host"]/mods:titleInfo', ns).empty?
+      raw_title = mods_xml.search('//mods:relatedItem[@type="host"]/mods:titleInfo', ns).first
+    elsif !mods_xml.search('//mods:titleInfo', ns).empty?
+      raw_title = mods_xml.search('//mods:titleInfo', ns).first
+    elsif !mods_xml.search('//mods:titleInfo[@type="alternative"]', ns).empty?
+      raw_title = mods_xml.search('//mods:titleInfo[@type="alternative"]', ns).first
+    elsif !mods_xml.search('//mods:titleInfo[@type="translated"]', ns).empty?
+      raw_title = mods_xml.search('//mods:titleInfo[@type="translated"]', ns).first
+    else
+      raw_title = mods_xml.search('//mods:titleInfo[@type="uniform"]', ns)                  
+    end                
+    
+    label = xml_clean(raw_title, ' ')
+
+    names = mods_xml.search('//mods:name', ns)
+    ed_trans = ""
+    author_n = ""
+    names.each do |m_name|
+      if m_name.inner_text =~ /editor|translator|compiler/
+        ed_trans = xml_clean(m_name, ",")
+      elsif m_name.inner_text =~ /creator|attributed author/
+        author_n = xml_clean(m_name, ",")
+        author_n.gsub!(/,,/, ",")
+      end
+    end
+    
+    description = "#{author_n} #{ed_trans}"
+    
+    return label, description
+  end
+
+  def add_mods_prefix(mods_xml)    
+    mods_xml.root.add_namespace_definition("mods", "http://www.loc.gov/mods/v3")
+    mods_xml.root.name = "mods:#{mods_xml.root.name}"
+    mods_xml.root.children.each {|chil| xml_rename(chil)}    
+  end
+
+  def xml_rename(node)
+    m_name = node.name
+    node.name = "mods:#{m_name}"
+    m_chil = node.children    
+    m_chil.each {|c_node| xml_rename(c_node)} if m_chil
+  end
+
+
+#cleaning data
+
+  def clean_dirs(dir)
+    dirs_arr = Dir.entries(dir).map {|e| File.join(dir, e)}.select{|f| f unless f =~ /\.$/ || f =~ /\.\.$/ || f =~ /DS_Store/ || f =~ /README/}
+  end
+
+  def clean_id(node)
+    if node.attribute('type')
+      val = node.attribute('type').value
+      if val
+        id = node.inner_text
+        unless id == "none" || id == "" 
+          #stoas only need the - removed
+          if id =~/(stoa\d+[a-z]*-|stoa\d+[a-z]*)/
+            id = id.gsub('-', '.')      
+          else
+            if val =~ /tlg|phi/
+              #I hate that the ids aren't padded with 0s...           
+              id_step = id.split(".")
+              id_step.each_with_index {|x, i| i == 0 ? id_step[0] = sprintf("%04d", x.to_i) : id_step[1] = sprintf("%03d", x.to_i)}
+              #add in tlgs or phis
+              id = id_step.map {|x| "#{val}#{x.to_s}"}.join(".")
+            else              
+              id = "VIAF" + id[/\d+$/] if id =~ /viaf/
+              id = "LCCN " + id[/n\s+\d+/] if id =~ /n\s+\d+/
+              #have abo ids to account for
+              if id =~ /Perseus:abo/
+                id_parts = id.split(",")
+                id_type = id_parts[0].split(":")[2]
+                id = id_type + id_parts[1] + "." + id_type + id_parts[2]
+              end
+            end
+          end
+        end
+        return id
+      end
+    end
+  end
+
+  def xml_clean(nodes, sep = "")
+    empty_test = nodes.class == "Nokogiri::XML::NodeSet" ? nodes.empty? : nodes.blank?
+    unless empty_test
+      cleaner = ""
+      nodes.children.each do |x| 
+        cleaner << x.inner_text + sep
+      end
+      clean = cleaner.gsub(/\s+#{sep}|\s{2, 5}|#{sep}$/, " ").strip
+      return clean
+    else
+      return ""
+    end
+  end
+
+#errors
+  def error_handler(message, file_path, f_n)
+    #move all files with errors to the error directory for human review
+    puts message
+    @error_report << "#{message}\n\n"
+    @error_report.close
+    @error_report = File.open("#{ENV['HOME']}/catalog_pending/errors/error_log#{Date.today}.txt", 'a')
+    #`mv "#{file_path}" "#{ENV['HOME']}/catalog_pending/errors#{f_n}"`
+  end
+
+#for testing new paths
+  def test_run(message, values)
+    test_file = File.open("#{ENV['HOME']}/catalog_pending/test_run#{Date.today}.txt", 'a')
+    test_file << "#{message}\n#{values}\n\n"
+    test_file.close
+  end
+
+end

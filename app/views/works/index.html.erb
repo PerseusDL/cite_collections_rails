@@ -1,0 +1,39 @@
+<h1>Listing works</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Urn</th>
+      <th>Work</th>
+      <th>Title eng</th>
+      <th>Notes</th>
+      <th>Urn status</th>
+      <th>Created by</th>
+      <th>Edited by</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @works.each do |work| %>
+      <tr>
+        <td><%= work.urn %></td>
+        <td><%= work.work %></td>
+        <td><%= work.title_eng %></td>
+        <td><%= work.notes %></td>
+        <td><%= work.urn_status %></td>
+        <td><%= work.created_by %></td>
+        <td><%= work.edited_by %></td>
+        <td><%= link_to 'Show', work %></td>
+        <td><%= link_to 'Edit', edit_work_path(work) %></td>
+        <td><%= link_to 'Destroy', work, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<br>
+
+<%= link_to 'New Work', new_work_path %>

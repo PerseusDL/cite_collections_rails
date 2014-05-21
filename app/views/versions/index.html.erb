@@ -1,0 +1,47 @@
+<h1>Listing versions</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Urn</th>
+      <th>Version</th>
+      <th>Label eng</th>
+      <th>Desc eng</th>
+      <th>Type</th>
+      <th>Has mods</th>
+      <th>Urn status</th>
+      <th>Redirect to</th>
+      <th>Member of</th>
+      <th>Created by</th>
+      <th>Edited by</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @versions.each do |version| %>
+      <tr>
+        <td><%= version.urn %></td>
+        <td><%= version.version %></td>
+        <td><%= version.label_eng %></td>
+        <td><%= version.desc_eng %></td>
+        <td><%= version.type %></td>
+        <td><%= version.has_mods %></td>
+        <td><%= version.urn_status %></td>
+        <td><%= version.redirect_to %></td>
+        <td><%= version.member_of %></td>
+        <td><%= version.created_by %></td>
+        <td><%= version.edited_by %></td>
+        <td><%= link_to 'Show', version %></td>
+        <td><%= link_to 'Edit', edit_version_path(version) %></td>
+        <td><%= link_to 'Destroy', version, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<br>
+
+<%= link_to 'New Version', new_version_path %>

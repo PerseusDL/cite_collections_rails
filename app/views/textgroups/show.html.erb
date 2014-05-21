@@ -1,0 +1,49 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <strong>Urn:</strong>
+  <%= @textgroup.urn %>
+</p>
+
+<p>
+  <strong>Textgroup:</strong>
+  <%= @textgroup.textgroup %>
+</p>
+
+<p>
+  <strong>Groupname eng:</strong>
+  <%= @textgroup.groupname_eng %>
+</p>
+
+<p>
+  <strong>Has mads:</strong>
+  <%= @textgroup.has_mads %>
+</p>
+
+<p>
+  <strong>Mads possible:</strong>
+  <%= @textgroup.mads_possible %>
+</p>
+
+<p>
+  <strong>Notes:</strong>
+  <%= @textgroup.notes %>
+</p>
+
+<p>
+  <strong>Urn status:</strong>
+  <%= @textgroup.urn_status %>
+</p>
+
+<p>
+  <strong>Created by:</strong>
+  <%= @textgroup.created_by %>
+</p>
+
+<p>
+  <strong>Edited by:</strong>
+  <%= @textgroup.edited_by %>
+</p>
+
+<%= link_to 'Edit', edit_textgroup_path(@textgroup) %> |
+<%= link_to 'Back', textgroups_path %>

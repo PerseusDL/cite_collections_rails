@@ -1,0 +1,59 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <strong>Urn:</strong>
+  <%= @version.urn %>
+</p>
+
+<p>
+  <strong>Version:</strong>
+  <%= @version.version %>
+</p>
+
+<p>
+  <strong>Label eng:</strong>
+  <%= @version.label_eng %>
+</p>
+
+<p>
+  <strong>Desc eng:</strong>
+  <%= @version.desc_eng %>
+</p>
+
+<p>
+  <strong>Type:</strong>
+  <%= @version.type %>
+</p>
+
+<p>
+  <strong>Has mods:</strong>
+  <%= @version.has_mods %>
+</p>
+
+<p>
+  <strong>Urn status:</strong>
+  <%= @version.urn_status %>
+</p>
+
+<p>
+  <strong>Redirect to:</strong>
+  <%= @version.redirect_to %>
+</p>
+
+<p>
+  <strong>Member of:</strong>
+  <%= @version.member_of %>
+</p>
+
+<p>
+  <strong>Created by:</strong>
+  <%= @version.created_by %>
+</p>
+
+<p>
+  <strong>Edited by:</strong>
+  <%= @version.edited_by %>
+</p>
+
+<%= link_to 'Edit', edit_version_path(@version) %> |
+<%= link_to 'Back', versions_path %>

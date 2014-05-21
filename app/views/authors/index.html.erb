@@ -1,0 +1,45 @@
+<h1>Listing authors</h1>
+
+<table>
+  <thead>
+    <tr>
+      <th>Urn</th>
+      <th>Authority name</th>
+      <th>Canonical</th>
+      <th>Mads file</th>
+      <th>Alt ids</th>
+      <th>Related works</th>
+      <th>Urn status</th>
+      <th>Redirect to</th>
+      <th>Created by</th>
+      <th>Edited by</th>
+      <th></th>
+      <th></th>
+      <th></th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <% @authors.each do |author| %>
+      <tr>
+        <td><%= author.urn %></td>
+        <td><%= author.authority_name %></td>
+        <td><%= author.canonical_id %></td>
+        <td><%= author.mads_file %></td>
+        <td><%= author.alt_ids %></td>
+        <td><%= author.related_works %></td>
+        <td><%= author.urn_status %></td>
+        <td><%= author.redirect_to %></td>
+        <td><%= author.created_by %></td>
+        <td><%= author.edited_by %></td>
+        <td><%= link_to 'Show', author %></td>
+        <td><%= link_to 'Edit', edit_author_path(author) %></td>
+        <td><%= link_to 'Destroy', author, method: :delete, data: { confirm: 'Are you sure?' } %></td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>
+
+<br>
+
+<%= link_to 'New Author', new_author_path %>

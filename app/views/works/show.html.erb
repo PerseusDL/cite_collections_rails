@@ -1,0 +1,39 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <strong>Urn:</strong>
+  <%= @work.urn %>
+</p>
+
+<p>
+  <strong>Work:</strong>
+  <%= @work.work %>
+</p>
+
+<p>
+  <strong>Title eng:</strong>
+  <%= @work.title_eng %>
+</p>
+
+<p>
+  <strong>Notes:</strong>
+  <%= @work.notes %>
+</p>
+
+<p>
+  <strong>Urn status:</strong>
+  <%= @work.urn_status %>
+</p>
+
+<p>
+  <strong>Created by:</strong>
+  <%= @work.created_by %>
+</p>
+
+<p>
+  <strong>Edited by:</strong>
+  <%= @work.edited_by %>
+</p>
+
+<%= link_to 'Edit', edit_work_path(@work) %> |
+<%= link_to 'Back', works_path %>

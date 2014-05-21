@@ -1,0 +1,54 @@
+<p id="notice"><%= notice %></p>
+
+<p>
+  <strong>Urn:</strong>
+  <%= @author.urn %>
+</p>
+
+<p>
+  <strong>Authority name:</strong>
+  <%= @author.authority_name %>
+</p>
+
+<p>
+  <strong>Canonical:</strong>
+  <%= @author.canonical_id %>
+</p>
+
+<p>
+  <strong>Mads file:</strong>
+  <%= @author.mads_file %>
+</p>
+
+<p>
+  <strong>Alt ids:</strong>
+  <%= @author.alt_ids %>
+</p>
+
+<p>
+  <strong>Related works:</strong>
+  <%= @author.related_works %>
+</p>
+
+<p>
+  <strong>Urn status:</strong>
+  <%= @author.urn_status %>
+</p>
+
+<p>
+  <strong>Redirect to:</strong>
+  <%= @author.redirect_to %>
+</p>
+
+<p>
+  <strong>Created by:</strong>
+  <%= @author.created_by %>
+</p>
+
+<p>
+  <strong>Edited by:</strong>
+  <%= @author.edited_by %>
+</p>
+
+<%= link_to 'Edit', edit_author_path(@author) %> |
+<%= link_to 'Back', authors_path %>
