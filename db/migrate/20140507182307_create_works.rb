@@ -4,6 +4,7 @@ class CreateWorks < ActiveRecord::Migration
       t.string :urn
       t.string :work
       t.text :title_eng
+      t.string :orig_lang
       t.text :notes
       t.string :urn_status
       t.string :created_by
