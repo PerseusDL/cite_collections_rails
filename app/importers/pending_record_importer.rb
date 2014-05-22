@@ -6,10 +6,13 @@ class PendingRecordImporter
   def import
     @error_report = File.open("#{ENV['HOME']}/catalog_pending/errors/error_log#{Date.today}.txt", 'w')
     pending_mads = "#{ENV['HOME']}/catalog_pending/mads"
+    corrected_mads = "#{ENV['HOME']}/catalog_pending/corrections/mads"
     pending_mods = "#{ENV['HOME']}/catalog_pending/mods"
+    corrected_mods = "#{ENV['HOME']}/catalog_pending/corrections/mods"
 
     #update_git_dir("catalog_pending") UNCOMMENT THIS
-
+    #mads_import(corrected_mads)
+    mods_import(corrected_mods)
     #mads_import(pending_mads)
     mods_import(pending_mods)
 
@@ -27,7 +30,7 @@ class PendingRecordImporter
         info_hash = find_basic_info(mads_xml, mads)
         #if it already exists we don't need to add it to the table again!
         if info_hash
-          if info_hash[:cite_auth]
+          if info_hash[:cite_auth] && info_hash[:cite_auth].urn_status == "published"
             next
           else
             add_to_cite_tables(info_hash) if info_hash
@@ -55,81 +58,89 @@ class PendingRecordImporter
         file_path = mods
         mods_string = File.read(file_path)
         mods_xml = Nokogiri::XML::Document.parse(mods_string, &:noblanks)
-       
-        #need to check that the mods prefix exists and if not, add it
-        namespaces = mods_xml.namespaces
-        unless namespaces.include?("xmlns:mods")
-          add_mods_prefix(mods_xml)
-          File.open("#{ENV['HOME']}/catalog_pending/testrename.xml", "w"){|file| file << mods_xml}
-          new_mods = File.read("#{ENV['HOME']}/catalog_pending/testrename.xml") #!!will need to change!!
-          new_xml = Nokogiri::XML::Document.parse(new_mods, &:noblanks)
-          it_worked = new_xml.search("/mods:mods/mods:titleInfo")
-          if it_worked == nil || it_worked.empty?
-            message = "For file #{file_path}: tried adding prefix to mods but something went wrong, please check"
-            error_handler(message, file_path, file_path)
-            next
-          else
-            mods_xml = new_xml
-          end
-        end
-
-        has_cts = mods_xml.search("/mods:mods/mods:identifier[@type='ctsurn']")
-        unless has_cts.empty? || has_cts.inner_text == ""
-          #record already has a cts urn, could be added mods, multivolume record, or version correction?
-          ctsurn = has_cts.inner_text
+        
+        if file_path =~ /corrections/
+          #corrections only need to update the row, rename the file and move it 
+          ctsurn = mods_xml.search("/mods:mods/mods:identifier[@type='ctsurn']").inner_text
           vers = Version.find_by_cts(ctsurn)
-          if vers.length == 1 && v_obj.urn_status == "published"
-            #has cite row, either lacking a mods or the mods is being corrected
-            v_obj = vers[0]
+          #should only be one row
+          if vers.length == 1
+            row = vers[0]
             info_hash = find_basic_info(mods_xml, mods)
-            #0urn, 1version, 2label_eng, 3desc_eng, 4type, 5has_mods, 6urn_status, 
-    #7redirect_to, 8member_of, 9created_by, 10edited_by
-            update_hash = Hash.new
-            update_hash = {}
-            Version.update_row(v_obj.id, info_hash)
-            puts "skipping row creation for #{file_path}"
-            modspath = create_path('mods', ctsurn)
-            
-            #add mods prefix and save file in new location
-            
+            label, description = create_label_desc(info_hash, mods_xml)
+            v_lang = mods_xml.search("/mods:mods/mods:relatedItem/mods:language/mods:languageTerm").inner_text
+            v_type = info_hash[:orig_lang] == v_lang ? "edition" : "translation"
+            Version.update_row(row.id, {:version => ctsurn, :label_eng => label, :desc_eng => description, :type => v_type, :edited_by => "auto_importer"})
+            modspath = create_path('mods', ctsurn)                           
             #move_file(modspath, mods_xml)
-            
           else
-            if vers.length == 0
-              #has a ctsurn but no cite row, for whatever reason, needs to be added
-              info_hash = find_basic_info(mods_xml, mods)           
-              if info_hash
-                add_to_cite_tables(info_hash, mods_xml)
-              end
-            else
-              message = "For file #{file_path}: has more than one of the same cts_urn"
-              error_handler(message, file_path, ctsurn)
-            end
+            message = "For file #{file_path}: has more than one of the same cts_urn, should be checked"
+            error_handler(message, file_path, ctsurn)
           end
+
         else
-          
-          builder = Nokogiri::XML::Builder.new(:encoding => 'UTF-8') do |xml|
-            xml.mods {
-              xml.relatedItem(:type => 'host')
-            }
-          end
-          
-          unless mods_xml.search("//mods:relatedItem[@type='constituent']").empty?
-            #has constituent items, needs to be passed to a method to create new mods
-            split_constituents(mods_xml, mods)
-          else
-            info_hash = find_basic_info(mods_xml, mods)
-            #have the info from the record and cite tables, now process it
-            #:file_name,:canon_id,:a_name,:a_id,:alt_ids,:cite_auth,:cite_tg :w_title,:w_id,:cite_work,:w_lang
-            if info_hash
-                add_to_cite_tables(info_hash, mods_xml) 
-            else
-              message = "For file #{file_path} : No info hash returned, something has gone wrong, please check."
+          #need to check that the mods prefix exists and if not, add it
+          namespaces = mods_xml.namespaces
+          unless namespaces.include?("xmlns:mods")
+            add_mods_prefix(mods_xml)
+            File.open("#{ENV['HOME']}/catalog_pending/testrename.xml", "w"){|file| file << mods_xml}
+            new_mods = File.read("#{ENV['HOME']}/catalog_pending/testrename.xml") #!!will need to change!!
+            new_xml = Nokogiri::XML::Document.parse(new_mods, &:noblanks)
+            it_worked = new_xml.search("/mods:mods/mods:titleInfo")
+            if it_worked == nil || it_worked.empty?
+              message = "For file #{file_path}: tried adding prefix to mods but something went wrong, please check"
               error_handler(message, file_path, file_path)
+              next
+            else
+              mods_xml = new_xml
             end
           end
+
+          has_cts = mods_xml.search("/mods:mods/mods:identifier[@type='ctsurn']")
+          unless has_cts.empty? || has_cts.inner_text == ""
+            #record already has a cts urn, could be added mods or multivolume record
+            ctsurn = has_cts.inner_text
+            vers = Version.find_by_cts(ctsurn)            
+            if vers.length == 1 
+              v_obj = vers[0]
+              if v_obj.has_mods == "false"
+                #has cite row, lacking a mods 
+                Version.update_row(v_obj.id, {:has_mods => "true", :edited_by => "auto_importer"})
+              end
+                #if has row and confirmed mods, not a correction, assumed multivolume, just move to correct place
+                modspath = create_path('mods', ctsurn)                           
+                #move_file(modspath, mods_xml)     
+            else
+              if vers.length == 0
+                #has a ctsurn but no cite row, for whatever reason, needs to be added
+                info_hash = find_basic_info(mods_xml, mods)           
+                if info_hash
+                  add_to_cite_tables(info_hash, mods_xml)
+                end
+              else
+                message = "For file #{file_path}: has more than one of the same cts_urn"
+                error_handler(message, file_path, ctsurn)
+              end
+            end
+          else
+
+            unless mods_xml.search("//mods:relatedItem[@type='constituent']").empty?
+              #has constituent items, needs to be passed to a method to create new mods
+              split_constituents(mods_xml, mods)
+            else
+              info_hash = find_basic_info(mods_xml, mods)
+              #have the info from the record and cite tables, now process it
+              #:file_name,:canon_id,:a_name,:a_id,:alt_ids,:cite_auth,:cite_tg :w_title,:w_id,:cite_work,:w_lang
+              if info_hash
+                  add_to_cite_tables(info_hash, mods_xml) 
+              else
+                message = "For file #{file_path} : No info hash returned, something has gone wrong, please check."
+                error_handler(message, file_path, file_path)
+              end
+            end
+          end
+          #`rm #{file_path}`
         end
-        #`rm #{file_path}`
       end
     end
   end
@@ -187,7 +198,7 @@ class PendingRecordImporter
         unless info_hash[:cite_work]
           #no row for this work, add a row
           w_urn = Work.generate_urn
-          w_values = [w_urn, info_hash[:w_id], info_hash[:w_title], 'published', 'auto_importer','auto_importer']
+          w_values = [w_urn, info_hash[:w_id], info_hash[:w_title], info_hash[:orig_lang], '', 'published', 'auto_importer','auto_importer']
           Work.add_cite_row(w_values)
           puts "added work"
         end

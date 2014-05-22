@@ -39,6 +39,7 @@ module ApplicationHelper
 
       #!!need to include something for pulling the original language when tags included, line below for now
       lit_type = id =~ /tlg/ ? "greek" : "latin"
+      lit_abbr = lit_type == "greek" ? "grc" : "lat"
       #for mads the w_id and a_id will be the same
       w_id = "urn:cts:#{lit_type}Lit:#{id}"
       a_id = w_id[/urn:cts:\w+:\w+\d+[a-z]*/]
@@ -74,9 +75,8 @@ module ApplicationHelper
             end
           end
 
-          work_row = Work.find_by_id(w_id)
-         
-          orig_lang = work_row ? work_row.orig_lang : lit_type
+          work_row = Work.find_by_id(w_id)        
+          orig_lang = work_row ? work_row.orig_lang : lit_abbr
           info_hash.merge!(:w_title => work_title,
                         :w_id => w_id,
                         :cite_work => work_row,
