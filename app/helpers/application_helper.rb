@@ -36,8 +36,11 @@ module ApplicationHelper
       #all to get a file name that I had earlier but cleverly turned into the path that I needed then...
       f_n = file_path[/(\/[a-zA-Z0-9\.\(\)-]+)?\.xml/] 
       id, alt_ids = find_rec_id(xml_record, file_path, f_n)
+
+      #!!need to include something for pulling the original language when tags included, line below for now
+      lit_type = id =~ /tlg/ ? "greek" : "latin"
       #for mads the w_id and a_id will be the same
-      w_id = id =~ /tlg/ ? "urn:cts:greekLit:#{id}" : "urn:cts:latinLit:#{id}"
+      w_id = "urn:cts:#{lit_type}Lit:#{id}"
       a_id = w_id[/urn:cts:\w+:\w+\d+[a-z]*/]
       canon_id = a_id[/\w+\d+[a-z]*$/]
       if id
@@ -71,12 +74,12 @@ module ApplicationHelper
             end
           end
 
-          work_nset = Work.find_by_id(w_id)
+          work_row = Work.find_by_id(w_id)
          
-          orig_lang = xml_record.search("/mods:mods/mods:language/mods:languageTerm")
+          orig_lang = work_row ? work_row.orig_lang : lit_type
           info_hash.merge!(:w_title => work_title,
                         :w_id => w_id,
-                        :cite_work => work_nset,
+                        :cite_work => work_row,
                         :w_lang => orig_lang)
         else
           #related works, easy, find <mads:description>List of related work identifiers and grab siblings
@@ -218,7 +221,7 @@ module ApplicationHelper
       end
     end
     
-    description = "#{author_n} #{ed_trans}"
+    description = "#{author_n}; #{ed_trans}"
     
     return label, description
   end
