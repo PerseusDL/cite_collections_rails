@@ -4,8 +4,8 @@ module ApplicationHelper
 
 
 #create directory path
-  def create_path(type, ctsurn)  
-    path_name = "#{ENV['HOME']}/catalog_data/#{type}/"
+  def create_mods_path(ctsurn)  
+    path_name = "#{ENV['HOME']}/catalog_pending/test/mods/"
     ctsmain = ctsurn[/(greekLit|latinLit).+/]
     path_name << "#{ctsmain.gsub(/:|\./, "/")}"
     unless File.exists?(path_name)
@@ -22,8 +22,21 @@ module ApplicationHelper
     return modspath
   end  
 
+  def create_mads_path(old_path)
+    path_name = "#{ENV['HOME']}/catalog_pending/test/mads/PrimaryAuthors/"
+    op_parts = old_path.split("/")
+    file_n = op_parts.pop
+    name = op_parts.pop
+    frst_let = name[0]   
+    path_name << "#{frst_let}/#{name}/"
+    unless File.exists?(path_name)
+      FileUtils.mkdir_p(path_name)
+    end
+    path_name << file_n
+  end
+
   def move_file(path, xml)
-    fl = File.new(modspath, "w")
+    fl = File.open(path, "w")
     fl << xml
     fl.close
   end
@@ -41,7 +54,7 @@ module ApplicationHelper
       lit_type = id =~ /tlg/ ? "greek" : "latin"
       lit_abbr = lit_type == "greek" ? "grc" : "lat"
       #for mads the w_id and a_id will be the same
-      w_id = "urn:cts:#{lit_type}Lit:#{id}"
+      w_id = id =~ /cts/ ? id[/urn:cts:\w+:\w+\d+[a-z]*\.\w+\d+[a-z]*/] : "urn:cts:#{lit_type}Lit:#{id}"
       a_id = w_id[/urn:cts:\w+:\w+\d+[a-z]*/]
       canon_id = a_id[/\w+\d+[a-z]*$/]
       if id
@@ -77,10 +90,15 @@ module ApplicationHelper
 
           work_row = Work.find_by_id(w_id)        
           orig_lang = work_row ? work_row.orig_lang : lit_abbr
+          vers_langs = []
+          xml_record.search("/mods:mods/mods:relatedItem/mods:language").each do |x| 
+            vers_langs << x.inner_text
+          end
           info_hash.merge!(:w_title => work_title,
                         :w_id => w_id,
                         :cite_work => work_row,
-                        :w_lang => orig_lang)
+                        :w_lang => orig_lang,
+                        :v_langs => vers_langs)
         else
           #related works, easy, find <mads:description>List of related work identifiers and grab siblings
           extensions = xml_record.search("/mads:mads/mads:extension/mads:description")
@@ -96,9 +114,9 @@ module ApplicationHelper
         
         return info_hash       
       end
-    rescue
+    rescue Exception => e
       file_name = file_path[/(\/[a-zA-Z0-9\.\(\)]+)?\.xml/]
-      message = "For file #{file_name}: something went wrong, #{$!}"
+      message = "For file #{file_name}: something went wrong, #{$!} #{e.backtrace}"
       error_handler(message, file_path, file_name)
       return nil
     end
@@ -126,7 +144,7 @@ module ApplicationHelper
         name_ns = xml_record.search("/mods:mods/mods:name")
         unless name_ns.empty?
           name_ns.each do |node|
-            if node.search("./mods:role/mods:roleTerm").inner_text == "creator"
+            if node.search("./mods:role/mods:roleTerm").inner_text =~ /creator|author/
               n = []
               node.search("./mods:namePart").each {|x| n << x.inner_text}
               names << n.join(" ")             
@@ -266,7 +284,7 @@ module ApplicationHelper
               id = "VIAF" + id[/\d+$/] if id =~ /viaf/
               id = "LCCN " + id[/n\s+\d+/] if id =~ /n\s+\d+/
               #have abo ids to account for
-              if id =~ /Perseus:abo/
+              if id =~ /Perseus:abo/ && id !~ /ltan/
                 id_parts = id.split(",")
                 id_type = id_parts[0].split(":")[2]
                 id = id_type + id_parts[1] + "." + id_type + id_parts[2]

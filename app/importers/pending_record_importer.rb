@@ -11,12 +11,12 @@ class PendingRecordImporter
     corrected_mods = "#{ENV['HOME']}/catalog_pending/corrections/mods"
 
     #update_git_dir("catalog_pending") UNCOMMENT THIS
-    #mads_import(corrected_mads)
+    mads_import(corrected_mads)
     mods_import(corrected_mods)
-    #mads_import(pending_mads)
+    mads_import(pending_mads)
     mods_import(pending_mods)
 
-    fusion_tables_update
+    #fusion_tables_update
   end
 
   def mads_import(pending_mads)
@@ -24,16 +24,27 @@ class PendingRecordImporter
     mads_dirs.each do |name_dir|
       mads = clean_dirs(name_dir).select { |f| f =~ /mads/}[0]
       if mads
-
         mads_string = File.read(mads)
         mads_xml = Nokogiri::XML::Document.parse(mads_string, &:noblanks)
         info_hash = find_basic_info(mads_xml, mads)
         #if it already exists we don't need to add it to the table again!
-        if info_hash
+        if info_hash #have to account for corrections!
           if info_hash[:cite_auth] && info_hash[:cite_auth].urn_status == "published"
             next
           else
             add_to_cite_tables(info_hash) if info_hash
+
+            new_auth = Author.find_by_id(info_hash[:canon_id])
+            #add cite urn to record
+            id_line = mads_xml.search("/mads:mads/mads:identifier").last
+            n_id = Nokogiri::XML::Node.new "mads:identifier", mads_xml
+            n_id.add_namespace_definition("mads", "http://www.loc.gov/mads/v2")
+            n_id.content = new_auth.urn
+            n_id.set_attribute("type", "citeurn")
+            id_line.add_next_sibling(n_id)
+
+            madspath = create_mads_path(mads)
+            move_file(madspath, mads_xml)
           end
         else
           message = "For file #{mads} : No info hash returned, something has gone wrong, please check."
@@ -58,7 +69,7 @@ class PendingRecordImporter
         file_path = mods
         mods_string = File.read(file_path)
         mods_xml = Nokogiri::XML::Document.parse(mods_string, &:noblanks)
-        
+
         if file_path =~ /corrections/
           #corrections only need to update the row, rename the file and move it 
           ctsurn = mods_xml.search("/mods:mods/mods:identifier[@type='ctsurn']").inner_text
@@ -71,8 +82,8 @@ class PendingRecordImporter
             v_lang = mods_xml.search("/mods:mods/mods:relatedItem/mods:language/mods:languageTerm").inner_text
             v_type = info_hash[:orig_lang] == v_lang ? "edition" : "translation"
             Version.update_row(row.id, {:version => ctsurn, :label_eng => label, :desc_eng => description, :type => v_type, :edited_by => "auto_importer"})
-            modspath = create_path('mods', ctsurn)                           
-            #move_file(modspath, mods_xml)
+            modspath = create_mods_path(ctsurn)                           
+            move_file(modspath, mods_xml)
           else
             message = "For file #{file_path}: has more than one of the same cts_urn, should be checked"
             error_handler(message, file_path, ctsurn)
@@ -108,8 +119,8 @@ class PendingRecordImporter
                 Version.update_row(v_obj.id, {:has_mods => "true", :edited_by => "auto_importer"})
               end
                 #if has row and confirmed mods, not a correction, assumed multivolume, just move to correct place
-                modspath = create_path('mods', ctsurn)                           
-                #move_file(modspath, mods_xml)     
+                modspath = create_mods_path(ctsurn)                           
+                move_file(modspath, mods_xml)     
             else
               if vers.length == 0
                 #has a ctsurn but no cite row, for whatever reason, needs to be added
@@ -123,7 +134,6 @@ class PendingRecordImporter
               end
             end
           else
-
             unless mods_xml.search("//mods:relatedItem[@type='constituent']").empty?
               #has constituent items, needs to be passed to a method to create new mods
               split_constituents(mods_xml, mods)
@@ -132,9 +142,12 @@ class PendingRecordImporter
               #have the info from the record and cite tables, now process it
               #:file_name,:canon_id,:a_name,:a_id,:alt_ids,:cite_auth,:cite_tg :w_title,:w_id,:cite_work,:w_lang
               if info_hash
-                  add_to_cite_tables(info_hash, mods_xml) 
+                  add_to_cite_tables(info_hash, mods_xml)
+                  #add to versions table
+                  puts "going into add version"
+                  add_to_vers_table(info_hash, mods_xml) 
               else
-                message = "For file #{file_path} : No info hash returned, something has gone wrong, please check."
+                message = "For file #{file_path} : No info hash returned, something has gone wrong, please check. #{$!}"
                 error_handler(message, file_path, file_path)
               end
             end
@@ -159,8 +172,7 @@ class PendingRecordImporter
           #only creates rows in the authors table for mads files, so authors acts as an index of our mads, 
           #tgs can cover everyone mentioned in mods files
           a_urn = Author.generate_urn
-          frst_let = info_hash[:a_name][0,1]
-          mads_path = "PrimaryAuthors/#{frst_let}/#{info_hash[:a_name]}#{info_hash[:file_name]}"         
+          mads_path = create_mads_path(info_hash[:path])         
           a_values = ["#{a_urn}", "#{info_hash[:a_name]}", "#{info_hash[:canon_id]}", "#{mads_path}", "#{info_hash[:alt_ids]}", "#{info_hash[:related_works]}", 'published','', 'auto_importer', 'auto_importer']
           Author.add_cite_row(a_values)
         end
@@ -169,8 +181,8 @@ class PendingRecordImporter
         #find name returned from cite tables, compare to name from record
         #if they aren't equal, throw an error
         cite_name = info_hash[:cite_auth].authority_name
-        cite_auth_id = info_hash[:cite_auth].canonical_id
-        unless cite_auth_id == info_hash[:canon_id]
+        cite_auth_id = info_hash[:cite_auth].canonical_id 
+        unless cite_auth_id == info_hash[:canon_id] || info_hash[:canon_id] =~ /#{info_hash[:cite_auth].alt_ids}/
           message = "For file #{info_hash[:file_name]}: The author id saved in the CITE table doesn't match the id in the file, please check."
           error_handler(message, info_hash[:path], info_hash[:file_name])
           return
@@ -202,14 +214,12 @@ class PendingRecordImporter
           Work.add_cite_row(w_values)
           puts "added work"
         end
-        #add to versions table
-        puts "going into add version"
-        add_to_vers_table(info_hash, mods_xml)
+
       end
 
     rescue Exception => e
       if e.message
-        message = e.message 
+        message = "#{e.message}, #{e.backtrace}"
       else
         message = "For file #{info_hash[:file_name]}: something went wrong, #{$!}"
       end
@@ -225,12 +235,13 @@ class PendingRecordImporter
       #vers_col = "urn, version, label_eng, desc_eng, type, has_mods, urn_status, redirect_to, member_of, created_by, edited_by"
       
         #two (or more) languages listed, create more records
-        info_hash[:w_lang].each do |lang|
+        info_hash[:v_langs].each do |lang|
           puts "in add version"
-          vers_type = lang.inner_text =~ /grc|lat/ ? "edition" : "translation"
+          vers_type = lang == info_hash[:w_lang] ? "edition" : "translation"
           coll = mods_xml.search("//mods:identifier[@type='Perseus:abo']").empty? ? "opp" : "perseus"
           vers_label, vers_desc = create_label_desc(info_hash, mods_xml)
-          vers_urn_wo_num = "#{info_hash[:w_id]}.#{coll}-#{lang.inner_text}"
+          vers_urn_wo_num = "#{info_hash[:w_id]}.#{coll}-#{lang}"
+
           puts "got urn, #{vers_urn_wo_num}"
           #pull all versions that have the work id, returns csv w/first row of column names
           existing_vers = Version.find_by_cts(vers_urn_wo_num)
@@ -252,8 +263,6 @@ class PendingRecordImporter
           #need to check that the description isn't the same
             #how to determine if it is a second mods record for an edition?
             #oclc #s and LCCNs?
-          
-          #if has any lang other than lat or grc, is a translation (could cause issues...)
           #insert row in table
           vers_cite = Version.generate_urn
           puts "got cite urn #{vers_cite}"
@@ -270,10 +279,9 @@ class PendingRecordImporter
           id_line.add_next_sibling(n_id)
 
           
-          modspath = create_path('mods', vers_urn)
-          #move_file(modspath, mods_xml)
+          modspath = create_mods_path(vers_urn)
+          move_file(modspath, mods_xml)
           #then save at new location and remove from old
-          test_run("Would save to:", modspath)
         end
       
       
@@ -289,7 +297,7 @@ class PendingRecordImporter
     #use builder to create mods level, then going to have to use .each to add the children of relatedItem
     #add the top level info for the original wrapped as <relatedItem type="host">
     #save new files to catalog pending
-    byebug
+ 
     const_nodes = mods_xml.search("//mods:relatedItem[@type='constituent']")
     const_nodes.each do |const|
 
@@ -303,10 +311,12 @@ class PendingRecordImporter
         builder.doc.xpath("//mods:relatedItem")[0].add_previous_sibling(sib.clone)
       end
       mods_xml.root.children.each do |child|
-        unless child.name == "//mods:relatedItem"
+        
+        unless child.name == "relatedItem"
           builder.doc.xpath("//mods:relatedItem")[0].add_child(child.clone)
         end
       end
+
       info_hash = find_basic_info(builder.doc, file_path)
       add_to_cite_tables(info_hash, builder.doc) if info_hash
     end

@@ -1,0 +1,48 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1187\cocoasubrtf400
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+\margl1440\margr1440\vieww15000\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+
+\f0\fs24 \cf0 Document updated: 5/29/2014\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural
+\cf0 Workflow\
+\
+If creating a mods or mads record from scratch\
+	-use the form\
+	-create a record by hand and save in catalog_pending/(mods or mads depending)\
+\
+If correcting a mods or mads record\
+	-if the change will not impact anything in the cite table (check table columns)\
+		-make change to record in catalog_data and push to github\
+	-if the change WILL change something in a cite table\
+		-make change and move the file to catalog_pending/corrections \
+\
+Table columns:\
+	#auth_col = "urn, authority_name, canonical_id, mads_file, alt_ids, related_works, urn_status, redirect_to, created_by, edited_by"\
+	#tg_col = "urn, textgroup, groupname_eng, has_mads, mads_possible, notes, urn_status, created_by, edited_by"\
+	#work_col = "urn, work, title_eng, orig_lang, notes, urn_status, created_by, edited_by"\
+	#vers_col = "urn, version, label_eng, desc_eng, type, has_mods, urn_status, redirect_to, member_of, created_by, edited_by"\
+\
+\
+Work issues\
+\
+-no work section of urn\
+	-tlg0698 /Users/ada/catalog_pending/mods/Alexander Ephesius/AlexanderEphesius.FHG3.Fragmenta.mods.xml\
+	-tlg0000 Fragmenta /Chaereas.FHG3.Fragmenta.mods.xml\
+	-tlg0221 /Users/ada/catalog_pending/mods/Euphorion/euphorion.FHG3.Fragmenta.mods.xml\
+\
+\
+Textgroup issues\
+-missing names\
+	-stoa0010c /Users/ada/catalog_pending/mods/Aelius Paetus/AeliusPaetus.GRF(Teubner).Fragmenta.mods.xml\
+	-stoa0296a /Users/ada/catalog_pending/mods/William of Tyre/WilliamTyre.MedLatin.HistoriaRerum.Selections.mods.xml\
+\
+\
+\
+/Users/ada/catalog_pending/mods/Aelius Paetus/AeliusPaetus.GRF(Teubner).Fragmenta.mods.xml\
+-marked as 'editor' no 'creator'\
+\
+\
+CassiusDio.Foster.AnnalsofRome-VolI.mods - Two tlgs?}
