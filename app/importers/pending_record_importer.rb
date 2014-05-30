@@ -300,7 +300,6 @@ class PendingRecordImporter
  
     const_nodes = mods_xml.search("//mods:relatedItem[@type='constituent']")
     const_nodes.each do |const|
-
       builder = Nokogiri::XML::Builder.new(:encoding => 'UTF-8') do |xml|
         xml['mods'].mods('xmlns:mods' => 'http://www.loc.gov/mods/v3') {
           xml['mods'].relatedItem(:type => 'host')
@@ -319,6 +318,7 @@ class PendingRecordImporter
 
       info_hash = find_basic_info(builder.doc, file_path)
       add_to_cite_tables(info_hash, builder.doc) if info_hash
+      add_to_vers_table(info_hash, builder.doc) if info_hash
     end
   end
 

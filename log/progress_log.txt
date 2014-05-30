@@ -1,4 +1,4 @@
-Document updated: 5/29/2014\
+Document updated: 5/30/2014
 ********************
 Workflow
 
@@ -19,6 +19,17 @@ Table columns:
 	#vers_col = "urn, version, label_eng, desc_eng, type, has_mods, urn_status, redirect_to, member_of, created_by, edited_by"
 ********************
 
+
+!!! Big Questions/Problems !!!
+
+-Do we want CTS urns in our MADS records?  Has been only CITE up until now
+
+-Having instance where two files are being saved in the directories with a jump in the grc/lat/eng number but second isn't saved in the db, seems to happen with double language editions.  Still need to track down.
+
+!!!                        !!!
+
+
+
 Work issues
 -no work section of urn
 	-tlg0698 /Users/ada/catalog_pending/mods/Alexander Ephesius/AlexanderEphesius.FHG3.Fragmenta.mods.xml
@@ -34,35 +45,43 @@ Textgroup issues
 
 Author issues
 -don't make it through info_hash method: line 58 in application_helper.rb
+** Do we want CTS urns in our MADS records? **
 	/Users/ada/catalog_pending/mads/Abydenus Historicus/viaf102377847.mads.xml
+		-has ctsurn not cite 
 	/Users/ada/catalog_pending/mads/Asclepiades Myrleanus/viaf29920397.mads.xml
+		-has ctsurn not cite
 	/Users/ada/catalog_pending/mads/Ateius Capito/nr95039375.madsxml.xml
-	/Users/ada/catalog_pending/mads/Dewing, H.B. (Henry Bronson)/nr93032245.madsxml.xml
+		-has ctsurn not cite
 	/Users/ada/catalog_pending/mads/Evagrius Monachus/nr96044291.madsxml.xml
-	/Users/ada/catalog_pending/mads/Gillies, Pierre/n80057296.madsxml.xml
-	/Users/ada/catalog_pending/mads/Haury, Jakob/nr2003009667.madsxml.xml
-	/Users/ada/catalog_pending/mads/Krasheninnikov, M (Mikhail)/n86022860.madsxml.xml
-	/Users/ada/catalog_pending/mads/Pasquali, Giorgio, 1885-1952/n79124956.madsxml.xml
+		-has ctsurn not cite
 	/Users/ada/catalog_pending/mads/Phoronis/phoronis.mads.xml
+		-has ctsurn not cite
 	/Users/ada/catalog_pending/mads/Ptolemaeus Megalopolitanus/viaf37304981.mads.xml
-	/Users/ada/catalog_pending/mads/Ritzenfeld, Albert, 1882-/nr99005442.madsxml.xml
+		-has ctsurn not cite
 	/Users/ada/catalog_pending/mads/Sinnius Capito/nr95027981.madsxml.xml
+		-has ctsurn not cite
 	/Users/ada/catalog_pending/mads/Socrates Rhodius/viaf71784002.mads.xml
+		-has ctsurn not cite
 	/Users/ada/catalog_pending/mads/Timagenes/viaf59476397.mads.xml
-
+		-has ctsurn not cite
 
 
 General run errors
+
+-tlg0000
+	-Chaereas.FHG3.Fragmenta.mods.xml (grc-1 and grc-18; lat-1 and lat-18)
+	-onomacritus.EGF.mods.xml (grc-2 and grc-19; lat-2 and lat-19)
+	-Pisinus.Fragmenta.EGF.mods.xml (grc-3 and grc-20; lat-3 and lat-20)
 
 /Users/ada/catalog_pending/mods/Aelius Paetus/AeliusPaetus.GRF(Teubner).Fragmenta.mods.xml
 -marked as 'editor' no 'creator'
 
 -CassiusDio.Foster.AnnalsofRome-VolI.mods - Two tlgs?, has issue with finding author names
 
--/GeographiGraeciMinores.Vol1.mods.xml - might not be splitting properly
+!!Think this is fixed => -/GeographiGraeciMinores.Vol1.mods.xml - might not be splitting properly
 
 -/Users/ada/catalog_pending/mods/Procopius/Teubner/procopius.OperaOmnia.Teubner(Haury).Vol3-Part II.mods.xml - no info hash
 
 -/serenus.Cimiano.LiberMedicinalis(English).mods.xml : should we worry about multiple creators in a record?
 
--/WilliamTyre.MedLatin.HistoriaRerum.Selections.mods.xml : Could not find an author name, please check the record.
+-/WilliamTyre.MedLatin.HistoriaRerum.Selections.mods.xml : Could not find an author name, please check the record. - No roleTerm given

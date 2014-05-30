@@ -47,16 +47,19 @@ module ApplicationHelper
     begin
       #a regex ugly enough that only its mother could love it, 
       #all to get a file name that I had earlier but cleverly turned into the path that I needed then...
-      f_n = file_path[/(\/[a-zA-Z0-9\.\(\)-]+)?\.xml/] 
+      f_n = file_path[/(\/[a-zA-Z0-9\.\(\)-]+)?\.xml/]
       id, alt_ids = find_rec_id(xml_record, file_path, f_n)
-
-      #!!need to include something for pulling the original language when tags included, line below for now
-      lit_type = id =~ /tlg/ ? "greek" : "latin"
-      lit_abbr = lit_type == "greek" ? "grc" : "lat"
-      #for mads the w_id and a_id will be the same
-      w_id = id =~ /cts/ ? id[/urn:cts:\w+:\w+\d+[a-z]*\.\w+\d+[a-z]*/] : "urn:cts:#{lit_type}Lit:#{id}"
-      a_id = w_id[/urn:cts:\w+:\w+\d+[a-z]*/]
-      canon_id = a_id[/\w+\d+[a-z]*$/]
+      unless id =~ /lccn/i
+        lit_type = id =~ /tlg/ ? "greek" : "latin"
+        lit_abbr = lit_type == "greek" ? "grc" : "lat"
+        #for mads the w_id and a_id will be the same
+        w_id = id =~ /cts/ ? id[/urn:cts:\w+:\w+\d+[a-z]*\.\w+\d+[a-z]*/] : "urn:cts:#{lit_type}Lit:#{id}"
+        a_id = w_id[/urn:cts:\w+:\w+\d+[a-z]*/]
+        canon_id = a_id[/\w+\d+[a-z]*$/]
+      else
+        a_id = nil
+        canon_id = id
+      end
       if id
         #search for and compare author values
         auth_name = find_rec_author(xml_record, file_path, f_n)
@@ -91,8 +94,15 @@ module ApplicationHelper
           work_row = Work.find_by_id(w_id)        
           orig_lang = work_row ? work_row.orig_lang : lit_abbr
           vers_langs = []
-          xml_record.search("/mods:mods/mods:relatedItem/mods:language").each do |x| 
-            vers_langs << x.inner_text
+          xml_record.search("/mods:mods/mods:relatedItem/mods:language").each do |x|
+            attri = x.attribute("type")
+            #want to only get text language when the designation is there, as opposed to the preface
+            if attri
+              vers_langs << x.inner_text if attri.value == "text"
+            else
+              #but not all records have a type="text" and we need that language anyway
+              vers_langs << x.inner_text
+            end
           end
           info_hash.merge!(:w_title => work_title,
                         :w_id => w_id,
@@ -187,7 +197,7 @@ module ApplicationHelper
 
           if id =~ /tlg|phi|stoa|lccn/i #might need to expand this for LCCN, VIAF, etc. if we start using them
             if found_id =~ /tlg|phi|stoa/
-              #skip, having a hell of a time making it work with unless
+              #skip, having a hell of a time making it work with 'unless'
             else
               found_id = id 
             end
@@ -282,7 +292,7 @@ module ApplicationHelper
               id = id_step.map {|x| "#{val}#{x.to_s}"}.join(".")
             else              
               id = "VIAF" + id[/\d+$/] if id =~ /viaf/
-              id = "LCCN " + id[/n\s+\d+/] if id =~ /n\s+\d+/
+              id = "LCCN " + id[/(n|nr)\s+\d+/] if id =~ /(n|nr)\s+\d+/
               #have abo ids to account for
               if id =~ /Perseus:abo/ && id !~ /ltan/
                 id_parts = id.split(",")
