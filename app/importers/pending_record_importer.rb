@@ -304,7 +304,7 @@ class PendingRecordImporter
     #save new files to catalog pending
  
     const_nodes = mods_xml.search("//mods:relatedItem[@type='constituent']")
-    const_nodes.each do |const|
+    const_nodes.each_with_index do |const, i|
       builder = Nokogiri::XML::Builder.new(:encoding => 'UTF-8') do |xml|
         xml['mods'].mods('xmlns:mods' => 'http://www.loc.gov/mods/v3') {
           xml['mods'].relatedItem(:type => 'host')
@@ -322,8 +322,16 @@ class PendingRecordImporter
       end
 
       info_hash = find_basic_info(builder.doc, file_path)
-      add_to_cite_tables(info_hash, builder.doc) if info_hash
-      add_to_vers_table(info_hash, builder.doc) if info_hash
+      if info_hash
+        add_to_cite_tables(info_hash, builder.doc)
+        add_to_vers_table(info_hash, builder.doc)
+      else
+        new_path = file_path.chomp(".xml") + "const#{i}.xml"
+        move_file(new_path, builder.doc)
+        new_name = new_path[/(\/[a-zA-Z0-9\s\.\(\)-]+)?\.xml/]
+        message = "For file #{new_path}: no info_hash returned, saving new constituent record in errors"
+        error_handler(message, new_path, new_name)
+      end
     end
   end
 

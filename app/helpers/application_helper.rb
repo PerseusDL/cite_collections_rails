@@ -47,7 +47,7 @@ module ApplicationHelper
     begin
       #a regex ugly enough that only its mother could love it, 
       #all to get a file name that I had earlier but cleverly turned into the path that I needed then...
-      f_n = file_path[/(\/[a-zA-Z0-9\.\(\)-]+)?\.xml/]
+      f_n = file_path[/(\/[a-zA-Z0-9\s\.\(\)-]+)?\.xml/]
       id, alt_ids = find_rec_id(xml_record, file_path, f_n)
       unless id =~ /lccn/i
         lit_type = id =~ /tlg/ ? "greek" : "latin"
@@ -192,7 +192,7 @@ module ApplicationHelper
       ids.each do |node|
         id = clean_id(node)
 
-        unless id == "none" || id == "" 
+        unless id == "none" || id == "" || id =~ /0000/
           alt_ids << id
 
           if id =~ /tlg|phi|stoa|lccn/i #might need to expand this for LCCN, VIAF, etc. if we start using them

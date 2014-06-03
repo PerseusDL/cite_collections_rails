@@ -1,4 +1,4 @@
-Document updated: 6/2/2014
+Document updated: 6/3/2014
 ********************
 Workflow
 
@@ -23,8 +23,6 @@ Table columns:
 !!! Big Questions/Problems !!!
 
 -Do we want CTS urns in our MADS records?  Has been only CITE up until now
-
--Having instance where two files are being saved in the directories with a jump in the grc/lat/eng number but second isn't saved in the db, seems to happen with double language editions.  Still need to track down.
 
 !!!                        !!!
 
@@ -68,10 +66,10 @@ Author issues
 
 General run errors
 
--tlg0000
-	-Chaereas.FHG3.Fragmenta.mods.xml (grc-1 and grc-18; lat-1 and lat-18)
-	-onomacritus.EGF.mods.xml (grc-2 and grc-19; lat-2 and lat-19)
-	-Pisinus.Fragmenta.EGF.mods.xml (grc-3 and grc-20; lat-3 and lat-20)
+Made this an error, won't make it to the db -tlg0000
+	-Chaereas.FHG3.Fragmenta.mods.xml
+	-onomacritus.EGF.mods.xml 
+	-Pisinus.Fragmenta.EGF.mods.xml
 
 /Users/ada/catalog_pending/mods/Aelius Paetus/AeliusPaetus.GRF(Teubner).Fragmenta.mods.xml
 -marked as 'editor' no 'creator'
@@ -80,9 +78,7 @@ General run errors
 
 -/GeographiGraeciMinores.Vol1.mods.xml - if multiple authors (Descriptio Graci), should have an entry for each (and mods record?)
 
--/GeographiGraeciMinores.Vol1.mods.xml -Mensura Totius Habitae Terrae missing a tlg, marked "Need to look up" In this case the new mods record that would be created needs to be moved to errors, not the whole record with all of the constituents 
-
--/Users/ada/catalog_pending/mods/Procopius/Teubner/procopius.OperaOmnia.Teubner(Haury).Vol3-Part II.mods.xml - no info hash
+FIXED? -/GeographiGraeciMinores.Vol1.mods.xml -Mensura Totius Habitae Terrae missing a tlg, marked "Need to look up" In this case the new mods record that would be created needs to be moved to errors, not the whole record with all of the constituents 
 
 -/serenus.Cimiano.LiberMedicinalis(English).mods.xml : should we worry about multiple creators in a record?
 
