@@ -1,4 +1,4 @@
-Document updated: 5/30/2014
+Document updated: 6/2/2014
 ********************
 Workflow
 
@@ -78,7 +78,9 @@ General run errors
 
 -CassiusDio.Foster.AnnalsofRome-VolI.mods - Two tlgs?, has issue with finding author names
 
-!!Think this is fixed => -/GeographiGraeciMinores.Vol1.mods.xml - might not be splitting properly
+-/GeographiGraeciMinores.Vol1.mods.xml - if multiple authors (Descriptio Graci), should have an entry for each (and mods record?)
+
+-/GeographiGraeciMinores.Vol1.mods.xml -Mensura Totius Habitae Terrae missing a tlg, marked "Need to look up" In this case the new mods record that would be created needs to be moved to errors, not the whole record with all of the constituents 
 
 -/Users/ada/catalog_pending/mods/Procopius/Teubner/procopius.OperaOmnia.Teubner(Haury).Vol3-Part II.mods.xml - no info hash
 

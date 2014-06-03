@@ -95,7 +95,7 @@ module ApplicationHelper
           orig_lang = work_row ? work_row.orig_lang : lit_abbr
           vers_langs = []
           xml_record.search("/mods:mods/mods:relatedItem/mods:language").each do |x|
-            attri = x.attribute("type")
+            attri = x.attribute("objectPart")
             #want to only get text language when the designation is there, as opposed to the preface
             if attri
               vers_langs << x.inner_text if attri.value == "text"

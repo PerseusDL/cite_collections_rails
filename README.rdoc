@@ -1,28 +1,7 @@
-== README
+== cite_collections_rails
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+Repository to hold the Rails implementation of the CITE tables and importation of new MODS and MADS files from the catalog_pending repo to the catalog_data repo.
 
-Things you may want to cover:
+Copyright 2013 The Perseus Digital Library, Tufts University
 
-* Ruby version
-
-* System dependencies
-
-* Configuration
-
-* Database creation
-
-* Database initialization
-
-* How to run the test suite
-
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
-
-
-Please feel free to use a different markup language if you do not plan to run
-<tt>rake doc:app</tt>.
+Contents of this repository are licensed under a Creative Commons Attribution-ShareAlike 3.0 United States License. http://creativecommons.org/licenses/by-sa/3.0/us/

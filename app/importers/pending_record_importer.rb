@@ -191,11 +191,16 @@ class PendingRecordImporter
       end
 
       unless info_hash[:cite_tg]
-        #do we need a name check?
-        #no row for this textgroup, add a row
-        t_urn = Textgroup.generate_urn
-        t_values = ["#{t_urn}", "#{info_hash[:a_id]}", "#{info_hash[:a_name]}", "#{info_hash[:cite_auth] == nil}", 'true','', 'published', 'auto_importer','auto_importer']
-        Textgroup.add_cite_row(t_values)
+        if info_hash[:a_name]
+          #no row for this textgroup, add a row
+          t_urn = Textgroup.generate_urn
+          t_values = ["#{t_urn}", "#{info_hash[:a_id]}", "#{info_hash[:a_name]}", "#{info_hash[:cite_auth] == nil}", 'true','', 'published', 'auto_importer','auto_importer']
+          Textgroup.add_cite_row(t_values)
+        else
+          message = "No author name found in record, can not create textgroup"
+          error_handler(message, info_hash[:path], info_hash[:file_name])
+          return
+        end
       else
         #if mads, check if mads is marked true, update to true if false
         unless mods_xml
@@ -233,7 +238,7 @@ class PendingRecordImporter
     begin
       
       #vers_col = "urn, version, label_eng, desc_eng, type, has_mods, urn_status, redirect_to, member_of, created_by, edited_by"
-      
+
         #two (or more) languages listed, create more records
         info_hash[:v_langs].each do |lang|
           puts "in add version"
