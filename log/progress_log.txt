@@ -1,4 +1,4 @@
-Document updated: 6/3/2014
+Document updated: 6/10/2014
 ********************
 Workflow
 
@@ -22,14 +22,18 @@ Table columns:
 
 !!! Big Questions/Problems !!!
 
--Do we want CTS urns in our MADS records?  Has been only CITE up until now
+-Do we want CTS urns in our MADS records?  Has been only CITE up until now: YES WANT CTS URNS
+
+-Corrections to Mods records that would impact the CITE tables have been made in catalog_data, need to account for these and update the CITE tables
+	-use commits from Alison/anyone on github to catalog_data to move those files to catalog_pending/corrections, or just run through those files one at a time, no need to physically move them...  Gets rid of the issue of how to tell what is a correction and what is a new file.  New files come from catalog_pending, corrections come from catalog_data.
+	https://developer.github.com/v3/git/commits/
 
 !!!                        !!!
 
 
 
 Work issues
--no work section of urn
+issue 3-no work section of urn
 	-tlg0698 /Users/ada/catalog_pending/mods/Alexander Ephesius/AlexanderEphesius.FHG3.Fragmenta.mods.xml
 	-tlg0000 Fragmenta /Chaereas.FHG3.Fragmenta.mods.xml
 	-tlg0221 /Users/ada/catalog_pending/mods/Euphorion/euphorion.FHG3.Fragmenta.mods.xml
@@ -42,8 +46,8 @@ Textgroup issues
 
 
 Author issues
--don't make it through info_hash method: line 58 in application_helper.rb
-** Do we want CTS urns in our MADS records? **
+Issue 4--don't make it through info_hash method: line 58 in application_helper.rb
+** Do we want CTS urns in our MADS records? ** YES WE DO
 	/Users/ada/catalog_pending/mads/Abydenus Historicus/viaf102377847.mads.xml
 		-has ctsurn not cite 
 	/Users/ada/catalog_pending/mads/Asclepiades Myrleanus/viaf29920397.mads.xml
@@ -66,12 +70,12 @@ Author issues
 
 General run errors
 
-Made this an error, won't make it to the db -tlg0000
+Issue 5-Made this an error, won't make it to the db -tlg0000
 	-Chaereas.FHG3.Fragmenta.mods.xml
 	-onomacritus.EGF.mods.xml 
 	-Pisinus.Fragmenta.EGF.mods.xml
 
-/Users/ada/catalog_pending/mods/Aelius Paetus/AeliusPaetus.GRF(Teubner).Fragmenta.mods.xml
+issue 2-/Users/ada/catalog_pending/mods/Aelius Paetus/AeliusPaetus.GRF(Teubner).Fragmenta.mods.xml
 -marked as 'editor' no 'creator'
 
 -CassiusDio.Foster.AnnalsofRome-VolI.mods - Two tlgs?, has issue with finding author names
@@ -83,3 +87,11 @@ FIXED? -/GeographiGraeciMinores.Vol1.mods.xml -Mensura Totius Habitae Terrae mis
 -/serenus.Cimiano.LiberMedicinalis(English).mods.xml : should we worry about multiple creators in a record?
 
 -/WilliamTyre.MedLatin.HistoriaRerum.Selections.mods.xml : Could not find an author name, please check the record. - No roleTerm given
+
+
+!!!!  TO DO  !!!!
+-Add ability to deal with CTS urns in MADS records
+-account for 'x' in a tlg/phi/stoa id
+-update method so corrections come from catalog_data as informed by commits to that repo
+
+!!!!         !!!!
