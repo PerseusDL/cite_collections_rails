@@ -19,6 +19,10 @@ class Author < ActiveRecord::Base
     found_id = Author.find_by_canonical_id(id) || Author.find_by_alt_ids(id)
   end
 
+  def self.update_row(id, hash)
+    updated = Author.update(id, hash)
+  end
+
   def self.add_cite_row(v)
     #"0urn, 1authority_name, 2canonical_id, 3mads_file, 4alt_ids, 5related_works, 
     #6urn_status, 7redirect_to, 8created_by, 9edited_by"

@@ -1,4 +1,4 @@
-Document updated: 6/10/2014
+Document updated: 7/18/2014
 ********************
 Workflow
 
@@ -7,10 +7,8 @@ If creating a mods or mads record from scratch
 	-create a record by hand and save in catalog_pending/(mods or mads depending)
 
 If correcting a mods or mads record
-	-if the change will not impact anything in the cite table (check table columns)
-		-make change to record in catalog_data and push to github
-	-if the change WILL change something in a cite table
-		-make change and move the file to catalog_pending/corrections 
+	-if change impacts the ctsurn, the cite table must be updated by hand with a deletion or redirect and the appropriate record removed
+	-otherwise make changes and commit to github, one record per commit, anything that impacts the info in the tables will be automatically updated
 
 Table columns:
 	#auth_col = "urn, authority_name, canonical_id, mads_file, alt_ids, related_works, urn_status, redirect_to, created_by, edited_by"
@@ -24,9 +22,6 @@ Table columns:
 
 -Do we want CTS urns in our MADS records?  Has been only CITE up until now: YES WANT CTS URNS
 
--Corrections to Mods records that would impact the CITE tables have been made in catalog_data, need to account for these and update the CITE tables
-	-use commits from Alison/anyone on github to catalog_data to move those files to catalog_pending/corrections, or just run through those files one at a time, no need to physically move them...  Gets rid of the issue of how to tell what is a correction and what is a new file.  New files come from catalog_pending, corrections come from catalog_data.
-	https://developer.github.com/v3/git/commits/
 
 !!!                        !!!
 
@@ -92,6 +87,6 @@ FIXED? -/GeographiGraeciMinores.Vol1.mods.xml -Mensura Totius Habitae Terrae mis
 !!!!  TO DO  !!!!
 -Add ability to deal with CTS urns in MADS records
 -account for 'x' in a tlg/phi/stoa id
--update method so corrections come from catalog_data as informed by commits to that repo
+
 
 !!!!         !!!!

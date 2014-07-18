@@ -6,13 +6,11 @@ class PendingRecordImporter
   def import
     @error_report = File.open("#{ENV['HOME']}/catalog_pending/errors/error_log#{Date.today}.txt", 'w')
     pending_mads = "#{ENV['HOME']}/catalog_pending/mads"
-    corrected_mads = "#{ENV['HOME']}/catalog_pending/corrections/mads"
     pending_mods = "#{ENV['HOME']}/catalog_pending/mods"
-    corrected_mods = "#{ENV['HOME']}/catalog_pending/corrections/mods"
+    corrections = "#{ENV['HOME']}/catalog_data"
 
     #update_git_dir("catalog_pending") UNCOMMENT THIS
-    mads_import(corrected_mads)
-    mods_import(corrected_mods)
+    update_from_catalog_data(corrections)
     mads_import(pending_mads)
     mods_import(pending_mods)
 
@@ -70,26 +68,6 @@ class PendingRecordImporter
         mods_string = File.read(file_path)
         mods_xml = Nokogiri::XML::Document.parse(mods_string, &:noblanks)
 
-        if file_path =~ /corrections/
-          #corrections only need to update the row, rename the file and move it 
-          ctsurn = mods_xml.search("/mods:mods/mods:identifier[@type='ctsurn']").inner_text
-          vers = Version.find_by_cts(ctsurn)
-          #should only be one row
-          if vers.length == 1
-            row = vers[0]
-            info_hash = find_basic_info(mods_xml, mods)
-            label, description = create_label_desc(info_hash, mods_xml)
-            v_lang = mods_xml.search("/mods:mods/mods:relatedItem/mods:language/mods:languageTerm").inner_text
-            v_type = info_hash[:orig_lang] == v_lang ? "edition" : "translation"
-            Version.update_row(row.id, {:version => ctsurn, :label_eng => label, :desc_eng => description, :type => v_type, :edited_by => "auto_importer"})
-            modspath = create_mods_path(ctsurn)                           
-            move_file(modspath, mods_xml)
-          else
-            message = "For file #{file_path}: has more than one of the same cts_urn, should be checked"
-            error_handler(message, file_path, ctsurn)
-          end
-
-        else
           #need to check that the mods prefix exists and if not, add it
           namespaces = mods_xml.namespaces
           unless namespaces.include?("xmlns:mods")
@@ -153,20 +131,20 @@ class PendingRecordImporter
             end
           end
           #`rm #{file_path}`
-        end
+        
       end
     end
   end
 
   def add_to_cite_tables(info_hash, mods_xml=nil)
     begin
+      #cite table columns are...
       #auth_col = "urn, authority_name, canonical_id, mads_file, alt_ids, related_works, urn_status, redirect_to, created_by, edited_by"
       #tg_col = "urn, textgroup, groupname_eng, has_mads, mads_possible, notes, urn_status, created_by, edited_by"
       #work_col = "urn, work, title_eng, notes, urn_status, created_by, edited_by"
 
       unless info_hash[:cite_auth]
 
-        #double check that we don't have a name that matches the author name
         #no row for this author, add a row       
         unless mods_xml
           #only creates rows in the authors table for mads files, so authors acts as an index of our mads, 
@@ -297,11 +275,7 @@ class PendingRecordImporter
   end
 
   def split_constituents(mods_xml, file_path)
-    #need to create a new mods file for each constituent item
-    #take each <relatedItem type="constituent"> and make it the top level in a new mods record
-    #use builder to create mods level, then going to have to use .each to add the children of relatedItem
-    #add the top level info for the original wrapped as <relatedItem type="host">
-    #save new files to catalog pending
+    #create a new mods file for each constituent item
  
     const_nodes = mods_xml.search("//mods:relatedItem[@type='constituent']")
     const_nodes.each_with_index do |const, i|
@@ -334,6 +308,80 @@ class PendingRecordImporter
       end
     end
   end
+
+
+  def update_from_catalog_data(path)
+    today = Time.now
+    #first time running this the time needs to be from the beginning of edits to catalog_data
+    #first time from July 9, 2013
+    #after that, need a set time, will we run this as a chron job?
+    since = "2013-07-08T00:00:00Z" #(today - seconds).to_s
+    url = "https://api.github.com/repos/PerseusDL/catalog_data/commits?since=#{since}"
+    agent = Mechanize.new
+    gh_results = agent.get(url)
+    json = JSON.parse(gh_results.body)
+    json.each do |commit|
+      #working with a hash of hashes
+      
+      message = commit["commit"]["message"]
+      editor = commit["commit"]["author"]["name"]
+      begin
+        if message =~ /Update/ #assuming one commit = one file
+          parts = message.split(/\s/)
+          file = parts[1] if parts[1] =~ /\.xml/
+          file_path = Dir.glob("#{path}/**/#{file}")[0]
+          mods_string = File.read(file_path)
+          mods_xml = Nokogiri::XML::Document.parse(mods_string, &:noblanks)
+          info_hash = find_basic_info(mods_xml, file_path)
+          if info_hash
+            if file_path =~ /mads/
+              auth = info_hash[:cite_auth]
+              auth_hash = {}           
+              auth_hash[:authority_name] = info_hash[:a_name] if auth.authority_name != info_hash[:a_name]
+              auth_hash[:alt_ids] = info_hash[:alt_ids] if auth.alt_ids != info_hash[:alt_ids]
+              auth_hash[:related_works] = info_hash[:related_works] if auth.related_works != info_hash[:related_works]
+    
+              unless auth_hash.empty?
+                auth_hash[:edited_by] = editor
+                Author.update_row(auth.id, auth_hash)
+              end
+            else
+              cts = file_path[/\w+\.\w+\.\w+-\w+\d+/]
+              tg_hash, w_hash, v_hash = {}, {}, {}
+              tg = info_hash[:cite_tg]
+              work = info_hash[:cite_work]
+              vers = Version.find_by_cts(cts)[0]
+
+              if tg.groupname_eng != info_hash[:a_name]
+                tg_hash[:groupname_eng] = info_hash[:a_name]
+                tg_hash[:edited_by] = editor
+                Textgroup.update_row(tg.id, tg_hash)
+              end
+
+              if work.title_eng != info_hash[:w_title]
+                w_hash[:title_eng] = info_hash[:w_title]
+                w_hash[:edited_by] = editor
+                Work.update_row(work.id, w_hash)
+              end
+
+              vers_label, vers_desc = create_label_desc(info_hash, mods_xml)            
+              v_hash[:label_eng] = vers_label if vers.label_eng != vers_label
+              v_hash[:desc_eng] = vers_desc if vers.desc_eng != vers_desc
+              unless v_hash.empty?
+                v_hash[:edited_by] = editor
+                Version.update_row(vers.id, v_hash)
+              end
+
+            end
+          end
+        end
+      rescue
+        message = "Error for catalog_data update, commit was #{commit["sha"]}, error message was: #{$!}"
+        error_handler(message)
+      end
+    end
+  end
+
 
   def fusion_tables_update
   end

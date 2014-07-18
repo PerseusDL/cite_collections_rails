@@ -19,6 +19,10 @@ class Work < ActiveRecord::Base
     found_id = Work.find_by_work(id)
   end
 
+  def self.update_row(id, hash)
+    updated = Work.update(id, hash)
+  end
+
   def self.add_cite_row(v)
     #0urn, 1work, 2title_eng, 3orig_lang, 4notes, 5urn_status, 6created_by, 7edited_by
     wrk = Work.new do |w|

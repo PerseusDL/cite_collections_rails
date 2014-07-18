@@ -110,7 +110,7 @@ module ApplicationHelper
                         :w_lang => orig_lang,
                         :v_langs => vers_langs)
         else
-          #related works, easy, find <mads:description>List of related work identifiers and grab siblings
+          #related works, find <mads:description>List of related work identifiers and grab siblings
           extensions = xml_record.search("/mads:mads/mads:extension/mads:description")
           extensions.each do |ex|
             if ex.inner_text == "List of related work identifiers"
@@ -149,15 +149,16 @@ module ApplicationHelper
       else   
 
       #grab the name with the "creator" role      
-        names = []
+        names = {}
      
         name_ns = xml_record.search("/mods:mods/mods:name")
         unless name_ns.empty?
           name_ns.each do |node|
-            if node.search("./mods:role/mods:roleTerm").inner_text =~ /creator|author/
+            a_type = node.search("./mods:role/mods:roleTerm").inner_text
+            if a_type =~ /creator$|author/
               n = []
               node.search("./mods:namePart").each {|x| n << x.inner_text}
-              names << n.join(" ")             
+              names[a_type] = n.join(" ")             
             end
           end
           if names.empty?
@@ -165,8 +166,11 @@ module ApplicationHelper
             error_handler(message, file_path, f_n)
             return
           else
-            a_name = names[0] if names.length == 1
-            error_handler("For #{f_n} : should we worry about multiple creators in a record?", file_path, f_n) if names.length > 1
+            if names.size == 1
+              a_name = names.values[0] 
+            else
+              a_name = names["creator"] ? names["creator"] : names.values[0]
+            end 
           end
         else
           message = "For file #{f_n} : Could not find an author name, please check the record."
@@ -322,8 +326,7 @@ module ApplicationHelper
   end
 
 #errors
-  def error_handler(message, file_path, f_n)
-    #move all files with errors to the error directory for human review
+  def error_handler(message, *file_info)
     puts message
     @error_report << "#{message}\n\n"
     @error_report.close
