@@ -54,7 +54,11 @@ module ApplicationHelper
         lit_abbr = lit_type == "greek" ? "grc" : "lat"
         #for mads the w_id and a_id will be the same
         w_id = id =~ /cts/ ? id[/urn:cts:\w+:\w+\d+[a-z]*\.\w+\d+[a-z]*/] : "urn:cts:#{lit_type}Lit:#{id}"
-        a_id = w_id[/urn:cts:\w+:\w+\d+[a-z]*/]
+        if f_n =~ /mads/ && id =~ /cts/
+          a_id = id
+        else
+          a_id = w_id[/urn:cts:\w+:\w+\d+[a-z]*/]
+        end
         canon_id = a_id[/\w+\d+[a-z]*$/]
       else
         a_id = nil
@@ -187,6 +191,7 @@ module ApplicationHelper
 
 
   def find_rec_id(xml_record, file_path, f_n)
+
     begin
       ids = f_n =~ /mads/ ? xml_record.search("/mads:mads/mads:identifier") : xml_record.search("/mods:mods/mods:identifier")
       found_id = nil
@@ -195,7 +200,7 @@ module ApplicationHelper
       #parsing found ids, take tlg or phi over stoa unless there is an empty string or "none"
       ids.each do |node|
         id = clean_id(node)
-
+        
         unless id == "none" || id == "" || id =~ /0000/
           alt_ids << id
 

@@ -1,4 +1,4 @@
-Document updated: 7/18/2014
+Document updated: 7/24/2014
 ********************
 Workflow
 
@@ -20,7 +20,6 @@ Table columns:
 
 !!! Big Questions/Problems !!!
 
--Do we want CTS urns in our MADS records?  Has been only CITE up until now: YES WANT CTS URNS
 
 
 !!!                        !!!
@@ -41,26 +40,6 @@ Textgroup issues
 
 
 Author issues
-Issue 4--don't make it through info_hash method: line 58 in application_helper.rb
-** Do we want CTS urns in our MADS records? ** YES WE DO
-	/Users/ada/catalog_pending/mads/Abydenus Historicus/viaf102377847.mads.xml
-		-has ctsurn not cite 
-	/Users/ada/catalog_pending/mads/Asclepiades Myrleanus/viaf29920397.mads.xml
-		-has ctsurn not cite
-	/Users/ada/catalog_pending/mads/Ateius Capito/nr95039375.madsxml.xml
-		-has ctsurn not cite
-	/Users/ada/catalog_pending/mads/Evagrius Monachus/nr96044291.madsxml.xml
-		-has ctsurn not cite
-	/Users/ada/catalog_pending/mads/Phoronis/phoronis.mads.xml
-		-has ctsurn not cite
-	/Users/ada/catalog_pending/mads/Ptolemaeus Megalopolitanus/viaf37304981.mads.xml
-		-has ctsurn not cite
-	/Users/ada/catalog_pending/mads/Sinnius Capito/nr95027981.madsxml.xml
-		-has ctsurn not cite
-	/Users/ada/catalog_pending/mads/Socrates Rhodius/viaf71784002.mads.xml
-		-has ctsurn not cite
-	/Users/ada/catalog_pending/mads/Timagenes/viaf59476397.mads.xml
-		-has ctsurn not cite
 
 
 General run errors
@@ -85,7 +64,6 @@ FIXED? -/GeographiGraeciMinores.Vol1.mods.xml -Mensura Totius Habitae Terrae mis
 
 
 !!!!  TO DO  !!!!
--Add ability to deal with CTS urns in MADS records
 -account for 'x' in a tlg/phi/stoa id
 
 
