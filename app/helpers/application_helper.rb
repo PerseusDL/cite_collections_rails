@@ -53,7 +53,7 @@ module ApplicationHelper
         lit_type = id =~ /tlg/ ? "greek" : "latin"
         lit_abbr = lit_type == "greek" ? "grc" : "lat"
         #for mads the w_id and a_id will be the same
-        w_id = id =~ /cts/ ? id[/urn:cts:\w+:\w+\d+[a-z]*\.\w+\d+[a-z]*/] : "urn:cts:#{lit_type}Lit:#{id}"
+        w_id = id =~ /cts/ ? id[/urn:cts:\w+:\w+\d+[a-z]*\.\w+\d+[a-z0-9]*/] : "urn:cts:#{lit_type}Lit:#{id}"
         if f_n =~ /mads/ && id =~ /cts/
           a_id = id
         else
@@ -199,6 +199,9 @@ module ApplicationHelper
 
       #parsing found ids, take tlg or phi over stoa unless there is an empty string or "none"
       ids.each do |node|
+        if file_path =~ /euphorion.FHG3.Fragmenta.mods/
+          byebug
+        end
         id = clean_id(node)
         
         unless id == "none" || id == "" || id =~ /0000/
@@ -294,11 +297,18 @@ module ApplicationHelper
             id = id.gsub('-', '.')      
           else
             if val =~ /tlg|phi/
-              #I hate that the ids aren't padded with 0s...           
-              id_step = id.split(".")
-              id_step.each_with_index {|x, i| i == 0 ? id_step[0] = sprintf("%04d", x.to_i) : id_step[1] = sprintf("%03d", x.to_i)}
-              #add in tlgs or phis
-              id = id_step.map {|x| "#{val}#{x.to_s}"}.join(".")
+              if id =~ /\d+x\d$/i #catching 0012X01 type of ids
+                id_step = id.split(/x/i)
+                id_step[1]= "X"+id_step[1]
+                #add in tlgs or phis
+                id = id_step.map {|x| val + x}.join(".")
+              else
+                #I hate that the ids aren't padded with 0s...           
+                id_step = id.split(".")
+                id_step.each_with_index {|x, i| i == 0 ? id_step[0] = sprintf("%04d", x.to_i) : id_step[1] = sprintf("%03d", x.to_i)}
+                #add in tlgs or phis
+                id = id_step.map {|x| val + x.to_s}.join(".") 
+              end             
             else              
               id = "VIAF" + id[/\d+$/] if id =~ /viaf/
               id = "LCCN " + id[/(n|nr)\s+\d+/] if id =~ /(n|nr)\s+\d+/
