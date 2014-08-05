@@ -1,3 +1,12 @@
+#Copyright 2014 The Perseus Project, Tufts University, Medford MA
+#This free software: you can redistribute it and/or modify it under the terms of the GNU General Public License 
+#published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+#This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+#without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+#See the GNU General Public License for more details.
+#See http://www.gnu.org/licenses/.
+#=============================================================================================
+
 module ApplicationHelper
 
   #Helper methods
@@ -23,7 +32,7 @@ module ApplicationHelper
   end  
 
   def create_mads_path(old_path)
-    path_name = "#{ENV['HOME']}/catalog_pending/test/mads/PrimaryAuthors/"
+    path_name = "#{ENV['HOME']}/catalog_pending/mads/PrimaryAuthors/"
     op_parts = old_path.split("/")
     file_n = op_parts.pop
     name = op_parts.pop
@@ -233,7 +242,7 @@ module ApplicationHelper
     end
   end
 
-  def create_label_desc(info_hash, mods_xml)
+  def create_label_desc(mods_xml)
     ns = mods_xml.collect_namespaces
     if !mods_xml.search('//mods:relatedItem[@type="host"]/mods:titleInfo', ns).empty?
       raw_title = mods_xml.search('//mods:relatedItem[@type="host"]/mods:titleInfo', ns).first
@@ -279,6 +288,12 @@ module ApplicationHelper
     m_chil.each {|c_node| xml_rename(c_node)} if m_chil
   end
 
+  def get_xml(file)
+    file_string = File.open(file, "r+")
+    file_xml = Nokogiri::XML::Document.parse(file_string, &:noblanks)
+    file_string.close
+    return file_xml
+  end
 
 #cleaning data
 

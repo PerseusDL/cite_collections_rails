@@ -1,4 +1,4 @@
-Document updated: 7/24/2014
+Document updated: 8/1/2014
 ********************
 Workflow
 
@@ -19,6 +19,9 @@ Table columns:
 
 
 !!! Big Questions/Problems !!!
+
+-Why is there the work portion on this tg urn?? 
+	'2171','urn:cite:perseus:textgroup.1774.1','urn:cts:greekLit:tlg1170.tlg001','Apollonius Aphrodisiensis v3. Jh','true','true','','published','auto_importer','auto_importer','2014-07-24 16:03:21','2014-07-24 16:03:21'
 
 
 

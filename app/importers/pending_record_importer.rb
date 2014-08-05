@@ -1,3 +1,13 @@
+#Copyright 2014 The Perseus Project, Tufts University, Medford MA
+#This free software: you can redistribute it and/or modify it under the terms of the GNU General Public License 
+#published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+#This software is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; 
+#without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+#See the GNU General Public License for more details.
+#See http://www.gnu.org/licenses/.
+#=============================================================================================
+
+
 class PendingRecordImporter
   include CiteColls
   include ApplicationHelper
@@ -22,8 +32,7 @@ class PendingRecordImporter
     mads_dirs.each do |name_dir|
       mads = clean_dirs(name_dir).select { |f| f =~ /mads/}[0]
       if mads
-        mads_string = File.read(mads)
-        mads_xml = Nokogiri::XML::Document.parse(mads_string, &:noblanks)
+        mads_xml = get_xml(mads)
         info_hash = find_basic_info(mads_xml, mads)
         #if it already exists we don't need to add it to the table again!
         if info_hash #have to account for corrections!
@@ -65,16 +74,13 @@ class PendingRecordImporter
       end
       collect_xml.each do |mods|
         file_path = mods
-        mods_string = File.read(file_path)
-        mods_xml = Nokogiri::XML::Document.parse(mods_string, &:noblanks)
-
+        mods_xml = get_xml(file_path)
           #need to check that the mods prefix exists and if not, add it
           namespaces = mods_xml.namespaces
           unless namespaces.include?("xmlns:mods")
             add_mods_prefix(mods_xml)
             File.open("#{ENV['HOME']}/catalog_pending/testrename.xml", "w"){|file| file << mods_xml}
-            new_mods = File.read("#{ENV['HOME']}/catalog_pending/testrename.xml") #!!will need to change!!
-            new_xml = Nokogiri::XML::Document.parse(new_mods, &:noblanks)
+            new_xml = get_xml("#{ENV['HOME']}/catalog_pending/testrename.xml")#!!will need to change!!
             it_worked = new_xml.search("/mods:mods/mods:titleInfo")
             if it_worked == nil || it_worked.empty?
               message = "For file #{file_path}: tried adding prefix to mods but something went wrong, please check"
@@ -150,7 +156,7 @@ class PendingRecordImporter
           #only creates rows in the authors table for mads files, so authors acts as an index of our mads, 
           #tgs can cover everyone mentioned in mods files
           a_urn = Author.generate_urn
-          mads_path = create_mads_path(info_hash[:path])         
+          mads_path = create_mads_path(info_hash[:path])[/PrimaryAuthors.+\.xml/]         
           a_values = ["#{a_urn}", "#{info_hash[:a_name]}", "#{info_hash[:canon_id]}", "#{mads_path}", "#{info_hash[:alt_ids]}", "#{info_hash[:related_works]}", 'published','', 'auto_importer', 'auto_importer']
           Author.add_cite_row(a_values)
         end
@@ -222,7 +228,7 @@ class PendingRecordImporter
           puts "in add version"
           vers_type = lang == info_hash[:w_lang] ? "edition" : "translation"
           coll = mods_xml.search("//mods:identifier[@type='Perseus:abo']").empty? ? "opp" : "perseus"
-          vers_label, vers_desc = create_label_desc(info_hash, mods_xml)
+          vers_label, vers_desc = create_label_desc(mods_xml)
           vers_urn_wo_num = "#{info_hash[:w_id]}.#{coll}-#{lang}"
 
           puts "got urn, #{vers_urn_wo_num}"
@@ -330,8 +336,7 @@ class PendingRecordImporter
           parts = message.split(/\s/)
           file = parts[1] if parts[1] =~ /\.xml/
           file_path = Dir.glob("#{path}/**/#{file}")[0]
-          mods_string = File.read(file_path)
-          mods_xml = Nokogiri::XML::Document.parse(mods_string, &:noblanks)
+          mods_xml = get_xml(file_path)
           info_hash = find_basic_info(mods_xml, file_path)
           if info_hash
             if file_path =~ /mads/
@@ -364,7 +369,7 @@ class PendingRecordImporter
                 Work.update_row(work.id, w_hash)
               end
 
-              vers_label, vers_desc = create_label_desc(info_hash, mods_xml)            
+              vers_label, vers_desc = create_label_desc(mods_xml)            
               v_hash[:label_eng] = vers_label if vers.label_eng != vers_label
               v_hash[:desc_eng] = vers_desc if vers.desc_eng != vers_desc
               unless v_hash.empty?
