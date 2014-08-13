@@ -216,7 +216,7 @@ module ApplicationHelper
         unless id == "none" || id == "" || id =~ /0000/
           alt_ids << id
 
-          if id =~ /tlg|phi|stoa|lccn/i #might need to expand this for LCCN, VIAF, etc. if we start using them
+          if id =~ /tlg|phi|stoa|lccn/i #might need to expand this for VIAF, etc. if we start using them
             if found_id =~ /tlg|phi|stoa/
               #skip, having a hell of a time making it work with 'unless'
             else

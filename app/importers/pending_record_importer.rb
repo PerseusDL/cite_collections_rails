@@ -35,7 +35,7 @@ class PendingRecordImporter
         mads_xml = get_xml(mads)
         info_hash = find_basic_info(mads_xml, mads)
         #if it already exists we don't need to add it to the table again!
-        if info_hash #have to account for corrections!
+        if info_hash
           if info_hash[:cite_auth] && info_hash[:cite_auth].urn_status == "published"
             next
           else
@@ -57,6 +57,7 @@ class PendingRecordImporter
           message = "For file #{mads} : No info hash returned, something has gone wrong, please check."
           error_handler(message, mads, mads)
         end
+        #`rm #{file_path}`
       end
     end
   end
@@ -79,8 +80,8 @@ class PendingRecordImporter
           namespaces = mods_xml.namespaces
           unless namespaces.include?("xmlns:mods")
             add_mods_prefix(mods_xml)
-            File.open("#{ENV['HOME']}/catalog_pending/testrename.xml", "w"){|file| file << mods_xml}
-            new_xml = get_xml("#{ENV['HOME']}/catalog_pending/testrename.xml")#!!will need to change!!
+            File.open(file_path, "w"){|file| file << mods_xml}
+            new_xml = get_xml(file_path)
             it_worked = new_xml.search("/mods:mods/mods:titleInfo")
             if it_worked == nil || it_worked.empty?
               message = "For file #{file_path}: tried adding prefix to mods but something went wrong, please check"
@@ -219,61 +220,55 @@ class PendingRecordImporter
 
 
   def add_to_vers_table(info_hash, mods_xml)
-    begin
-      
+    begin      
       #vers_col = "urn, version, label_eng, desc_eng, type, has_mods, urn_status, redirect_to, member_of, created_by, edited_by"
+      #two (or more) languages listed, create more records
+      info_hash[:v_langs].each do |lang|
+        puts "in add version"
+        vers_type = lang == info_hash[:w_lang] ? "edition" : "translation"
+        coll = mods_xml.search("//mods:identifier[@type='Perseus:abo']").empty? ? "opp" : "perseus"
+        vers_label, vers_desc = create_label_desc(mods_xml)
+        vers_urn_wo_num = "#{info_hash[:w_id]}.#{coll}-#{lang}"
 
-        #two (or more) languages listed, create more records
-        info_hash[:v_langs].each do |lang|
-          puts "in add version"
-          vers_type = lang == info_hash[:w_lang] ? "edition" : "translation"
-          coll = mods_xml.search("//mods:identifier[@type='Perseus:abo']").empty? ? "opp" : "perseus"
-          vers_label, vers_desc = create_label_desc(mods_xml)
-          vers_urn_wo_num = "#{info_hash[:w_id]}.#{coll}-#{lang}"
-
-          puts "got urn, #{vers_urn_wo_num}"
-          #pull all versions that have the work id, returns csv w/first row of column names
-          existing_vers = Version.find_by_cts(vers_urn_wo_num)
-          #create cts urn off of preexisting entries in version column
-          if existing_vers.length == 0
-            vers_urn = "#{vers_urn_wo_num}1"
-          else
-            num = nil
-            existing_vers.each_with_index do |line, i|
-              curr_urn = line[:version][/#{vers_urn_wo_num}\d+/]
-              urn_num = curr_urn[/\d+$/].to_i
-              num = urn_num + 1
-              if line[:label_eng] =~ /#{vers_label}/ && line[:desc_eng] =~ /#{vers_desc}/
-                #this means that the pulled label and description match the current row, not good?
-              end
+        puts "got urn, #{vers_urn_wo_num}"
+        #pull all versions that have the work id, returns csv w/first row of column names
+        existing_vers = Version.find_by_cts(vers_urn_wo_num)
+        #create cts urn off of preexisting entries in version column
+        if existing_vers.length == 0
+          vers_urn = "#{vers_urn_wo_num}1"
+        else
+          num = nil
+          existing_vers.each_with_index do |line, i|
+            curr_urn = line[:version][/#{vers_urn_wo_num}\d+/]
+            urn_num = curr_urn[/\d+$/].to_i
+            num = urn_num + 1
+            if line[:label_eng] =~ /#{vers_label}/ && line[:desc_eng] =~ /#{vers_desc}/
+              #this means that the pulled label and description match the current row, not good?
             end
-            vers_urn = "#{vers_urn_wo_num}#{num}"
           end
-          #need to check that the description isn't the same
-            #how to determine if it is a second mods record for an edition?
-            #oclc #s and LCCNs?
-          #insert row in table
-          vers_cite = Version.generate_urn
-          puts "got cite urn #{vers_cite}"
-          v_values = ["#{vers_cite}", "#{vers_urn}", "#{vers_label}", "#{vers_desc}", "#{vers_type}", 'true', 'test','','','auto_importer', 'auto_importer']
-          #this is to test the tables
-          Version.add_cite_row(v_values)
-  
-          #add cts urn to record
-          id_line = mods_xml.search("/mods:mods/mods:identifier").last
-          n_id = Nokogiri::XML::Node.new "mods:identifier", mods_xml
-          n_id.add_namespace_definition("mods", "http://www.loc.gov/mods/v3")
-          n_id.content = vers_urn
-          n_id.set_attribute("type", "ctsurn")
-          id_line.add_next_sibling(n_id)
-
-          
-          modspath = create_mods_path(vers_urn)
-          move_file(modspath, mods_xml)
-          #then save at new location and remove from old
+          vers_urn = "#{vers_urn_wo_num}#{num}"
         end
-      
-      
+        #need to check that the description isn't the same
+          #how to determine if it is a second mods record for an edition?
+          #oclc #s and LCCNs?
+        #insert row in table
+        vers_cite = Version.generate_urn
+        puts "got cite urn #{vers_cite}"
+        v_values = ["#{vers_cite}", "#{vers_urn}", "#{vers_label}", "#{vers_desc}", "#{vers_type}", 'true', 'test','','','auto_importer', 'auto_importer']
+        Version.add_cite_row(v_values)
+
+        #add cts urn to record
+        id_line = mods_xml.search("/mods:mods/mods:identifier").last
+        n_id = Nokogiri::XML::Node.new "mods:identifier", mods_xml
+        n_id.add_namespace_definition("mods", "http://www.loc.gov/mods/v3")
+        n_id.content = vers_urn
+        n_id.set_attribute("type", "ctsurn")
+        id_line.add_next_sibling(n_id)
+
+        
+        modspath = create_mods_path(vers_urn)
+        move_file(modspath, mods_xml)
+      end     
     rescue
       message = "For file #{info_hash[:file_name]} : There was an error while trying to save the version, error message was: #{$!}."
       error_handler(message, info_hash[:path], info_hash[:file_name])
