@@ -208,9 +208,6 @@ module ApplicationHelper
 
       #parsing found ids, take tlg or phi over stoa unless there is an empty string or "none"
       ids.each do |node|
-        if file_path =~ /euphorion.FHG3.Fragmenta.mods/
-          byebug
-        end
         id = clean_id(node)
         
         unless id == "none" || id == "" || id =~ /0000/
