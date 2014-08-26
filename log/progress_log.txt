@@ -1,4 +1,4 @@
-Document updated: 8/01/2014
+Document updated: 8/26/2014
 ********************
 Workflow
 
@@ -20,9 +20,6 @@ Table columns:
 
 !!! Big Questions/Problems !!!
 
--Why is there the work portion on this tg urn?? 
-	'2171','urn:cite:perseus:textgroup.1774.1','urn:cts:greekLit:tlg1170.tlg001','Apollonius Aphrodisiensis v3. Jh','true','true','','published','auto_importer','auto_importer','2014-07-24 16:03:21','2014-07-24 16:03:21'
-
 
 
 !!!                        !!!
@@ -31,9 +28,9 @@ Table columns:
 
 Work issues
 issue 3-no work section of urn
-	-tlg0698 /Users/ada/catalog_pending/mods/Alexander Ephesius/AlexanderEphesius.FHG3.Fragmenta.mods.xml
+
 	-tlg0000 Fragmenta /Chaereas.FHG3.Fragmenta.mods.xml
-	-tlg0221 /Users/ada/catalog_pending/mods/Euphorion/euphorion.FHG3.Fragmenta.mods.xml
+
 
 
 Textgroup issues
@@ -67,7 +64,7 @@ FIXED? -/GeographiGraeciMinores.Vol1.mods.xml -Mensura Totius Habitae Terrae mis
 
 
 !!!!  TO DO  !!!!
--account for 'x' in a tlg/phi/stoa id
+
 
 
 !!!!         !!!!

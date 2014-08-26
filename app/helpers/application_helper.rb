@@ -14,7 +14,7 @@ module ApplicationHelper
 
 #create directory path
   def create_mods_path(ctsurn)  
-    path_name = "#{ENV['HOME']}/catalog_pending/test/mods/"
+    path_name = "#{ENV['HOME']}/catalog_data/mods/"
     ctsmain = ctsurn[/(greekLit|latinLit).+/]
     path_name << "#{ctsmain.gsub(/:|\./, "/")}"
     unless File.exists?(path_name)
@@ -32,7 +32,7 @@ module ApplicationHelper
   end  
 
   def create_mads_path(old_path)
-    path_name = "#{ENV['HOME']}/catalog_pending/mads/PrimaryAuthors/"
+    path_name = "#{ENV['HOME']}/catalog_data/mads/PrimaryAuthors/"
     op_parts = old_path.split("/")
     file_n = op_parts.pop
     name = op_parts.pop
@@ -208,9 +208,10 @@ module ApplicationHelper
 
       #parsing found ids, take tlg or phi over stoa unless there is an empty string or "none"
       ids.each do |node|
+
         id = clean_id(node)
         
-        unless id == "none" || id == "" || id =~ /0000/
+        unless id == "none" || id == "" || id =~ /0000|\D000$/ || id =~ /\?/
           alt_ids << id
 
           if id =~ /tlg|phi|stoa|lccn/i #might need to expand this for VIAF, etc. if we start using them
@@ -225,7 +226,7 @@ module ApplicationHelper
       #if no id found throw an error   
       unless found_id    
         message = "For file #{f_n} : Could not find a suitable id, please check 
-        that there is a tlg, phi, or stoa id or that, if a mads, the mads namespace is present."
+        that there is a tlg, phi, or stoa id, that there are no ?'s or that, if a mads, the mads namespace is present."
         error_handler(message, file_path, f_n)
         return
       else
@@ -303,7 +304,7 @@ module ApplicationHelper
       val = node.attribute('type').value
       if val
         id = node.inner_text
-        unless id == "none" || id == "" 
+        unless id == "none" || id == "" || id =~ /\?/
           #stoas only need the - removed
           if id =~/(stoa\d+[a-z]*-|stoa\d+[a-z]*)/
             id = id.gsub('-', '.')      
@@ -357,7 +358,7 @@ module ApplicationHelper
     puts message
     @error_report << "#{message}\n\n"
     @error_report.close
-    @error_report = File.open("#{ENV['HOME']}/catalog_pending/errors/error_log#{Date.today}.txt", 'a')
+    @error_report = File.open("#{ENV['HOME']}/catalog_pending_errors/error_log#{Date.today}.txt", 'a')
     #`mv "#{file_path}" "#{ENV['HOME']}/catalog_pending/errors#{f_n}"`
   end
 

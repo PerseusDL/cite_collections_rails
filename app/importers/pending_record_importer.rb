@@ -14,7 +14,7 @@ class PendingRecordImporter
   require 'fileutils'
 
   def import
-    @error_report = File.open("#{ENV['HOME']}/catalog_pending/errors/error_log#{Date.today}.txt", 'w')
+    @error_report = File.open("#{ENV['HOME']}/catalog_pending_errors/error_log#{Date.today}.txt", 'w')
     pending_mads = "#{ENV['HOME']}/catalog_pending/mads"
     pending_mods = "#{ENV['HOME']}/catalog_pending/mods"
     corrections = "#{ENV['HOME']}/catalog_data"
@@ -103,9 +103,9 @@ class PendingRecordImporter
                 #has cite row, lacking a mods 
                 Version.update_row(v_obj.id, {:has_mods => "true", :edited_by => "auto_importer"})
               end
-                #if has row and confirmed mods, not a correction, assumed multivolume, just move to correct place
-                modspath = create_mods_path(ctsurn)                           
-                move_file(modspath, mods_xml)     
+              #if has row and confirmed mods, not a correction, assumed multivolume, just move to correct place
+              modspath = create_mods_path(ctsurn)                           
+              move_file(modspath, mods_xml)     
             else
               if vers.length == 0
                 #has a ctsurn but no cite row, for whatever reason, needs to be added
@@ -138,9 +138,10 @@ class PendingRecordImporter
             end
           end
           #`rm #{file_path}`
-        
+          
       end
     end
+    #also add commit and push of changes to catalog_pending and catalog_data
   end
 
   def add_to_cite_tables(info_hash, mods_xml=nil)
@@ -177,10 +178,16 @@ class PendingRecordImporter
 
       unless info_hash[:cite_tg]
         if info_hash[:a_name]
-          #no row for this textgroup, add a row
-          t_urn = Textgroup.generate_urn
-          t_values = ["#{t_urn}", "#{info_hash[:a_id]}", "#{info_hash[:a_name]}", "#{info_hash[:cite_auth] == nil}", 'true','', 'published', 'auto_importer','auto_importer']
-          Textgroup.add_cite_row(t_values)
+          if info_hash[:a_id]
+            #no row for this textgroup, add a row
+            t_urn = Textgroup.generate_urn
+            t_values = ["#{t_urn}", "#{info_hash[:a_id]}", "#{info_hash[:a_name]}", "#{info_hash[:cite_auth] == nil}", 'true','', 'published', 'auto_importer','auto_importer']
+            Textgroup.add_cite_row(t_values)
+          else
+            message = "LCCN id found in record, this is probably an editor, can not create textgroup"
+            error_handler(message, info_hash[:path], info_hash[:file_name])
+            return
+          end
         else
           message = "No author name found in record, can not create textgroup"
           error_handler(message, info_hash[:path], info_hash[:file_name])
