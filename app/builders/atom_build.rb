@@ -116,7 +116,9 @@ class AtomBuild
                       perseus_xml = get_xml("#{catalog_dir}/perseus/perseuscts.xml")
                       #have to remove the namespaces or it is impossible to find anything with xpath
                       perseus_xml.remove_namespaces!
-                      ed_node = perseus_xml.search("#{ver_type}[@urn='#{@ver_urn}']")
+                      ed_node = perseus_xml.search("#{ver_type}[@urn='#{@ver_urn}']") 
+                      #this is accounting for new epidoc editions that don't appear in the perseus xml file
+                      ed_node = nil if ed_node.empty?
                     else
                       ed_node = nil
                     end
