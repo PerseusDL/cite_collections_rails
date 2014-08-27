@@ -29,3 +29,10 @@ task :add_orig_lang => :environment do
   end
   File.open("#{ENV['HOME']}/Downloads/Perseus Work Collection1.csv", "w") {|f| f << collect}
 end
+
+desc "one time mads path correction"
+task :mads_path_change => :environment do
+  pri = PendingRecordImporter.new
+  pri.mads_path_change
+
+end

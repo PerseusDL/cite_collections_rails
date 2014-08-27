@@ -389,6 +389,39 @@ class PendingRecordImporter
     end
   end
 
+  def mads_path_change
+  
+    mads_files = Dir["#{ENV['HOME']}/catalog_data/mads/PrimaryAuthors/**/*{mads,madsxml}.xml"]
+    mads_files.each do |file|
+      file_xml = get_xml(file)
+      cite = file_xml.search('//mads:identifier[@type="citeurn"]').inner_text
+      a_row = Author.find_by_urn(cite)
+      unless a_row
+        id, alt_ids = find_rec_id(file_xml, file, file)
+        if id
+          a_row = Author.find_by_id(id)
+          if a_row
+            id_line = file_xml.search("/mads:mads/mads:identifier").last
+            n_id = Nokogiri::XML::Node.new "mads:identifier", file_xml
+            n_id.add_namespace_definition("mads", "http://www.loc.gov/mads/v2")
+            n_id.content = a_row.urn
+            n_id.set_attribute("type", "citeurn")
+            id_line.add_next_sibling(n_id)
+            m_file = File.open(file, 'w')
+            m_file << file_xml
+            m_file.close
+          else
+            puts "error with #{file}, check for urns"
+            next
+          end
+        end
+      end
+      unless a_row.mads_file == file[/PrimaryAuthors.+/]
+        a_row.mads_file = file[/PrimaryAuthors.+/]
+        a_row.save
+      end
+    end
+  end
 
   def fusion_tables_update
   end
