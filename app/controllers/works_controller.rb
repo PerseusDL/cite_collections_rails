@@ -1,4 +1,5 @@
 class WorksController < ApplicationController
+  before_filter :authenticate, except: [:show, :index, :search]
   before_action :set_work, only: [:show, :edit, :update, :destroy]
 
   # GET /works

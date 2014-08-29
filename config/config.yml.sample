@@ -1,0 +1,15 @@
+#this is a sample config file for setting the password to access editing of the db
+#via the web interface, please supply your username and password then save this as config.yml
+
+development:
+  username: 
+  password: 
+
+test:
+  username: 
+  password: 
+
+production:
+
+  username: 
+  password: 

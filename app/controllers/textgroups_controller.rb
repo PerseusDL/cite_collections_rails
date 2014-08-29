@@ -1,4 +1,5 @@
 class TextgroupsController < ApplicationController
+  before_filter :authenticate, except: [:show, :index, :search]
   before_action :set_textgroup, only: [:show, :edit, :update, :destroy]
 
   # GET /textgroups

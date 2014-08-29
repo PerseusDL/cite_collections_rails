@@ -1,4 +1,5 @@
 class VersionsController < ApplicationController
+  before_filter :authenticate, except: [:show, :index, :search]
   before_action :set_version, only: [:show, :edit, :update, :destroy]
 
   # GET /versions
