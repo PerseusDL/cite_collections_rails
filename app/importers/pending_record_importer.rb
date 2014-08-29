@@ -149,7 +149,7 @@ class PendingRecordImporter
       #cite table columns are...
       #auth_col = "urn, authority_name, canonical_id, mads_file, alt_ids, related_works, urn_status, redirect_to, created_by, edited_by"
       #tg_col = "urn, textgroup, groupname_eng, has_mads, mads_possible, notes, urn_status, created_by, edited_by"
-      #work_col = "urn, work, title_eng, notes, urn_status, created_by, edited_by"
+      #work_col = "urn, work, title_eng, notes, urn_status, redirect_to, created_by, edited_by"
 
       unless info_hash[:cite_auth]
 
@@ -207,7 +207,7 @@ class PendingRecordImporter
         unless info_hash[:cite_work]
           #no row for this work, add a row
           w_urn = Work.generate_urn
-          w_values = [w_urn, info_hash[:w_id], info_hash[:w_title], info_hash[:orig_lang], '', 'published', 'auto_importer','auto_importer']
+          w_values = [w_urn, info_hash[:w_id], info_hash[:w_title], info_hash[:orig_lang], '', 'published', '', 'auto_importer','']
           Work.add_cite_row(w_values)
           puts "added work"
         end

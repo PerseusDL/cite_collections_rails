@@ -7,6 +7,7 @@ class CreateWorks < ActiveRecord::Migration
       t.string :orig_lang
       t.text :notes
       t.string :urn_status
+      t.string :redirect_to
       t.string :created_by
       t.string :edited_by
       t.timestamps

@@ -73,6 +73,6 @@ class WorksController < ApplicationController
 
     # Never trust parameters from the scary internet, only allow the white list through.
     def work_params
-      params.require(:work).permit(:urn, :work, :title_eng, :orig_lang, :notes, :urn_status, :created_by, :edited_by)
+      params.require(:work).permit(:urn, :work, :title_eng, :orig_lang, :notes, :urn_status, :redirect_to, :created_by, :edited_by)
     end
 end
