@@ -1,0 +1,32 @@
+<% unless @textgroups == nil || @textgroups.empty? %>
+  <h1>Search Results</h1>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Urn</th>
+        <th>Textgroup</th>
+        <th>Groupname eng</th>
+        <th></th>
+        <th></th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <% @textgroups.each do |textgroup| %>
+        <tr>
+          <td><%= textgroup.urn %></td>
+          <td><%= textgroup.textgroup %></td>
+          <td><%= textgroup.groupname_eng %></td>
+          <td><%= link_to 'Show', textgroup %></td>
+          <td><%= link_to 'Edit', edit_textgroup_path(textgroup) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <h1>No results</h1>
+  
+<% end %>
+<br>
+<li> <%= link_to "Return to main page", root_path %> </li>

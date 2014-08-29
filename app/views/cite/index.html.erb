@@ -15,7 +15,16 @@
   <h4> Authors search </h4>
   <%= form_tag search_authors_path, :method => 'get' do %>
     <p>
-      <%= select_tag :field_type, options_for_select([['CITE URN', :urn], ['Author name', :authority_name], ['CTS URN', :canonical_id], ['File path', :mads_file], ['Alternate ids', :alt_ids], ['Related works', :related_works], ['Status', :urn_status]])%>
+      <%= select_tag :field_type, options_for_select([['CITE URN', :urn], ['Author name', :authority_name], ['CTS URN', :canonical_id], ['File path', :mads_file], ['Alternate ids', :alt_ids], ['Related works', :related_works], ['Status', :urn_status], ['Created by', :created_by], ['Edited by', :edited_by]])%>
+      <%= text_field_tag :search, params[:search] %>
+      <%= submit_tag "Search", :name => nil %>
+    </p>
+  <% end %>
+  <br>
+  <h4> Textgroups search </h4>
+  <%= form_tag search_textgroups_path, :method => 'get' do %>
+    <p>
+      <%= select_tag :field_type, options_for_select([['CITE URN', :urn], ['CTS URN', :textgroup], ['Group name', :groupname_eng], ['Has MADS?', :has_mads], ['MADS possible?', :mads_possible], ['Notes', :notes], ['Status', :urn_status], ['Created by', :created_by], ['Edited by', :edited_by]])%>
       <%= text_field_tag :search, params[:search] %>
       <%= submit_tag "Search", :name => nil %>
     </p>

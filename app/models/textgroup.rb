@@ -39,4 +39,15 @@ class Textgroup < ActiveRecord::Base
     end
     tg.save
   end
+
+  def self.lookup(params)
+    type = params[:field_type]
+    search = params[:search]
+    valid_cols = ['urn', 'textgroup', 'groupname_eng', 'has_mads', 'mads_possible', 'notes', 'urn_status', 'redirect_to', 'created_by', 'edited_by']
+    if valid_cols.include?(type)
+      result = Textgroup.all(:conditions => ["#{type} rlike ?", search])
+    else
+      result = nil
+    end
+  end
 end
