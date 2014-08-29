@@ -61,6 +61,11 @@ class VersionsController < ApplicationController
     end
   end
 
+  def search
+    session[:search_results] = request.url
+    @versions = Version.lookup(params)
+  end
+
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_version

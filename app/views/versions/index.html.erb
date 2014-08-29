@@ -27,7 +27,7 @@
         <td><%= version.version %></td>
         <td><%= version.label_eng %></td>
         <td><%= version.desc_eng %></td>
-        <td><%= version.type %></td>
+        <td><%= version.ver_type %></td>
         <td><%= version.has_mods %></td>
         <td><%= version.urn_status %></td>
         <td><%= version.redirect_to %></td>
@@ -36,12 +36,8 @@
         <td><%= version.edited_by %></td>
         <td><%= link_to 'Show', version %></td>
         <td><%= link_to 'Edit', edit_version_path(version) %></td>
-        <td><%= link_to 'Destroy', version, method: :delete, data: { confirm: 'Are you sure?' } %></td>
       </tr>
     <% end %>
   </tbody>
 </table>
 
-<br>
-
-<%= link_to 'New Version', new_version_path %>

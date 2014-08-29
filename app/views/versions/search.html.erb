@@ -1,0 +1,34 @@
+<% unless @versions == nil || @versions.empty? %>
+  <h1>Search Results</h1>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Urn</th>
+        <th>Version</th>
+        <th>Label eng</th>
+        <th>Desc eng</th>
+        <th></th>
+        <th></th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <% @versions.each do |version| %>
+        <tr>
+          <td><%= version.urn %></td>
+          <td><%= version.version %></td>
+          <td><%= version.label_eng %></td>
+          <td><%= version.desc_eng %></td>
+          <td><%= link_to 'Show', version %></td>
+          <td><%= link_to 'Edit', edit_version_path(version) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <h1>No results</h1>
+  
+<% end %>
+<br>
+<%= link_to "Return to main page", root_path %>

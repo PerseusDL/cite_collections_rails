@@ -37,4 +37,13 @@
       <%= submit_tag "Search", :name => nil %>
     </p>
   <% end %>
+  <br>
+  <h4> Version search </h4>
+  <%= form_tag search_versions_path, :method => 'get' do %>
+    <p>
+      <%= select_tag :field_type, options_for_select([['CITE URN', :urn], ['CTS URN', :version], ['Label', :label_eng], ['Description', :desc_eng], ['Edition or Translation', :ver_type], ['Has MODS?', :has_mods], ['Status', :urn_status], ['Redirect to', :redirect_to], ['Member of', :member_of], ['Created by', :created_by], ['Edited by', :edited_by]])%>
+      <%= text_field_tag :search, params[:search] %>
+      <%= submit_tag "Search", :name => nil %>
+    </p>
+  <% end %>
 

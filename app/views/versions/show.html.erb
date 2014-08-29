@@ -22,7 +22,7 @@
 
 <p>
   <strong>Type:</strong>
-  <%= @version.type %>
+  <%= @version.ver_type %>
 </p>
 
 <p>
@@ -56,4 +56,8 @@
 </p>
 
 <%= link_to 'Edit', edit_version_path(@version) %> |
-<%= link_to 'Back', versions_path %>
+<% if request.referer =~ /edit/%>
+  <%= link_to 'Back', session[:search_results] %>
+<% else %>
+  <%= link_to 'Back', request.referer %>
+<% end %>

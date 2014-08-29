@@ -18,7 +18,7 @@ class VersionsControllerTest < ActionController::TestCase
 
   test "should create version" do
     assert_difference('Version.count') do
-      post :create, version: { created_by: @version.created_by, desc_eng: @version.desc_eng, edited_by: @version.edited_by, has_mods: @version.has_mods, label_eng: @version.label_eng, member_of: @version.member_of, redirect_to: @version.redirect_to, type: @version.type, urn: @version.urn, urn_status: @version.urn_status, version: @version.version }
+      post :create, version: { created_by: @version.created_by, desc_eng: @version.desc_eng, edited_by: @version.edited_by, has_mods: @version.has_mods, label_eng: @version.label_eng, member_of: @version.member_of, redirect_to: @version.redirect_to, type: @version.ver_type, urn: @version.urn, urn_status: @version.urn_status, version: @version.version }
     end
 
     assert_redirected_to version_path(assigns(:version))
@@ -35,7 +35,7 @@ class VersionsControllerTest < ActionController::TestCase
   end
 
   test "should update version" do
-    patch :update, id: @version, version: { created_by: @version.created_by, desc_eng: @version.desc_eng, edited_by: @version.edited_by, has_mods: @version.has_mods, label_eng: @version.label_eng, member_of: @version.member_of, redirect_to: @version.redirect_to, type: @version.type, urn: @version.urn, urn_status: @version.urn_status, version: @version.version }
+    patch :update, id: @version, version: { created_by: @version.created_by, desc_eng: @version.desc_eng, edited_by: @version.edited_by, has_mods: @version.has_mods, label_eng: @version.label_eng, member_of: @version.member_of, redirect_to: @version.redirect_to, type: @version.ver_type, urn: @version.urn, urn_status: @version.urn_status, version: @version.version }
     assert_redirected_to version_path(assigns(:version))
   end
 

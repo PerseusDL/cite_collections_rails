@@ -261,7 +261,7 @@ class PendingRecordImporter
         #insert row in table
         vers_cite = Version.generate_urn
         puts "got cite urn #{vers_cite}"
-        v_values = ["#{vers_cite}", "#{vers_urn}", "#{vers_label}", "#{vers_desc}", "#{vers_type}", 'true', 'test','','','auto_importer', 'auto_importer']
+        v_values = ["#{vers_cite}", "#{vers_urn}", "#{vers_label}", "#{vers_desc}", "#{vers_type}", 'true', 'published','','','auto_importer', '']
         Version.add_cite_row(v_values)
 
         #add cts urn to record

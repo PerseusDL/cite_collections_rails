@@ -42,4 +42,15 @@ class Version < ActiveRecord::Base
     vers.save
   end
 
+  def self.lookup(params)
+    type = params[:field_type]
+    search = params[:search]
+    valid_cols = ['urn', 'version', 'label_eng', 'desc_eng', 'type', 'has_mods', 'urn_status', 'redirect_to', 'member_of', 'created_by', 'edited_by']
+    if valid_cols.include?(type)
+      result = Version.all(:conditions => ["#{type} rlike ?", search])
+    else
+      result = nil
+    end
+  end
+
 end
