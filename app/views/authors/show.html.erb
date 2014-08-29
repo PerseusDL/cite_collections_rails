@@ -51,4 +51,9 @@
 </p>
 
 <%= link_to 'Edit', edit_author_path(@author) %> |
-<%= link_to 'Back', request.referer %>
+<% if request.referer =~ /edit/%>
+  <%= link_to 'Back', session[:search_results] %>
+<% else %>
+  <%= link_to 'Back', request.referer %>
+<% end %> |
+<%= link_to "Return to main page", root_path %>

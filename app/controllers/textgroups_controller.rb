@@ -4,6 +4,7 @@ class TextgroupsController < ApplicationController
   # GET /textgroups
   # GET /textgroups.json
   def index
+    session[:search_results] = request.url
     @textgroups = Textgroup.all
   end
 
@@ -62,6 +63,7 @@ class TextgroupsController < ApplicationController
   end
 
   def search
+    session[:search_results] = request.url
     @textgroups = Textgroup.lookup(params)
   end
 

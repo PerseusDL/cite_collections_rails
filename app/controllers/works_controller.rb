@@ -4,6 +4,7 @@ class WorksController < ApplicationController
   # GET /works
   # GET /works.json
   def index
+    session[:search_results] = request.url
     @works = Work.all
   end
 
@@ -62,6 +63,7 @@ class WorksController < ApplicationController
   end
 
   def search
+    session[:search_results] = request.url
     @works = Work.lookup(params)
   end
 

@@ -4,6 +4,7 @@ class AuthorsController < ApplicationController
   # GET /authors
   # GET /authors.json
   def index
+    session[:search_results] = request.url
     @authors = Author.all
   end
 
@@ -62,6 +63,7 @@ class AuthorsController < ApplicationController
   end
 
   def search
+    session[:search_results] = request.url
     @authors = Author.lookup(params)
   end
 
