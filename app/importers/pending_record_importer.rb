@@ -159,7 +159,7 @@ class PendingRecordImporter
           #tgs can cover everyone mentioned in mods files
           a_urn = Author.generate_urn
           mads_path = create_mads_path(info_hash[:path])[/PrimaryAuthors.+\.xml/]         
-          a_values = ["#{a_urn}", "#{info_hash[:a_name]}", "#{info_hash[:canon_id]}", "#{mads_path}", "#{info_hash[:alt_ids]}", "#{info_hash[:related_works]}", 'published','', 'auto_importer', 'auto_importer']
+          a_values = ["#{a_urn}", "#{info_hash[:a_name]}", "#{info_hash[:canon_id]}", "#{mads_path}", "#{info_hash[:alt_ids]}", "#{info_hash[:related_works]}", 'published','', 'auto_importer', '']
           Author.add_cite_row(a_values)
         end
         
