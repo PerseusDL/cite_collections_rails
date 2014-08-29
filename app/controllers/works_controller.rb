@@ -61,6 +61,10 @@ class WorksController < ApplicationController
     end
   end
 
+  def search
+    @works = Work.lookup(params)
+  end
+
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_work
@@ -69,6 +73,6 @@ class WorksController < ApplicationController
 
     # Never trust parameters from the scary internet, only allow the white list through.
     def work_params
-      params.require(:work).permit(:urn, :work, :title_eng, :notes, :urn_status, :created_by, :edited_by)
+      params.require(:work).permit(:urn, :work, :title_eng, :orig_lang, :notes, :urn_status, :created_by, :edited_by)
     end
 end

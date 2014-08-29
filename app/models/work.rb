@@ -38,4 +38,15 @@ class Work < ActiveRecord::Base
     wrk.save
   end
 
+  def self.lookup(params)
+    type = params[:field_type]
+    search = params[:search]
+    valid_cols = ['urn', 'work', 'title_eng', 'orig_lang', 'notes', 'urn_status', 'redirect_to', 'created_by', 'edited_by']
+    if valid_cols.include?(type)
+      result = Work.all(:conditions => ["#{type} rlike ?", search])
+    else
+      result = nil
+    end
+  end
+
 end

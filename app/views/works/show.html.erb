@@ -16,6 +16,11 @@
 </p>
 
 <p>
+  <strong>Original language:</strong>
+  <%= @work.orig_lang %>
+</p>
+
+<p>
   <strong>Notes:</strong>
   <%= @work.notes %>
 </p>
@@ -36,4 +41,4 @@
 </p>
 
 <%= link_to 'Edit', edit_work_path(@work) %> |
-<%= link_to 'Back', works_path %>
+<%= link_to 'Back', request.referer %>

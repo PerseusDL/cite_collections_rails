@@ -1,5 +1,4 @@
 
-<div>
   <h2> Select the CITE collection to view </h2>
   <ul>
     <li> <%= link_to "List of Authors", authors_path %> </li>
@@ -29,4 +28,13 @@
       <%= submit_tag "Search", :name => nil %>
     </p>
   <% end %>
-</div>
+  <br>
+  <h4> Works search </h4>
+  <%= form_tag search_works_path, :method => 'get' do %>
+    <p>
+      <%= select_tag :field_type, options_for_select([['CITE URN', :urn], ['CTS URN', :work], ['Work title', :title_eng], ['Original language', :orig_lang], ['Notes', :notes], ['Status', :urn_status], ['Created by', :created_by], ['Edited by', :edited_by]])%>
+      <%= text_field_tag :search, params[:search] %>
+      <%= submit_tag "Search", :name => nil %>
+    </p>
+  <% end %>
+

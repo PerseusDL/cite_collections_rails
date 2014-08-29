@@ -1,0 +1,32 @@
+<% unless @works == nil || @works.empty? %>
+  <h1>Search Results</h1>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Urn</th>
+        <th>Work</th>
+        <th>Title eng</th>
+        <th></th>
+        <th></th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <% @works.each do |work| %>
+        <tr>
+          <td><%= work.urn %></td>
+          <td><%= work.work %></td>
+          <td><%= work.title_eng %></td>
+          <td><%= link_to 'Show', work %></td>
+          <td><%= link_to 'Edit', edit_work_path(work) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <h1>No results</h1>
+  
+<% end %>
+<br>
+<li> <%= link_to "Return to main page", root_path %> </li>
