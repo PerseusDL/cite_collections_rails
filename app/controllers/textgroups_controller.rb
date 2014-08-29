@@ -75,6 +75,6 @@ class TextgroupsController < ApplicationController
 
     # Never trust parameters from the scary internet, only allow the white list through.
     def textgroup_params
-      params.require(:textgroup).permit(:urn, :textgroup, :groupname_eng, :has_mads, :mads_possible, :notes, :urn_status, :created_by, :edited_by)
+      params.require(:textgroup).permit(:urn, :textgroup, :groupname_eng, :has_mads, :mads_possible, :notes, :urn_status, :redirect_to, :created_by, :edited_by)
     end
 end
