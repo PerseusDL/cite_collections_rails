@@ -16,7 +16,8 @@ class Author < ActiveRecord::Base
   end
 
   def self.find_by_id(id)
-    found_id = Author.find_by_canonical_id(id) || Author.find_by_alt_ids(id)
+    found_id = Author.find_by_canonical_id(id) 
+    found_id = Author.find(:all, :conditions => ["alt_ids rlike ?", id]) unless found_id
   end
 
   def self.update_row(id, hash)
@@ -39,6 +40,17 @@ class Author < ActiveRecord::Base
       a.edited_by = v[9]
     end
     auth.save
+  end
+
+  def self.lookup(params)
+    type = params[:field_type]
+    search = params[:search]
+    valid_cols = ['urn', 'authority_name', 'canonical_id', 'mads_file', 'alt_ids', 'related_works', 'urn_status', 'redirect_to', 'created_by', 'edited_by']
+    if valid_cols.include?(type)
+      result = Author.all(:conditions => ["#{type} rlike ?", search])
+    else
+      result = nil
+    end
   end
 
 end

@@ -1,0 +1,34 @@
+
+<% unless @authors.empty? %>
+  <h1>Search Results</h1>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Urn</th>
+        <th>Authority name</th>
+        <th>Canonical</th>
+        <th></th>
+        <th></th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <% @authors.each do |author| %>
+        <tr>
+          <td><%= author.urn %></td>
+          <td><%= author.authority_name %></td>
+          <td><%= author.canonical_id %></td>
+          <td><%= link_to 'Show', author %></td>
+          <td><%= link_to 'Edit', edit_author_path(author) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <h1>No results</h1>
+  
+<% end %>
+<br>
+<li> <%= link_to "Return to main page", root_path %> </li>
+

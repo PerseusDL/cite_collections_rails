@@ -1,0 +1,23 @@
+
+<div>
+  <h2> Select the CITE collection to view </h2>
+  <ul>
+    <li> <%= link_to "List of Authors", authors_path %> </li>
+    <li> <%= link_to "List of Textgroups", textgroups_path %> </li>
+    <li> <%= link_to "List of Works", works_path %> </li>
+    <li> <%= link_to "List of Versions", versions_path %> </li>
+  </ul>
+
+  <br>
+
+  <h2> Or search on a field </h2>
+  <br>
+  <h4> Authors search </h4>
+  <%= form_tag search_authors_path, :method => 'get' do %>
+    <p>
+      <%= select_tag :field_type, options_for_select([['CITE URN', :urn], ['Author name', :authority_name], ['CTS URN', :canonical_id], ['File path', :mads_file], ['Alternate ids', :alt_ids], ['Related works', :related_works], ['Status', :urn_status]])%>
+      <%= text_field_tag :search, params[:search] %>
+      <%= submit_tag "Search", :name => nil %>
+    </p>
+  <% end %>
+</div>

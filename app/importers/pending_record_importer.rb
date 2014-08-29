@@ -334,7 +334,7 @@ class PendingRecordImporter
       message = commit["commit"]["message"]
       editor = commit["commit"]["author"]["name"]
       begin
-        if message =~ /Update/ #assuming one commit = one file
+        if message =~ /Update/ #assuming one commit = one file  BAD ASSUMPTION
           parts = message.split(/\s/)
           file = parts[1] if parts[1] =~ /\.xml/
           file_path = Dir.glob("#{path}/**/#{file}")[0]

@@ -30,9 +30,15 @@ a {
 }
 
 div {
+  margin: 20px;
   &.field, &.actions {
-    margin-bottom: 10px;
+    margin: 10px;
   }
+}
+
+table,th,td {
+  border: 1px solid black;
+  padding: 10px;
 }
 
 #notice {

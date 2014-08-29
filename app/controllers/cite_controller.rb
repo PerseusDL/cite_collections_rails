@@ -1,0 +1,3 @@
+class CiteController < ApplicationController
+  
+end

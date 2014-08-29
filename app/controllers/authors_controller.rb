@@ -61,6 +61,10 @@ class AuthorsController < ApplicationController
     end
   end
 
+  def search
+    @authors = Author.lookup(params)
+  end
+
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_author

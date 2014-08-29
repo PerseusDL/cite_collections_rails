@@ -35,7 +35,7 @@ end
 
 gem 'byebug'
 gem "unicode", :platforms => [:mri_18, :mri_19]
-gem "bootstrap-sass"
+gem "bootstrap-sass", '~> 3.2.0'
 gem 'bootswatch-rails'
 gem 'mysql2'
 gem 'google-api-client'
