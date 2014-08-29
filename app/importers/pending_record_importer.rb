@@ -148,7 +148,7 @@ class PendingRecordImporter
     begin
       #cite table columns are...
       #auth_col = "urn, authority_name, canonical_id, mads_file, alt_ids, related_works, urn_status, redirect_to, created_by, edited_by"
-      #tg_col = "urn, textgroup, groupname_eng, has_mads, mads_possible, notes, urn_status, created_by, edited_by"
+      #tg_col = "urn, textgroup, groupname_eng, has_mads, mads_possible, notes, urn_status, redirect_to, created_by, edited_by"
       #work_col = "urn, work, title_eng, notes, urn_status, redirect_to, created_by, edited_by"
 
       unless info_hash[:cite_auth]
@@ -181,7 +181,7 @@ class PendingRecordImporter
           if info_hash[:a_id]
             #no row for this textgroup, add a row
             t_urn = Textgroup.generate_urn
-            t_values = ["#{t_urn}", "#{info_hash[:a_id]}", "#{info_hash[:a_name]}", "#{info_hash[:cite_auth] == nil}", 'true','', 'published', 'auto_importer','auto_importer']
+            t_values = ["#{t_urn}", "#{info_hash[:a_id]}", "#{info_hash[:a_name]}", "#{info_hash[:cite_auth] == nil}", 'true','', 'published', '', 'auto_importer','']
             Textgroup.add_cite_row(t_values)
           else
             message = "LCCN id found in record, this is probably an editor, can not create textgroup"

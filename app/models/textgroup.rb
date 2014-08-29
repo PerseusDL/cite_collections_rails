@@ -25,7 +25,7 @@ class Textgroup < ActiveRecord::Base
   
   def self.add_cite_row(v)
     #0urn, 1textgroup, 2groupname_eng, 3has_mads, 4mads_possible, 5notes, 
-    #6urn_status, 7created_by, 8edited_by
+    #6urn_status, 7redirect_to, 8created_by, 9edited_by
     tg = Textgroup.new do |t|
       t.urn = v[0]
       t.textgroup = v[1]
@@ -33,9 +33,10 @@ class Textgroup < ActiveRecord::Base
       t.has_mads = v[3] 
       t.mads_possible = v[4] 
       t.notes = v[5]
-      t.urn_status = v[6] 
-      t.created_by = v[7]
-      t.edited_by = v[8]
+      t.urn_status = v[6]
+      t.redirect_to = v[7] 
+      t.created_by = v[8]
+      t.edited_by = v[9]
     end
     tg.save
   end

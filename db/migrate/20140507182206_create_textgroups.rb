@@ -8,6 +8,7 @@ class CreateTextgroups < ActiveRecord::Migration
       t.string :mads_possible
       t.text :notes
       t.string :urn_status
+      t.string :redirect_to
       t.string :created_by
       t.string :edited_by
       t.timestamps
