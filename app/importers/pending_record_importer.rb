@@ -14,7 +14,7 @@ class PendingRecordImporter
   require 'fileutils'
 
   def import
-    @error_report = File.open("#{ENV['HOME']}/catalog_pending_errors/error_log#{Date.today}.txt", 'w')
+    @error_report = File.open("#{ENV['HOME']}/catalog_pending/errors/error_log#{Date.today}.txt", 'w')
     pending_mads = "#{ENV['HOME']}/catalog_pending/mads"
     pending_mods = "#{ENV['HOME']}/catalog_pending/mods"
     corrections = "#{ENV['HOME']}/catalog_data"

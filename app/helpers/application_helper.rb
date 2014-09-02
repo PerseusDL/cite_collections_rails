@@ -358,8 +358,8 @@ module ApplicationHelper
     puts message
     @error_report << "#{message}\n\n"
     @error_report.close
-    @error_report = File.open("#{ENV['HOME']}/catalog_pending_errors/error_log#{Date.today}.txt", 'a')
-    #`mv "#{file_path}" "#{ENV['HOME']}/catalog_pending/errors#{f_n}"`
+    @error_report = File.open("#{ENV['HOME']}/catalog_pending/errors/error_log#{Date.today}.txt", 'a')
+    #`mv "#{file_path}" "#{ENV['HOME']}/catalog_pending/errors/#{f_n}"`
   end
 
 #for testing new paths

@@ -19,7 +19,7 @@ end
 desc "add column to work table"
 task :add_orig_lang => :environment do
   collect = ""
-  file = File.open("#{ENV['HOME']}/Downloads/Perseus Work Collection.csv", "r")
+  file = File.open("#{ENV['HOME']}/cite_collections_rails/data/Perseus Work Collection.csv", "r")
   file.each_line do |line|
     row = line.split(/(,)(?=(?:[^"]|"[^"]*")*$)/)
     row.delete(",")
@@ -27,7 +27,7 @@ task :add_orig_lang => :environment do
     row.insert(3, lang)
     collect << row.join(",")
   end
-  File.open("#{ENV['HOME']}/Downloads/Perseus Work Collection1.csv", "w") {|f| f << collect}
+  File.open("#{ENV['HOME']}/cite_collections_rails/data/Perseus Work Collection.csv", "w") {|f| f << collect}
 end
 
 desc "one time mads path correction"
