@@ -8,8 +8,8 @@ This guide assumes that you have the following things set up on your machine:
 ##Installation
 After completing the basic setup for the Rails project, (cloning the repo, bundle installing locally) you will need to do the following:
 * create two yml files based off of the given sample files in /config, database.yml and config.yml
-..* database.yml controls your interactions with MySQL
-..* config.yml is where you provide a username and password for editing the table rows via the web interface
+  * database.yml controls your interactions with MySQL
+  * config.yml is where you provide a username and password for editing the table rows via the web interface
 * `rake db:migrate`
 * run MySQL commands located in data/load\_tables.sql to populate the db
 * Some of the MADS paths are incorrect based on the current directory structure of catalog\_data, so run `rake mads_path_change` to update these
@@ -34,9 +34,9 @@ You can also use the browser interface to edit rows in the CITE tables by select
 ##Resetting Everything
 Since the import method creates and (will eventually) delete files, if something has gone wrong and it is necessary to reset all directories and databases involved, the sequence of steps to reset is the following:
 * For catalog\_data and catalog\_pending
-..* `git reset --hard HEAD`
-..* `git clean -f -d`
+  * `git reset --hard HEAD`
+  * `git clean -f -d`
 * `rake add_orig_lang`
 * reload db
-..* `rake db:migrate:reset`
-..* run the MySQL commands in the load\_tables file in /data/load_tables.sql
+  * `rake db:migrate:reset`
+  * run the MySQL commands in the load\_tables file in /data/load_tables.sql
