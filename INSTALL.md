@@ -17,7 +17,7 @@ After completing the basic setup for the Rails project, (cloning the repo, bundl
 ##Populating the database and creating Atom feeds
 To import from catalog\_pending, `rake catalog_pending_import`, import will create new files in catalog\_data and eventually in catalog\_pending/errors if there are errors. Also eventually, it will delete files from catalog\_pending that it has created a corresponding file to in catalog\_data, then will run a git commit and git push to update both directories.
 
-To build an atom feed, rake build\_atom\_feed, this will add ‘FRBR.feeds.all.(date)’ to the home directory of your machine.
+To build an atom feed, `rake build\_atom\_feed`, this will add ‘FRBR.feeds.all.(date)’ to the home directory of your machine.
 
 Any errors that occur in either process will be documented in error logs located in catalog\_pending/errors and at the top level of the Atom feed directory.
 
