@@ -159,14 +159,15 @@ class ArabicRecordBuilder
               title_string = line_arr[19]
               title_string << "::::#{line_arr[20]}" unless line_arr[20] == "nodata"
               title_string.split("::::").each_with_index do |title, i|
-              if i == 0
-                new_mods['mods'].titleInfo(:lang => 'ara'){
-                  new_mods['mods'].title(line_arr[19])
-                } 
-              else
-                new_mods['mods'].titleInfo(:type => "alternative", :lang => 'ara'){
-                  new_mods['mods'].title(line_arr[19])
-                } 
+                if i == 0
+                  new_mods['mods'].titleInfo(:lang => 'ara'){
+                    new_mods['mods'].title(line_arr[19])
+                  } 
+                else
+                  new_mods['mods'].titleInfo(:type => "alternative", :lang => 'ara'){
+                    new_mods['mods'].title(line_arr[19])
+                  } 
+                end
               end
             else
               new_mods['mods'].titleInfo(:lang => 'ara', :script => "Arabic"){
