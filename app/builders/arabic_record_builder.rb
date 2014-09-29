@@ -40,17 +40,13 @@ class ArabicRecordBuilder
     # notes
     # 40REC_MISC  41REC_NOTE  42REC_OTHER_AUTHORS 43REC_MISC_INFO
 
-
+    @auth_authority = File.read("#{ENV['HOME']}/arabic_authors.csv").split("\n")
+    
     File.foreach(file) do |line|
       unless line =~ /record_uri/i
         line_arr = line.split("\t")
-        if file =~ /Authors/
-          xml_file, urn = build_mads_record(line_arr)
-          f = File.new("#{ENV['HOME']}/catalog_pending/mads/arabic/#{urn}.mads.xml", 'w')
-        else
-          xml_file, urn = build_mods_record(line_arr)       
-          f = File.new("#{ENV['HOME']}/catalog_pending/mods/arabic/#{urn}.mods.xml", 'w')
-        end
+        xml_file, urn = build_mods_record(line_arr)       
+        f = File.new("#{ENV['HOME']}/catalog_pending/mods/arabic/#{urn}.mods.xml", 'w')     
         if xml_file
           f << xml_file
           f.close
@@ -61,13 +57,13 @@ class ArabicRecordBuilder
 
   def build_mods_record(line_arr)
     begin
+      mrurn = line_arr[0]
+      urn = ctsurn_creation(mrurn, line_arr[1])
+      build_mads_record(line_arr, mrurn, urn)
       alt_titles = line_arr[3, 4]
       alt_titles = alt_titles & line_arr[6..9]
       r_name, r_date = name_and_date(line_arr[13])
       a_name, a_date = name_and_date(line_arr[16])
-      mrurn = line_arr[0]
-      urn = ctsurn_creation(mrurn, line_arr[1])
-      
 
       builder = Nokogiri::XML::Builder.new(:encoding => 'UTF-8') do |new_mods|
         
@@ -94,9 +90,7 @@ class ArabicRecordBuilder
 
           #author name(s)
           #providing both the Arabic script and the transliteration
-          #putting all name parts into one field for now, could split them into part vs. term of address
-          #if I can get a list of words indicating it is indeed a term of address
-          #Also need to split out the dates in the Arabic script names
+          
           new_mods['mods'].name(:type => "personal", :script => "Arabic"){
             new_mods['mods'].namePart(a_name)
             new_mods['mods'].namePart(:type => 'date'){
@@ -340,7 +334,88 @@ class ArabicRecordBuilder
     end
   end
 
-  def build_mads_record(line_arr)
+  def build_mads_record(line_arr, mrurn, urn)
+    #this will require changing as soon as records are added to the CITE tables, can then
+    #use them to check if a MADS record has already been created
+
+    #arabic_authors.csv
+    #0IND, 1URI, 2hasmads, 3worldcat, 4viaf, 5worldcattemp, 6shuhra, 7bornAH, 8diedAH, 9period, 
+    #10Ism + Nasab, 11Kunya, 12Laqab, 13Nisbas  
+
+    #main csv mads info
+    # 10AUTHOR_URI  11AUTHOR_DIED_AH  12AUTHOR_DIED_CE  13AUTHOR_NAME_TRANSLIT  14AUTHOR_NAME_TRUS  
+    # 15AUTHOR_NAME_TRSIM 16AUTHOR_NAME_AR      
+
+    #directory catalog_pending/mads/#{authorname}/#{file}
+    mads_dir = "#{ENV['HOME']}/catalog_pending/mads"
+    auth_csv = File.read("#{ENV['HOME']}/arabic_authors.csv").split("\n")
+    
+    mads_cts = urn.split('.')[0]
+    mads_mr = mrurn.split('.')[0..1].join('.')
+
+    i = auth_csv.index{|r| r =~ /#{mads_mr}/}
+    ar_auth_row = auth_csv[i].scan(/([^",]+)|"([^"]+)"|((?<=^|,)(?=,|$))/) #because I don't want to bother with the csv gem...
+    auth_name =  line_arr[15]
+    auth_file_nm = auth_name.split(",")[0]
+    auth_dir = "#{mads_dir}/#{auth_file_nm}"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+
+    unless File.directory?(auth_dir)
+      Dir.mkdir(auth_dir)
+
+      builder = Nokogiri::XML::Builder.new(:encoding => 'UTF-8') do |new_mads|
+        new_mads.mads('xmlns:mads' => "http://www.loc.gov/mads/v2",
+                'xmlns:mods' => "http://www.loc.gov/mods/v3", 
+                'xmlns:xsi' => "http://www.w3.org/2001/XMLSchema-instance",
+                'xmlns:xlink' => "http://www.w3.org/1999/xlink",
+                'xsi:schemaLocation' => "http://www.loc.gov/mads/ http://www.loc.gov/standards/mads/mads.xsd http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-2.xsd",
+                :version => "2.0"){
+            new_mads.parent.namespace = new_mads.parent.namespace_definitions.find{|ns|ns.prefix=="mads"}
+
+            #authority
+            authority_name, authority_date = name_and_date(line_arr[13])
+            
+            new_mads['mads'].authority(:geographicSubdivision => "not applicable"){
+              new_mads['mads'].name(:type => 'personal'){
+                new_mads['mads'].namePart(authority_name)
+                new_mads['mads'].namePart(:type => "date"){
+                  new_mads.text(authority_date)
+                }
+              }
+            }
+
+            #variants
+            line_arr[14..16].each do |name|
+              v_name, v_date = name_and_date(name)
+              new_mads['mads'].variant(:type => 'other'){
+                new_mads['mads'].name(:type => 'personal'){
+                  new_mads['mads'].namePart(v_name)
+                  new_mads['mads'].namePart(:type => "date"){
+                    new_mads.text(v_date)
+                  }
+                }
+              }
+            end
+            #identifier
+            new_mads['mads'].identifier(:type => 'ctsurn'){
+              new_mads.text()
+            }
+            new_mads['mads'].identifier(:type => 'mrurn'){
+              new_mads.text()
+            }
+            new_mads['mads'].identifier(:type => 'lccn'){
+              new_mads.text()
+            }
+            new_mads['mads'].identifier(:type => 'viaf'){
+              new_mads.text()
+            }
+            #extension
+              #related work ids
+        }
+      end
+    else
+      #directory and mads file exist, need to add the work id to relatedworks section
+
+    end
 
   end
 
@@ -413,6 +488,7 @@ class ArabicRecordBuilder
   end
 
   def name_and_date(full_name)
+    byebug
     name = full_name.split(/\(|\)/)
     if name[1] =~ /\d+/
       name_date = name.delete_at(1)
