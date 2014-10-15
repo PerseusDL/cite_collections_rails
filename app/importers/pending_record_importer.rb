@@ -14,10 +14,10 @@ class PendingRecordImporter
   require 'fileutils'
 
   def import
-    @error_report = File.open("#{ENV['HOME']}/catalog_pending/errors/error_log#{Date.today}.txt", 'w')
-    pending_mads = "#{ENV['HOME']}/catalog_pending/mads"
-    pending_mods = "#{ENV['HOME']}/catalog_pending/mods"
-    corrections = "#{ENV['HOME']}/catalog_data"
+    @error_report = File.open("#{BASE_DIR}/catalog_pending/errors/error_log#{Date.today}.txt", 'w')
+    pending_mads = "#{BASE_DIR}/catalog_pending/mads"
+    pending_mods = "#{BASE_DIR}/catalog_pending/mods"
+    corrections = "#{BASE_DIR}/catalog_data"
 
     #update_git_dir("catalog_pending") UNCOMMENT THIS
     update_from_catalog_data(corrections)
@@ -391,7 +391,7 @@ class PendingRecordImporter
 
   def mads_path_change
   
-    mads_files = Dir["#{ENV['HOME']}/catalog_data/mads/PrimaryAuthors/**/*{mads,madsxml}.xml"]
+    mads_files = Dir["#{BASE_DIR}/catalog_data/mads/PrimaryAuthors/**/*{mads,madsxml}.xml"]
     mads_files.each do |file|
       file_xml = get_xml(file)
       cite = file_xml.search('//mads:identifier[@type="citeurn"]').inner_text

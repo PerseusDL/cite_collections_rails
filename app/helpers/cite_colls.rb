@@ -33,7 +33,7 @@ module CiteColls
 
   def update_git_dir(dir_name)
     start_time = Time.now
-    data_dir = "#{ENV['HOME']}/#{dir_name}"
+    data_dir = "#{BASE_DIR}/#{dir_name}"
     unless File.directory?(data_dir)
       `git clone https://github.com/PerseusDL/#{dir_name}.git $HOME/#{dir_name}`
     end
@@ -70,7 +70,7 @@ module CiteColls
     
     @client=Google::APIClient.new(:application_name => 'autoImport', :application_version => '1.0.0')
     @ft = @client.discovered_api('fusiontables')
-    path_to_key = "#{ENV['HOME']}/gkey/9aa4bd6b8f715613724b1e61d9c99a37f5d7722b-privatekey.p12"
+    path_to_key = "#{BASE_DIR}/gkey/9aa4bd6b8f715613724b1e61d9c99a37f5d7722b-privatekey.p12"
     key = Google::APIClient::KeyUtils.load_from_pkcs12(path_to_key, 'notasecret')
     @client.authorization=Signet::OAuth2::Client.new(:token_credential_uri => 'https://accounts.google.com/o/oauth2/token', :audience => 'https://accounts.google.com/o/oauth2/token', :scope => 'https://www.googleapis.com/auth/fusiontables', :issuer => '202250365961-4r8cli9tm8dkaudk3rm6jl5ol3t9tcdt@developer.gserviceaccount.com', :signing_key => key)
     @client.authorization.fetch_access_token!
@@ -93,7 +93,7 @@ module CiteColls
     #backup the current cite tables and upload to github
     #maintain number of backups at 5
     update_git_dir("cite_collections")
-    cite_dir = "#{ENV['HOME']}/cite_collections"
+    cite_dir = "#{BASE_DIR}/cite_collections"
     cite_backups_dir = "#{cite_dir}/csv_backups"
 
     #0authors table, 1textgroups, 2works, 3versions

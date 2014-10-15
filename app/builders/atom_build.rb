@@ -19,12 +19,12 @@ class AtomBuild
       
       today_date = st.strftime("%Y%m%d")
       #pull most recent catalog_data files
-      catalog_dir = "#{ENV['HOME']}/catalog_data"
+      catalog_dir = "#{BASE_DIR}/catalog_data"
       #update_git_dir("catalog_data")
 
 
       #create the feed directory if it doesn't exist
-      feed_directories = "#{ENV['HOME']}/FRBR.feeds.all.#{today_date}"
+      feed_directories = "#{BASE_DIR}/FRBR.feeds.all.#{today_date}"
       unless File.directory?(feed_directories)
         Dir.mkdir(feed_directories)
         Dir.mkdir("#{feed_directories}/greekLit")

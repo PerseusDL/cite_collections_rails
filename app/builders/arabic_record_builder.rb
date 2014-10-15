@@ -39,14 +39,14 @@ class ArabicRecordBuilder
     #
     # notes
     # 40REC_MISC  41REC_NOTE  42REC_OTHER_AUTHORS 43REC_MISC_INFO
-
-    @auth_authority = File.read("#{ENV['HOME']}/arabic_authors.csv").split("\n")
+    byebug
+    @auth_authority = File.read("#{BASE_DIR}/arabic_authors.csv").split("\n")
     
     File.foreach(file) do |line|
       unless line =~ /record_uri/i
         line_arr = line.split("\t")
         xml_file, urn = build_mods_record(line_arr)       
-        f = File.new("#{ENV['HOME']}/catalog_pending/mods/arabic/#{urn}.mods.xml", 'w')     
+        f = File.new("#{BASE_DIR}/catalog_pending/mods/arabic/#{urn}.mods.xml", 'w')     
         if xml_file
           f << xml_file
           f.close
@@ -347,20 +347,34 @@ class ArabicRecordBuilder
     # 15AUTHOR_NAME_TRSIM 16AUTHOR_NAME_AR      
 
     #directory catalog_pending/mads/#{authorname}/#{file}
-    mads_dir = "#{ENV['HOME']}/catalog_pending/mads"
-    auth_csv = File.read("#{ENV['HOME']}/arabic_authors.csv").split("\n")
+    mads_dir = "#{BASE_DIR}/catalog_pending/mads"
+    auth_csv = File.read("#{BASE_DIR}/arabic_authors.csv").split("\n")
     
     mads_cts = urn.split('.')[0]
     mads_mr = mrurn.split('.')[0..1].join('.')
 
     i = auth_csv.index{|r| r =~ /#{mads_mr}/}
+    #need to double check that below is what I actually want
     ar_auth_row = auth_csv[i].scan(/([^",]+)|"([^"]+)"|((?<=^|,)(?=,|$))/) #because I don't want to bother with the csv gem...
     auth_name =  line_arr[15]
     auth_file_nm = auth_name.split(",")[0]
-    auth_dir = "#{mads_dir}/#{auth_file_nm}"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+    auth_dir = "#{mads_dir}/#{auth_file_nm}" 
+    file_path = "#{auth_dir}/#{mads_cts}.mads.xml"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
 
-    unless File.directory?(auth_dir)
-      Dir.mkdir(auth_dir)
+    if File.directory?(auth_dir) and File.exists?(file_path)
+      #directory and mads file exist, need to add the work id to relatedworks section
+      #open existing file
+      #find last related work node
+      #use builder with that node
+      f_xml = get_xml(file_path)
+      rel_work_node = f_xml.xpath("//mads:extension/mads:description/mads:identifier")
+
+      builder = Nokogiri::XML::Builder.with() do |new_node|
+
+      end
+
+    else
+      Dir.mkdir(auth_dir) unless File.directory?(auth_dir)
 
       builder = Nokogiri::XML::Builder.new(:encoding => 'UTF-8') do |new_mads|
         new_mads.mads('xmlns:mads' => "http://www.loc.gov/mads/v2",
@@ -395,28 +409,34 @@ class ArabicRecordBuilder
                 }
               }
             end
+            
             #identifier
             new_mads['mads'].identifier(:type => 'ctsurn'){
-              new_mads.text()
+              new_mads.text(mads_cts)
             }
             new_mads['mads'].identifier(:type => 'mrurn'){
-              new_mads.text()
+              new_mads.text(mads_mr)
             }
             new_mads['mads'].identifier(:type => 'lccn'){
-              new_mads.text()
+              new_mads.text(ar_auth_row[3]) unless ar_auth_row[3].empty?
             }
             new_mads['mads'].identifier(:type => 'viaf'){
-              new_mads.text()
+              new_mads.text(ar_auth_row[4]) unless ar_auth_row[4].empty?
             }
-            #extension
-              #related work ids
+
+            #extension - related work ids
+            new_mads['mads'].extension{
+              new_mads['mads'].description("List of related work identifiers")
+              new_mads.identifier(:type => "ctsurn"){
+                new_mads.text(urn)
+              }
+            }
         }
       end
-    else
-      #directory and mads file exist, need to add the work id to relatedworks section
-
     end
-
+    f = File.open(file_path, "w")
+    f << builder.to_xml
+    f.close
   end
 
   def ctsurn_creation(mrurn, work_mrurn)
@@ -424,7 +444,7 @@ class ArabicRecordBuilder
     #be possible to look up the last urn in the table.
     #For now just creating a variable to carry the last assigned urn.
 
-    cts_file = File.open("#{ENV['HOME']}/arabic_urns.txt", 'a+')
+    cts_file = File.open("#{BASE_DIR}/arabic_urns.txt", 'a+')
     cts_list = cts_file.read
     ms_suffix = mrurn =~ /MS\d+/ ? mrurn[/MS\d+/] : ""
     mrurnc = mrurn.sub(/\./, "")

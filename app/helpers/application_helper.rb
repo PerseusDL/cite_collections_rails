@@ -14,7 +14,7 @@ module ApplicationHelper
 
 #create directory path
   def create_mods_path(ctsurn)  
-    path_name = "#{ENV['HOME']}/catalog_data/mods/"
+    path_name = "#{BASE_DIR}/catalog_data/mods/"
     ctsmain = ctsurn[/(greekLit|latinLit).+/]
     path_name << "#{ctsmain.gsub(/:|\./, "/")}"
     unless File.exists?(path_name)
@@ -32,7 +32,7 @@ module ApplicationHelper
   end  
 
   def create_mads_path(old_path)
-    path_name = "#{ENV['HOME']}/catalog_data/mads/PrimaryAuthors/"
+    path_name = "#{BASE_DIR}/catalog_data/mads/PrimaryAuthors/"
     op_parts = old_path.split("/")
     file_n = op_parts.pop
     name = op_parts.pop
@@ -358,13 +358,13 @@ module ApplicationHelper
     puts message
     @error_report << "#{message}\n\n"
     @error_report.close
-    @error_report = File.open("#{ENV['HOME']}/catalog_pending/errors/error_log#{Date.today}.txt", 'a')
-    #`mv "#{file_path}" "#{ENV['HOME']}/catalog_pending/errors/#{f_n}"`
+    @error_report = File.open("#{BASE_DIR}/catalog_pending/errors/error_log#{Date.today}.txt", 'a')
+    #`mv "#{file_path}" "#{BASE_DIR}/catalog_pending/errors/#{f_n}"`
   end
 
 #for testing new paths
   def test_run(message, values)
-    test_file = File.open("#{ENV['HOME']}/catalog_pending/test_run#{Date.today}.txt", 'a')
+    test_file = File.open("#{BASE_DIR}/catalog_pending/test_run#{Date.today}.txt", 'a')
     test_file << "#{message}\n#{values}\n\n"
     test_file.close
   end
