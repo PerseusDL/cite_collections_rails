@@ -5,3 +5,6 @@ map '/cite-collections' do
   run Rails.application
 end
 
+map "/" do
+run Rails.application
+end
