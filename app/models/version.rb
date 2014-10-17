@@ -53,4 +53,28 @@ class Version < ActiveRecord::Base
     end
   end
 
+  def prev
+    unless self.id == 1
+      prev = Version.find(self.id - 1)
+    else
+      prev = nil
+    end
+    return prev
+  end
+
+  def next
+    unless self.id == Version.last.id
+      nxt = Version.find(self.id + 1)
+    else
+      nxt = nil
+    end
+    return nxt
+  end
+
+  def prevnext
+    prev = self.prev
+    nxt = self.next
+    return prev, nxt
+  end
+
 end

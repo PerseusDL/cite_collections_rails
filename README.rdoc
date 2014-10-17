@@ -1,6 +1,29 @@
 == cite_collections_rails
 
-Repository to hold the Rails implementation of the CITE tables and importation of new MODS and MADS files from the catalog_pending repo to the catalog_data repo.
+This is the implementation for the Perseus DL CITE Collections.  It includes methods for generating new MODS and MADS files from the XML residing in catalog_pending, relocating those new files to catalog_data, updating the CITE tables with the new record information, and for generating new ATOM feeds from the catalog_data records to be imported into the Perseus Catalog.  It also provides a simple web interface and RESTful API to access data in the CITE tables.
+
+
+= API
+
+Calls to the API can produce XML or JSON replies.  XML is the default format, append '.json' to any call to get back that format.
+
+The base URI is:
+  http://catalog.perseus.org/cite-collections/api/[collection]
+
+Our CITE collections are Authors, Textgroups, Works, and Versions.
+
+The API requests available are:
+  /[collection]                     - Provides the full collection
+  /[collection]/[cite_urn]          - Returns a single record for the given CITE URN
+  /[collection]/count               - Number of objects in a collection
+  /[collection]/first               - First object in a collection
+  /[collection]/last                - Last object in a collection
+  /[collection]/[cite_urn]/previous - Object before the given URN
+  /[collection]/[cite_urn]/next     - Object after the given URN
+  /[collection]/[cite_urn]/prevnext - Objects before and after the given URN
+
+
+
 
 Copyright 2013 The Perseus Digital Library, Tufts University
 

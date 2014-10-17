@@ -1,4 +1,5 @@
 CiteCollections::Application.routes.draw do
+  
   get "cite/index"
   resources :versions do
     collection do
@@ -23,6 +24,23 @@ CiteCollections::Application.routes.draw do
       get 'search'
     end
   end
+
+  namespace :api, defaults: {format: 'xml'} do
+    resources :authors, :works, :textgroups, :versions, :constraints => {:id => /urn:cite:\w+:\w+\.*\w*\.*\w*-*\w*/}, only: [:index, :show] do
+      collection do
+        get 'count'
+        get 'first'
+        get 'last'
+      end
+      member do
+        get 'previous'
+        get 'next'
+        get 'prevnext'
+      end
+    end
+    
+  end
+
 
     
 

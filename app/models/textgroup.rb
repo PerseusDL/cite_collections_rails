@@ -51,4 +51,28 @@ class Textgroup < ActiveRecord::Base
       result = nil
     end
   end
+
+  def prev
+    unless self.id == 1
+      prev = Textgroup.find(self.id - 1)
+    else
+      prev = nil
+    end
+    return prev
+  end
+
+  def next
+    unless self.id == Textgroup.last.id
+      nxt = Textgroup.find(self.id + 1)
+    else
+      nxt = nil
+    end
+    return nxt
+  end
+
+  def prevnext
+    prev = self.prev
+    nxt = self.next
+    return prev, nxt
+  end
 end

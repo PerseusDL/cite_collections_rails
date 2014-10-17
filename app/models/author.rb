@@ -53,4 +53,28 @@ class Author < ActiveRecord::Base
     end
   end
 
+  def prev
+    unless self.id == 1
+      prev = Author.find(self.id - 1)
+    else
+      prev = nil
+    end
+    return prev
+  end
+
+  def next
+    unless self.id == Author.last.id
+      nxt = Author.find(self.id + 1)
+    else
+      nxt = nil
+    end
+    return nxt
+  end
+
+  def prevnext
+    prev = self.prev
+    nxt = self.next
+    return prev, nxt
+  end
+
 end
