@@ -3,7 +3,7 @@
 This is the implementation for the Perseus DL CITE Collections.  It includes methods for generating new MODS and MADS files from the XML residing in catalog_pending, relocating those new files to catalog_data, updating the CITE tables with the new record information, and for generating new ATOM feeds from the catalog_data records to be imported into the Perseus Catalog.  It also provides a simple web interface and RESTful API to access data in the CITE tables.
 
 
-= API
+== API
 
 Calls to the API can produce XML or JSON replies.  XML is the default format, append '.json' to any call to get back that format.
 
