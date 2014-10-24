@@ -25,7 +25,7 @@ CiteCollections::Application.routes.draw do
     end
   end
 
-  namespace :api, defaults: {format: 'xml'} do
+  namespace :api do
     resources :authors, :works, :textgroups, :versions, :constraints => {:id => /urn:cite:\w+:\w+\.*\w*\.*\w*-*\w*/}, only: [:index, :show] do
       collection do
         get 'count'

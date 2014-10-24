@@ -2,7 +2,12 @@ module Api
   class WorksController < ApplicationController
     respond_to :json, :xml
     before_action :set_work, only: [:show, :previous, :next, :prevnext]
+    before_filter :default_format_xml
 
+    def default_format_xml
+      request.format = "xml" unless params[:format]
+    end
+    
     def index
       @works = Work.all
       respond_with(@works, except: :id)

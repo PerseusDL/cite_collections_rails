@@ -2,6 +2,11 @@ module Api
   class AuthorsController < ApplicationController
     respond_to :json, :xml
     before_action :set_author, only: [:show, :previous, :next, :prevnext]
+    before_filter :default_format_xml
+
+    def default_format_xml
+      request.format = "xml" unless params[:format]
+    end
 
     def index
       @authors = Author.all

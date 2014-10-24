@@ -2,7 +2,12 @@ module Api
   class TextgroupsController < ApplicationController
     respond_to :json, :xml
     before_action :set_textgroup, only: [:show, :previous, :next, :prevnext]
+    before_filter :default_format_xml
 
+    def default_format_xml
+      request.format = "xml" unless params[:format]
+    end
+    
     def index
       @textgroups = Textgroup.all
       respond_with(@textgroups, except: :id)
