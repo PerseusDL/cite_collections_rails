@@ -44,6 +44,12 @@ module Api
       respond_with(@both, except: :id)
     end
 
+    def search
+      recieved = params.permit(:urn, :version, :label_eng, :desc_eng, :type, :has_mods, :urn_status, :redirect_to, :member_of, :created_by, :edited_by)
+      @response = Version.where(recieved)
+      respond_with(@response, except: :id)
+    end
+
     private
       # Use callbacks to share common setup or constraints between actions.
       def set_version

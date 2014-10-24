@@ -44,6 +44,12 @@ module Api
       respond_with(@both, except: :id)
     end
 
+    def search
+      recieved = params.permit(:urn, :work, :title_eng, :orig_lang, :notes, :urn_status, :redirect_to, :created_by, :edited_by)
+      @response = Work.where(recieved)
+      respond_with(@response, except: :id)
+    end
+
     private
       # Use callbacks to share common setup or constraints between actions.
       def set_work

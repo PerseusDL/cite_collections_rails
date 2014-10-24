@@ -21,6 +21,7 @@ The API requests available are:
   /[collection]/[cite_urn]/previous - Object before the given URN
   /[collection]/[cite_urn]/next     - Object after the given URN
   /[collection]/[cite_urn]/prevnext - Objects before and after the given URN
+  /[collection]/search?[key]=[value]- Search on any row in the table by column names
 
 
 
