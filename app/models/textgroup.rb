@@ -7,11 +7,11 @@ class Textgroup < ActiveRecord::Base
   def self.generate_urn
     last_urn = Textgroup.latest_urn
     unless last_urn
-      new_urn = "urn:cite:perseus:textgroup.1.1"
+      new_urn = "urn:cite:perseus:cattg.1.1"
     else
       urn_parts = last_urn.split('.')
       inc_urn = urn_parts[1].to_i + 1
-      new_urn = "urn:cite:perseus:textgroup.#{inc_urn}.1"
+      new_urn = "urn:cite:perseus:cattg.#{inc_urn}.1"
     end
   end
 

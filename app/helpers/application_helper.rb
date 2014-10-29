@@ -211,7 +211,7 @@ module ApplicationHelper
 
         id = clean_id(node)
         
-        unless id == "none" || id == "" || id =~ /0000|\D000$/ || id =~ /\?/
+        unless id == "none" || id == "" || id =~ /0000|\D000$/ || id =~ /\?/ || id =~ /urn:cts/
           alt_ids << id
 
           if id =~ /tlg|phi|stoa|lccn|viaf/i #might need to expand this to other standards
@@ -324,7 +324,7 @@ module ApplicationHelper
               end             
             else              
               id = "VIAF" + id[/\d+$/] if id =~ /viaf/
-              id = "LCCN " + id[/(n|nr)\s+\d+/] if id =~ /(n|nr)\s+\d+/
+              id = "LCCN " + id[/(n|nr|nb|no)\s+\d+/] if id =~ /(n|nr)\s+\d+/
               #have abo ids to account for
               if id =~ /Perseus:abo/ && id !~ /ltan/
                 id_parts = id.split(",")
