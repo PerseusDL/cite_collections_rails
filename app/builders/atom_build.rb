@@ -321,16 +321,6 @@ class AtomBuild
           feed.description('xml:lang' => 'eng'){feed.text(params['description'])}
         }
       end
-
-      #have to add in the perseus_info if it exists, but only doing structure info
-      #since I've found a lot of bad descriptions
-      if params['perseus_info']
-        online = params['perseus_info'].xpath('online')[0].clone
-        member = params['perseus_info'].xpath('memberof')[0].clone
-        ed = find_node("//cts:#{params['type']}", builder.doc)
-        ed.add_child(online)
-        ed.add_child(member)
-      end
     end
   end
 
