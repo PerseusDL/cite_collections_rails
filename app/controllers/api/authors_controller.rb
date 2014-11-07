@@ -50,8 +50,8 @@ module Api
     end
 
     def search
-      recieved = params.permit(:urn, :authority_name, :canonical_id, :mads_file, :alt_ids, :related_works, :urn_status, :redirect_to, :created_by, :edited_by)
-      @response = Author.where(recieved)
+      received = params.permit(:urn, :authority_name, :canonical_id, :mads_file, :alt_ids, :related_works, :urn_status, :redirect_to, :created_by, :edited_by)
+      @response = Author.where(received)
       respond_with(@response, except: :id)
     end
 
