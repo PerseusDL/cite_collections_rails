@@ -310,7 +310,7 @@ module ApplicationHelper
             id = id.gsub('-', '.')      
           else
             if val =~ /tlg|phi/
-              if id =~ /\d+x\d$/i #catching 0012X01 type of ids
+              if id =~ /\d+x\d+$/i #catching 0012X01 type of ids
                 id_step = id.split(/x/i)
                 id_step[1]= "X"+id_step[1]
                 #add in tlgs or phis
