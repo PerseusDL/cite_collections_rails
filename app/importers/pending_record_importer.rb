@@ -137,6 +137,7 @@ class PendingRecordImporter
               end
             end
           end
+          
           #`rm #{file_path}`
           
       end
@@ -209,6 +210,7 @@ class PendingRecordImporter
           w_urn = Work.generate_urn
           w_values = [w_urn, info_hash[:w_id], info_hash[:w_title], info_hash[:orig_lang], '', 'published', '', 'auto_importer','']
           Work.add_cite_row(w_values)
+          #!! Insert here check that the work is listed in Author.related_works? if not, add it 
           puts "added work"
         end
 
@@ -271,8 +273,7 @@ class PendingRecordImporter
         n_id.content = vers_urn
         n_id.set_attribute("type", "ctsurn")
         id_line.add_next_sibling(n_id)
-
-        
+     
         modspath = create_mods_path(vers_urn)
         move_file(modspath, mods_xml)
       end     
@@ -389,41 +390,5 @@ class PendingRecordImporter
     end
   end
 
-  def mads_path_change
-  
-    mads_files = Dir["#{BASE_DIR}/catalog_data/mads/PrimaryAuthors/**/*{mads,madsxml}.xml"]
-    mads_files.each do |file|
-      file_xml = get_xml(file)
-      cite = file_xml.search('//mads:identifier[@type="citeurn"]').inner_text
-      a_row = Author.find_by_urn(cite)
-      unless a_row
-        id, alt_ids = find_rec_id(file_xml, file, file)
-        if id
-          a_row = Author.find_by_id(id)
-          if a_row
-            id_line = file_xml.search("/mads:mads/mads:identifier").last
-            n_id = Nokogiri::XML::Node.new "mads:identifier", file_xml
-            n_id.add_namespace_definition("mads", "http://www.loc.gov/mads/v2")
-            n_id.content = a_row.urn
-            n_id.set_attribute("type", "citeurn")
-            id_line.add_next_sibling(n_id)
-            m_file = File.open(file, 'w')
-            m_file << file_xml
-            m_file.close
-          else
-            puts "error with #{file}, check for urns"
-            next
-          end
-        end
-      end
-      unless a_row.mads_file == file[/PrimaryAuthors.+/]
-        a_row.mads_file = file[/PrimaryAuthors.+/]
-        a_row.save
-      end
-    end
-  end
-
-  def fusion_tables_update
-  end
 
 end

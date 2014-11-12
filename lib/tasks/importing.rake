@@ -16,23 +16,5 @@ task :catalog_pending_import => :environment do
   cpi.import
 end
 
-desc "add column to work table"
-task :add_orig_lang => :environment do
-  collect = ""
-  file = File.open("#{BASE_DIR}/cite_collections_rails/data/Perseus Work Collection.csv", "r")
-  file.each_line do |line|
-    row = line.split(/(,)(?=(?:[^"]|"[^"]*")*$)/)
-    row.delete(",")
-    lang = row[1] =~ /tlg/ ? "grc" : "lat"
-    row.insert(3, lang)
-    collect << row.join(",")
-  end
-  File.open("#{BASE_DIR}/cite_collections_rails/data/Perseus Work Collection.csv", "w") {|f| f << collect}
-end
 
-desc "one time mads path correction"
-task :mads_path_change => :environment do
-  pri = PendingRecordImporter.new
-  pri.mads_path_change
 
-end
