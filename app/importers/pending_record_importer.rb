@@ -24,125 +24,121 @@ class PendingRecordImporter
     mads_import(pending_mads)
     mods_import(pending_mods)
 
-    #fusion_tables_update
+    #remove all the now empty directories, leaving only the files that encountered errors
+    Dir["#{pending_mads}/**/"].reverse_each { |d| Dir.rmdir d if Dir.entries(d).size == 2 }
+    Dir["#{pending_mods}/**/"].reverse_each { |d| Dir.rmdir d if Dir.entries(d).size == 2 }
   end
 
   def mads_import(pending_mads)
-    mads_dirs = clean_dirs(pending_mads)
-    mads_dirs.each do |name_dir|
-      mads = clean_dirs(name_dir).select { |f| f =~ /mads/}[0]
-      if mads
-        mads_xml = get_xml(mads)
-        info_hash = find_basic_info(mads_xml, mads)
-        #if it already exists we don't need to add it to the table again!
-        if info_hash
-          if info_hash[:cite_auth] && info_hash[:cite_auth].urn_status == "published"
-            next
-          else
-            add_to_cite_tables(info_hash) if info_hash
-
-            new_auth = Author.find_by_id(info_hash[:canon_id])
-            #add cite urn to record
-            id_line = mads_xml.search("/mads:mads/mads:identifier").last
-            n_id = Nokogiri::XML::Node.new "mads:identifier", mads_xml
-            n_id.add_namespace_definition("mads", "http://www.loc.gov/mads/v2")
-            n_id.content = new_auth.urn
-            n_id.set_attribute("type", "citeurn")
-            id_line.add_next_sibling(n_id)
-
-            madspath = create_mads_path(mads)
-            move_file(madspath, mads_xml)
-          end
+    all_mads_dirs = clean_dirs(pending_mads)
+    mads_files = []
+    all_mads_dirs.each {|file| mads_files << file unless file =~ /marc/}
+    mads_files.each do |mads|
+      mads_xml = get_xml(mads)
+      info_hash = find_basic_info(mads_xml, mads)
+      #if it already exists we don't need to add it to the table again
+      if info_hash
+        unless info_hash[:cite_auth].empty?
+          Author.update_row(info_hash, "auto_importer")
+          next
         else
-          message = "For file #{mads} : No info hash returned, something has gone wrong, please check."
-          error_handler(message, mads, mads)
+          add_to_cite_tables(info_hash)
+
+          new_auth = Author.get_by_id(info_hash[:canon_id])[0]
+          #add cite urn to record
+          id_line = mads_xml.search("/mads:mads/mads:identifier").last
+          n_id = Nokogiri::XML::Node.new "mads:identifier", mads_xml
+          n_id.add_namespace_definition("mads", "http://www.loc.gov/mads/v2")
+          n_id.content = new_auth.urn
+          n_id.set_attribute("type", "citeurn")
+          id_line.add_next_sibling(n_id)
+
+          madspath = create_mads_path(mads)
+          move_file(madspath, mads_xml)
+          #remove the successfully imported file from catalog_pending
+          FileUtils.rm(mads)
         end
-        #`rm #{file_path}`
+      else
+        message = "For file #{mads} : No info hash returned, something has gone wrong, please check."
+        error_handler(message, mads, mads)
       end
     end
+    #remove all the marc records
+    FileUtils.rm Dir.glob("#{pending_mads}/**/*.marcxml.xml")
   end
 
   def mods_import(pending_mods)
-    mods_dirs = clean_dirs(pending_mods)
-    mods_dirs.each do |name_dir|
-          
-      level_down = clean_dirs(name_dir)
-      collect_xml = level_down.select { |f| File.file? f}
-      if collect_xml.empty?
-        level_down.each do |publisher_dir|
-          collect_xml = clean_dirs(publisher_dir)
+    mods_files = clean_dirs(pending_mods)
+    mods_files.each do |mods|
+      file_path = mods
+      mods_xml = get_xml(file_path)
+      #need to check that the mods prefix exists and if not, add it
+      namespaces = mods_xml.namespaces
+      unless namespaces.include?("xmlns:mods")
+        add_mods_prefix(mods_xml)
+        File.open(file_path, "w"){|file| file << mods_xml}
+        new_xml = get_xml(file_path)
+        it_worked = new_xml.search("/mods:mods/mods:titleInfo")
+        if it_worked == nil || it_worked.empty?
+          message = "For file #{file_path}: tried adding prefix to mods but something went wrong, please check"
+          error_handler(message, file_path, file_path)
+          next
+        else
+          mods_xml = new_xml
         end
       end
-      collect_xml.each do |mods|
-        file_path = mods
-        mods_xml = get_xml(file_path)
-          #need to check that the mods prefix exists and if not, add it
-          namespaces = mods_xml.namespaces
-          unless namespaces.include?("xmlns:mods")
-            add_mods_prefix(mods_xml)
-            File.open(file_path, "w"){|file| file << mods_xml}
-            new_xml = get_xml(file_path)
-            it_worked = new_xml.search("/mods:mods/mods:titleInfo")
-            if it_worked == nil || it_worked.empty?
-              message = "For file #{file_path}: tried adding prefix to mods but something went wrong, please check"
-              error_handler(message, file_path, file_path)
-              next
-            else
-              mods_xml = new_xml
-            end
-          end
 
-          has_cts = mods_xml.search("/mods:mods/mods:identifier[@type='ctsurn']")
-          unless has_cts.empty? || has_cts.inner_text == ""
-            #record already has a cts urn, could be added mods or multivolume record
-            ctsurn = has_cts.inner_text
-            vers = Version.find_by_cts(ctsurn)            
-            if vers.length == 1 
-              v_obj = vers[0]
-              if v_obj.has_mods == "false"
-                #has cite row, lacking a mods 
-                Version.update_row(v_obj.id, {:has_mods => "true", :edited_by => "auto_importer"})
-              end
-              #if has row and confirmed mods, not a correction, assumed multivolume, just move to correct place
-              modspath = create_mods_path(ctsurn)                           
-              move_file(modspath, mods_xml)     
-            else
-              if vers.length == 0
-                #has a ctsurn but no cite row, for whatever reason, needs to be added
-                info_hash = find_basic_info(mods_xml, mods)           
-                if info_hash
-                  add_to_cite_tables(info_hash, mods_xml)
-                end
-              else
-                message = "For file #{file_path}: has more than one of the same cts_urn"
-                error_handler(message, file_path, ctsurn)
-              end
+      has_cts = mods_xml.search("/mods:mods/mods:identifier[@type='ctsurn']")
+      unless has_cts.empty? || has_cts.inner_text == ""
+        #record already has a cts urn, could be added mods or multivolume record
+        ctsurn = has_cts.inner_text
+        vers = Version.find_by_cts(ctsurn)            
+        if vers.length == 1 
+          v_obj = vers[0]
+          if v_obj.has_mods == "false"
+            #has cite row, lacking a mods, update accordingly 
+            Version.update(v_obj.id, {:has_mods => "true", :edited_by => "auto_importer"})
+            info_hash = find_basic_info(mods_xml, mods)
+            Version.update_row(ctsurn, info_hash, mods, "auto_importer")
+          end
+          #if has row and confirmed mods, not a correction, assumed multivolume, just move to correct place
+          Version.update_row(ctsurn, info_hash, mods, "auto_importer")
+          modspath = create_mods_path(ctsurn)                           
+          move_file(modspath, mods_xml)     
+        else
+          if vers.length == 0
+            #has a ctsurn but no cite row, for whatever reason, needs to be added
+            info_hash = find_basic_info(mods_xml, mods)           
+            if info_hash
+              add_to_cite_tables(info_hash, mods_xml)
             end
           else
-            unless mods_xml.search("//mods:relatedItem[@type='constituent']").empty?
-              #has constituent items, needs to be passed to a method to create new mods
-              split_constituents(mods_xml, mods)
-            else
-              info_hash = find_basic_info(mods_xml, mods)
-              #have the info from the record and cite tables, now process it
-              #:file_name,:canon_id,:a_name,:a_id,:alt_ids,:cite_auth,:cite_tg :w_title,:w_id,:cite_work,:w_lang
-              if info_hash
-                  add_to_cite_tables(info_hash, mods_xml)
-                  #add to versions table
-                  puts "going into add version"
-                  add_to_vers_table(info_hash, mods_xml) 
-              else
-                message = "For file #{file_path} : No info hash returned, something has gone wrong, please check. #{$!}"
-                error_handler(message, file_path, file_path)
-              end
-            end
+            message = "For file #{file_path}: has more than one of the same cts_urn"
+            error_handler(message, file_path, ctsurn)
           end
-          
-          #`rm #{file_path}`
-          
+        end
+      else
+        unless mods_xml.search("//mods:relatedItem[@type='constituent']").empty?
+          #has constituent items, needs to be passed to a method to create new mods
+          split_constituents(mods_xml, mods)
+        else
+          info_hash = find_basic_info(mods_xml, mods)
+          #have the info from the record and cite tables, now process it
+          #:file_name,:canon_id,:a_name,:a_id,:alt_ids,:cite_auth,:cite_tg :w_title,:w_id,:cite_work,:w_lang
+          if info_hash
+              add_to_cite_tables(info_hash, mods_xml)
+              #add to versions table
+              puts "going into add version"
+              add_to_vers_table(info_hash, mods_xml)
+              #remove the successfully imported file from catalog_pending
+              FileUtils.rm(file_path) 
+          else
+            message = "For file #{file_path} : No info hash returned, something has gone wrong, please check. #{$!}"
+            error_handler(message, file_path, file_path)
+          end
+        end
       end
     end
-    #also add commit and push of changes to catalog_pending and catalog_data
   end
 
   def add_to_cite_tables(info_hash, mods_xml=nil)
@@ -152,8 +148,10 @@ class PendingRecordImporter
       #tg_col = "urn, textgroup, groupname_eng, has_mads, mads_possible, notes, urn_status, redirect_to, created_by, edited_by"
       #work_col = "urn, work, title_eng, notes, urn_status, redirect_to, created_by, edited_by"
 
-      unless info_hash[:cite_auth]
+      #reminder! there can be more than one author, so authors are handled in arrays
+      cite_auth_arr = info_hash[:cite_auth]
 
+      if cite_auth_arr.empty?
         #no row for this author, add a row       
         unless mods_xml
           #only creates rows in the authors table for mads files, so authors acts as an index of our mads, 
@@ -161,20 +159,22 @@ class PendingRecordImporter
           a_urn = Author.generate_urn
           mads_path = create_mads_path(info_hash[:path])[/PrimaryAuthors.+\.xml/]         
           a_values = ["#{a_urn}", "#{info_hash[:a_name]}", "#{info_hash[:canon_id]}", "#{mads_path}", "#{info_hash[:alt_ids]}", "#{info_hash[:related_works]}", 'published','', 'auto_importer', '']
-          Author.add_cite_row(a_values)
+          info_hash[:cite_auth] << Author.add_cite_row(a_values)
         end
         
       else
-        #find name returned from cite tables, compare to name from record
-        #if they aren't equal, throw an error
-        cite_name = info_hash[:cite_auth].authority_name
-        cite_auth_id = info_hash[:cite_auth].canonical_id 
-        unless cite_auth_id == info_hash[:canon_id] || info_hash[:canon_id] =~ /#{info_hash[:cite_auth].alt_ids}/
-          message = "For file #{info_hash[:file_name]}: The author id saved in the CITE table doesn't match the id in the file, please check."
-          error_handler(message, info_hash[:path], info_hash[:file_name])
-          return
+        cite_auth_arr.each do |cite_auth|
+          #find name returned from cite tables, compare to name from record
+          #if they aren't equal, throw an error
+          cite_name = cite_auth.authority_name
+          cite_auth_id = cite_auth.canonical_id 
+          unless cite_auth_id == info_hash[:canon_id] || info_hash[:canon_id] =~ /#{cite_auth.alt_ids}/
+            message = "For file #{info_hash[:file_name]}: The author id saved in the CITE table doesn't match the id in the file, please check."
+            error_handler(message, info_hash[:path], info_hash[:file_name])
+            return
+          end
         end
-        #need to actually do something with it now, scrape and fill in new info if mads, represents a change to the file?
+        Author.update_row(info_hash, "auto_importer") unless mods_xml
       end
 
       unless info_hash[:cite_tg]
@@ -185,6 +185,7 @@ class PendingRecordImporter
             t_values = ["#{t_urn}", "#{info_hash[:a_id]}", "#{info_hash[:a_name]}", "#{info_hash[:cite_auth] == nil}", 'true','', 'published', '', 'auto_importer','']
             Textgroup.add_cite_row(t_values)
           else
+            #!!This will need to change once we establish how to coin urns for these sorts of authors
             message = "LCCN id found in record, this is probably an editor, can not create textgroup"
             error_handler(message, info_hash[:path], info_hash[:file_name])
             return
@@ -200,7 +201,7 @@ class PendingRecordImporter
           tg = info_hash[:cite_tg]
           mads_stat = tg.has_mads
           if mads_stat == false
-            Textgroup.update_row(tg.id, :has_mads => 'true')
+            Textgroup.update(tg.id, {:has_mads => 'true', :edited_by => "auto_importer"})
           end
         end
       end
@@ -210,7 +211,12 @@ class PendingRecordImporter
           w_urn = Work.generate_urn
           w_values = [w_urn, info_hash[:w_id], info_hash[:w_title], info_hash[:orig_lang], '', 'published', '', 'auto_importer','']
           Work.add_cite_row(w_values)
-          #!! Insert here check that the work is listed in Author.related_works? if not, add it 
+          #check that the work is listed in Author.related_works, if not, add it 
+          cite_auth_arr.each do |cite_auth|
+            unless cite_auth.related_works =~ /#{info_hash[:w_id]}/
+              Author.update(cite_auth.id, {:related_works => ";#{info_hash[:w_id]}"})
+            end
+          end
           puts "added work"
         end
 
@@ -253,13 +259,14 @@ class PendingRecordImporter
             num = urn_num + 1
             if line[:label_eng] =~ /#{vers_label}/ && line[:desc_eng] =~ /#{vers_desc}/
               #this means that the pulled label and description match the current row, not good?
+              message = "#{curr_urn} and #{vers_urn_wo_num} have the same label and description, please check!"
+              error_handler(message, info_hash[:path], info_hash[:file_name])
+              return
             end
           end
           vers_urn = "#{vers_urn_wo_num}#{num}"
         end
-        #need to check that the description isn't the same
-          #how to determine if it is a second mods record for an edition?
-          #oclc #s and LCCNs?
+
         #insert row in table
         vers_cite = Version.generate_urn
         puts "got cite urn #{vers_cite}"
@@ -316,6 +323,8 @@ class PendingRecordImporter
         error_handler(message, new_path, new_name)
       end
     end
+    #remove the successfully imported file from catalog_pending
+    FileUtils.rm(file_path)
   end
 
 
@@ -331,55 +340,26 @@ class PendingRecordImporter
     json = JSON.parse(gh_results.body)
     json.each do |commit|
       #working with a hash of hashes
-      
       message = commit["commit"]["message"]
       editor = commit["commit"]["author"]["name"]
       begin
-        if message =~ /Update/ #assuming one commit = one file  BAD ASSUMPTION
+        if message =~ /Update/ #!!assuming one commit = one file  BAD ASSUMPTION
           parts = message.split(/\s/)
           file = parts[1] if parts[1] =~ /\.xml/
           file_path = Dir.glob("#{path}/**/#{file}")[0]
           mods_xml = get_xml(file_path)
+
           info_hash = find_basic_info(mods_xml, file_path)
           if info_hash
-            if file_path =~ /mads/
-              auth = info_hash[:cite_auth]
-              auth_hash = {}           
-              auth_hash[:authority_name] = info_hash[:a_name] if auth.authority_name != info_hash[:a_name]
-              auth_hash[:alt_ids] = info_hash[:alt_ids] if auth.alt_ids != info_hash[:alt_ids]
-              auth_hash[:related_works] = info_hash[:related_works] if auth.related_works != info_hash[:related_works]
-    
-              unless auth_hash.empty?
-                auth_hash[:edited_by] = editor
-                Author.update_row(auth.id, auth_hash)
-              end
+            if file_path =~ /mads/              
+              Author.update_row(info_hash, editor)
             else
+              Textgroup.update_row(info_hash, editor)             
+              Work.update_row(info_hash, editor)
+
               cts = file_path[/\w+\.\w+\.\w+-\w+\d+/]
-              tg_hash, w_hash, v_hash = {}, {}, {}
-              tg = info_hash[:cite_tg]
-              work = info_hash[:cite_work]
-              vers = Version.find_by_cts(cts)[0]
-
-              if tg.groupname_eng != info_hash[:a_name]
-                tg_hash[:groupname_eng] = info_hash[:a_name]
-                tg_hash[:edited_by] = editor
-                Textgroup.update_row(tg.id, tg_hash)
-              end
-
-              if work.title_eng != info_hash[:w_title]
-                w_hash[:title_eng] = info_hash[:w_title]
-                w_hash[:edited_by] = editor
-                Work.update_row(work.id, w_hash)
-              end
-
-              vers_label, vers_desc = create_label_desc(mods_xml)            
-              v_hash[:label_eng] = vers_label if vers.label_eng != vers_label
-              v_hash[:desc_eng] = vers_desc if vers.desc_eng != vers_desc
-              unless v_hash.empty?
-                v_hash[:edited_by] = editor
-                Version.update_row(vers.id, v_hash)
-              end
-
+              vers_label, vers_desc = create_label_desc(mods_xml)
+              Version.update_row(cts, vers_label, vers_desc, editor)
             end
           end
         end

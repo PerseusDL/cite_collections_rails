@@ -19,8 +19,15 @@ class Version < ActiveRecord::Base
     found_ids = Version.find(:all, :conditions => ["version rlike ?", id])
   end
 
-  def self.update_row(id, hash)
-    updated = Version.update(id, hash)
+  def self.update_row(cts, vers_label, vers_desc, editor)
+    vers = Version.find_by_cts(cts)[0]
+    v_hash = {}            
+    v_hash[:label_eng] = vers_label if vers.label_eng != vers_label
+    v_hash[:desc_eng] = vers_desc if vers.desc_eng != vers_desc
+    unless v_hash.empty?
+      v_hash[:edited_by] = editor
+      Version.update(vers.id, v_hash)
+    end
   end
 
   def self.add_cite_row(v)

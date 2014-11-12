@@ -15,13 +15,25 @@ class Author < ActiveRecord::Base
     end
   end
 
-  def self.find_by_id(id)
-    found_id = Author.find_by_canonical_id(id) 
+  def self.get_by_id(id)
+    found_id = Author.find(:all, :conditions => ["canonical_id = ?", id]) 
     found_id = Author.find(:all, :conditions => ["alt_ids rlike ?", id]) unless found_id
+    #returns an array of Author(s)
+    return found_id
   end
 
-  def self.update_row(id, hash)
-    updated = Author.update(id, hash)
+  def self.update_row(info_hash, editor)
+    info_hash[:cite_auth].each do |auth|
+      auth_hash = {}           
+      auth_hash[:authority_name] = info_hash[:a_name] if auth.authority_name != info_hash[:a_name]
+      auth_hash[:alt_ids] = info_hash[:alt_ids] if auth.alt_ids != info_hash[:alt_ids]
+      auth_hash[:related_works] = info_hash[:related_works] if auth.related_works != info_hash[:related_works]
+
+      unless auth_hash.empty?
+        auth_hash[:edited_by] = editor
+        Author.update(auth.id, auth_hash)
+      end
+    end  
   end
 
   def self.add_cite_row(v)
@@ -40,6 +52,7 @@ class Author < ActiveRecord::Base
       a.edited_by = v[9]
     end
     auth.save
+    return [auth]
   end
 
   def self.lookup(params)

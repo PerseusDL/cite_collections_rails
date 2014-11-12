@@ -19,8 +19,14 @@ class Work < ActiveRecord::Base
     found_id = Work.find_by_work(id)
   end
 
-  def self.update_row(id, hash)
-    updated = Work.update(id, hash)
+  def self.update_row(info_hash, editor)
+    work = info_hash[:cite_work]
+    w_hash = {}
+    if work.title_eng != info_hash[:w_title]
+      w_hash[:title_eng] = info_hash[:w_title]
+      w_hash[:edited_by] = editor
+      Work.update(work.id, w_hash)
+    end
   end
 
   def self.add_cite_row(v)

@@ -58,6 +58,7 @@ module ApplicationHelper
       #all to get a file name that I had earlier but cleverly turned into the path that I needed then...
       f_n = file_path[/(\/[a-zA-Z0-9\s\.\(\)-]+)?\.xml/]
       id, alt_ids = find_rec_id(xml_record, file_path, f_n)
+      #this and the find_rec_id will need to be updated to accommodate different ids
       unless id =~ /lccn/i
         lit_type = id =~ /tlg/ ? "greek" : "latin"
         lit_abbr = lit_type == "greek" ? "grc" : "lat"
@@ -76,7 +77,7 @@ module ApplicationHelper
       if id
         #search for and compare author values
         auth_name = find_rec_author(xml_record, file_path, f_n)
-        auth_nset = Author.find_by_id(canon_id)      
+        auth_nset = Author.get_by_id(canon_id)      
         tg_nset = Textgroup.find_by_id(a_id)   
         
         info_hash = { :file_name => f_n,
@@ -208,13 +209,13 @@ module ApplicationHelper
 
       #parsing found ids, take tlg or phi over stoa unless there is an empty string or "none"
       ids.each do |node|
-
+    
         id = clean_id(node)
         
         unless id == "none" || id == "" || id =~ /0000|\D000$/ || id =~ /\?/ || id =~ /urn:cts/
           alt_ids << id
 
-          if id =~ /tlg|phi|stoa|lccn|viaf/i #might need to expand this to other standards
+          if id =~ /tlg|phi|stoa|lccn|viaf/i #!!will need to expand this to other standards
             if found_id =~ /tlg|phi|stoa/
               #skip, having a hell of a time making it work with 'unless'
             else
@@ -257,18 +258,21 @@ module ApplicationHelper
     label = xml_clean(raw_title, ' ')
 
     names = mods_xml.search('//mods:name', ns)
-    ed_trans = ""
-    author_n = ""
+    ed_trans_arr = []
+    author_arr = []
     names.each do |m_name|
       if m_name.inner_text =~ /editor|translator|compiler/
-        ed_trans = xml_clean(m_name, ",")
+        ed_trans = xml_clean(m_name, ", ")
+        ed_trans.gsub!(/,,|\.,/, ",")
+        ed_trans_arr << ed_trans
       elsif m_name.inner_text =~ /creator|attributed author/
-        author_n = xml_clean(m_name, ",")
-        author_n.gsub!(/,,/, ",")
+        author_n = xml_clean(m_name, ", ")
+        author_n.gsub!(/,,|\.,/, ",")
+        author_arr << author_n
       end
     end
     
-    description = "#{author_n}; #{ed_trans}"
+    description = "#{author_arr.join('; ')}; #{ed_trans_arr.join('; ')}"
     
     return label, description
   end
@@ -296,9 +300,10 @@ module ApplicationHelper
 #cleaning data
 
   def clean_dirs(dir)
-    dirs_arr = Dir.entries(dir).map {|e| File.join(dir, e)}.select{|f| f unless f =~ /\.$/ || f =~ /\.\.$/ || f =~ /DS_Store/ || f =~ /README/}
+    dirs_arr = Dir.glob("#{dir}/**/*.xml")
   end
 
+  #!! need to update this method for newly coined urns, expand the scope
   def clean_id(node)
     if node.attribute('type')
       val = node.attribute('type').value

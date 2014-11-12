@@ -19,8 +19,14 @@ class Textgroup < ActiveRecord::Base
     found_id = Textgroup.find_by_textgroup(id)
   end
 
-  def self.update_row(id, hash)
-    updated = Textgroup.update(id, hash)
+  def self.update_row(info_hash, editor)
+    tg = info_hash[:cite_tg]
+    tg_hash = {}
+    if tg.groupname_eng != info_hash[:a_name]
+      tg_hash[:groupname_eng] = info_hash[:a_name]
+      tg_hash[:edited_by] = editor
+      Textgroup.update(tg.id, tg_hash)
+    end
   end
   
   def self.add_cite_row(v)
