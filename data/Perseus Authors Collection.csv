@@ -1,4 +1,3 @@
-urn,authority_name,canonical_id,mads_file,alt_ids,related_works,urn_status,redirect_to,created_by,edited_by
 urn:cite:perseus:author.1.1,Anacreontea,,PrimaryAuthors/A/Anacreontea/n83-015406.mads.xml,,tlg4150.tlg001,published,,feed_aggregator,
 urn:cite:perseus:author.2.1,"Abelard, Peter 1079-1142",stoa0002,PrimaryAuthors/A/Abelard/n79-142562.xml.mads.xml,,,published,,feed_aggregator,
 urn:cite:perseus:author.3.1,Ablabius Rhetor 5. Jh. n. Chr,tlg4023,"PrimaryAuthors/A/Ablabius Illustrius, Epigrammatist/AblabiusIllustrius.mads.xml",,,published,,feed_aggregator,
@@ -1228,7 +1227,7 @@ urn:cite:perseus:author.1226.1,Rufinus (Epigrammatist),tlg1656,"PrimaryAuthors/Q
 urn:cite:perseus:author.1227.1,Rufinus Antiochensis,stoa0244c,"PrimaryAuthors/Q-R/Rufinus, Antiochensis/no2005-55260.xml.mads.xml",,,published,,feed_aggregator,
 urn:cite:perseus:author.1228.1,Rufinus of Aquileia 345-410,stoa0244d,PrimaryAuthors/Q-R/Rufinus of Aquileia/n82-255489.xml.mads.xml,,,published,,feed_aggregator,
 urn:cite:perseus:author.1229.1,Rufus Domesticus ca. 3. Jh,tlg4041,PrimaryAuthors/Q-R/Rufus (Rufinus) Domesticus/viaf49614293.mads.xml,,,published,,feed_aggregator,
-urn:cite:perseus:author.1230.1,Rufus Domesticus fl.3. Jh,tlg4041,PrimaryAuthors/Q-R/Rufinus Domesticus/RufinusDomesticus.mads.xml,,,published,,feed_aggregator,
+urn:cite:perseus:author.1230.1,Rufus Domesticus fl.3. Jh,tlg4041,PrimaryAuthors/Q-R/Rufinus Domesticus/RufinusDomesticus.mads.xml,,,duplicate,urn:cite:perseus:author.1229.1,feed_aggregator,
 urn:cite:perseus:author.1231.1,Rufus of Ephesus,tlg0564,PrimaryAuthors/Q-R/Rufus of Ephesus/n83-122630.mads.xml,,,published,,feed_aggregator,
 urn:cite:perseus:author.1232.1,"Rutilius Lupus, Publius",phi0425,PrimaryAuthors/Q-R/Rutilius Lupus/n86-113828.xml.mads.xml,stoa0246,,published,,feed_aggregator,
 urn:cite:perseus:author.1233.1,"Rutilius Namatianus, Claudius 5th cent",stoa0247,PrimaryAuthors/Q-R/Rutilius Namatianus/n81-85591.xml.mads.xml,,,published,,feed_aggregator,
