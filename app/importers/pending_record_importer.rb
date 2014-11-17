@@ -213,8 +213,11 @@ class PendingRecordImporter
           Work.add_cite_row(w_values)
           #check that the work is listed in Author.related_works, if not, add it 
           cite_auth_arr.each do |cite_auth|
-            unless cite_auth.related_works =~ /#{info_hash[:w_id]}/
-              Author.update(cite_auth.id, {:related_works => ";#{info_hash[:w_id]}"})
+            w_o_cts = info_hash[:w_id][/\w+\.\w+$/]
+            s_rel_w = cite_auth.related_works
+            unless s_rel_w =~ /#{w_o_cts}/
+              rel_w = (s_rel_w == nil || s_rel_w.empty?) ? w_o_cts : (s_rel_w << ";#{w_o_cts}")
+              Author.update(cite_auth.id, {:related_works => rel_w})
             end
           end
           puts "added work"
