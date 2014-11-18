@@ -95,22 +95,28 @@ class PendingRecordImporter
         vers = Version.find_by_cts(ctsurn)            
         if vers.length == 1 
           v_obj = vers[0]
+          label, description = create_label_desc(mods_xml)
           if v_obj.has_mods == "false"
             #has cite row, lacking a mods, update accordingly 
             Version.update(v_obj.id, {:has_mods => "true", :edited_by => "auto_importer"})
-            info_hash = find_basic_info(mods_xml, mods)
-            Version.update_row(ctsurn, info_hash, mods, "auto_importer")
           end
           #if has row and confirmed mods, not a correction, assumed multivolume, just move to correct place
-          Version.update_row(ctsurn, info_hash, mods, "auto_importer")
+          Version.update_row(ctsurn, label, description, "auto_importer")
           modspath = create_mods_path(ctsurn)                           
-          move_file(modspath, mods_xml)     
+          move_file(modspath, mods_xml)
+          #remove the successfully imported file from catalog_pending
+          FileUtils.rm(file_path)     
         else
           if vers.length == 0
             #has a ctsurn but no cite row, for whatever reason, needs to be added
             info_hash = find_basic_info(mods_xml, mods)           
             if info_hash
               add_to_cite_tables(info_hash, mods_xml)
+              #add to versions table
+              puts "going into add version"
+              add_to_vers_table(info_hash, mods_xml)
+              #remove the successfully imported file from catalog_pending
+              FileUtils.rm(file_path)
             end
           else
             message = "For file #{file_path}: has more than one of the same cts_urn"
@@ -295,9 +301,10 @@ class PendingRecordImporter
 
   def split_constituents(mods_xml, file_path)
     #create a new mods file for each constituent item
- 
+    
     const_nodes = mods_xml.search("//mods:relatedItem[@type='constituent']")
     const_nodes.each_with_index do |const, i|
+
       builder = Nokogiri::XML::Builder.new(:encoding => 'UTF-8') do |xml|
         xml['mods'].mods('xmlns:mods' => 'http://www.loc.gov/mods/v3') {
           xml['mods'].relatedItem(:type => 'host')

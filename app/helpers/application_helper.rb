@@ -54,9 +54,8 @@ module ApplicationHelper
 
   def find_basic_info(xml_record, file_path)
     begin
-      #a regex ugly enough that only its mother could love it, 
-      #all to get a file name that I had earlier but cleverly turned into the path that I needed then...
-      f_n = file_path[/(\/[a-zA-Z0-9\s\.\(\)-]+)?\.xml/]
+      #get a file name that I had earlier but cleverly turned into the path that I needed then...
+      f_n = file_path[/(\/[\w\s\.\(\)-]+)?\.xml/]
       id, alt_ids = find_rec_id(xml_record, file_path, f_n)
       #this and the find_rec_id will need to be updated to accommodate different ids
       unless id =~ /lccn/i
@@ -106,7 +105,7 @@ module ApplicationHelper
           end
 
           work_row = Work.find_by_id(w_id)        
-          orig_lang = work_row ? work_row.orig_lang : lit_abbr
+          orig_lang = work_row.orig_lang ? work_row.orig_lang : lit_abbr
           vers_langs = []
           xml_record.search("/mods:mods/mods:relatedItem/mods:language").each do |x|
             attri = x.attribute("objectPart")
@@ -203,13 +202,23 @@ module ApplicationHelper
   def find_rec_id(xml_record, file_path, f_n)
 
     begin
+
       ids = f_n =~ /mads/ ? xml_record.search("/mads:mads/mads:identifier") : xml_record.search("/mods:mods/mods:identifier")
       found_id = nil
       alt_ids = []
 
       #parsing found ids, take tlg or phi over stoa unless there is an empty string or "none"
       ids.each do |node|
-    
+
+        #this is a stopgap until we have a procedure for assigning ids to commentaries
+        if node.attribute('displayLabel')
+          val = node.attribute('displayLabel').value
+          if val == 'isCommentaryOn'
+            message = "#{f_n} is a commentary, saving for another time"
+            error_handler(message)
+            return
+          end
+        end
         id = clean_id(node)
         
         unless id == "none" || id == "" || id =~ /0000|\D000$/ || id =~ /\?/ || id =~ /urn:cts/
@@ -331,7 +340,7 @@ module ApplicationHelper
               id = "VIAF" + id[/\d+$/] if id =~ /viaf/
               id = "LCCN " + id[/(n|nr|nb|no)\s+\d+/] if id =~ /(n|nr)\s+\d+/
               #have abo ids to account for
-              if id =~ /Perseus:abo/ && id !~ /ltan/
+              if id =~ /Perseus:abo/ && id !~ /ltan|bede/
                 id_parts = id.split(",")
                 id_type = id_parts[0].split(":")[2]
                 id = id_type + id_parts[1] + "." + id_type + id_parts[2]
