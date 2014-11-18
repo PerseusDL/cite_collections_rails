@@ -6,7 +6,7 @@ class CreateAuthors < ActiveRecord::Migration
       t.string :canonical_id
       t.string :mads_file
       t.string :alt_ids
-      t.string :related_works
+      t.text :related_works
       t.string :urn_status
       t.string :redirect_to
       t.string :created_by
