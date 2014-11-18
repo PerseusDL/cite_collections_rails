@@ -25,8 +25,8 @@ class PendingRecordImporter
     mods_import(pending_mods)
 
     #remove all the now empty directories, leaving only the files that encountered errors
-    Dir["#{pending_mads}/**/"].reverse_each { |d| Dir.rmdir d if Dir.entries(d).size == 2 }
-    Dir["#{pending_mods}/**/"].reverse_each { |d| Dir.rmdir d if Dir.entries(d).size == 2 }
+    delete_dirs(pending_mads)
+    delete_dirs(pending_mods)
   end
 
   def mads_import(pending_mads)

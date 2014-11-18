@@ -104,8 +104,10 @@ module ApplicationHelper
             end
           end
 
-          work_row = Work.find_by_id(w_id)        
-          orig_lang = work_row.orig_lang ? work_row.orig_lang : lit_abbr
+          work_row = Work.find_by_id(w_id)   
+          if work_row     
+            orig_lang = work_row.orig_lang ? work_row.orig_lang : lit_abbr
+          end
           vers_langs = []
           xml_record.search("/mods:mods/mods:relatedItem/mods:language").each do |x|
             attri = x.attribute("objectPart")
@@ -376,11 +378,11 @@ module ApplicationHelper
     #`mv "#{file_path}" "#{BASE_DIR}/catalog_pending/errors/#{f_n}"`
   end
 
-#for testing new paths
-  def test_run(message, values)
-    test_file = File.open("#{BASE_DIR}/catalog_pending/test_run#{Date.today}.txt", 'a')
-    test_file << "#{message}\n#{values}\n\n"
-    test_file.close
+  def delete_dirs(pending)
+    Dir["#{pending}/**/"].reverse_each do |d|
+      File.delete("#{d}.DS_Store") if File.exists?("#{d}.DS_Store")
+      Dir.rmdir d if Dir.entries(d).size == 2 
+    end
   end
 
 end
