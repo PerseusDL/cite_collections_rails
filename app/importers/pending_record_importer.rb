@@ -91,14 +91,16 @@ class PendingRecordImporter
       has_cts = mods_xml.search("/mods:mods/mods:identifier[@type='ctsurn']")
       unless has_cts.empty? || has_cts.inner_text == ""
         #record already has a cts urn, could be added mods or multivolume record
+        #also need to check to make sure the ctsurn is in the correct format, doesn't just give a work urn
         ctsurn = has_cts.inner_text
-        vers = Version.find_by_cts(ctsurn)            
-        if vers.length == 1 
-          v_obj = vers[0]
+        vers = Version.find_by_cts(ctsurn)  
+        same = nil
+        vers.each {|v| same = ((v.version == ctsurn && v.urn_status == "published") ? v : nil) if v}
+        if same
           label, description = create_label_desc(mods_xml)
-          if v_obj.has_mods == "false"
+          if same.has_mods == "false"
             #has cite row, lacking a mods, update accordingly 
-            Version.update(v_obj.id, {:has_mods => "true", :edited_by => "auto_importer"})
+            Version.update(same.id, {:has_mods => "true", :edited_by => "auto_importer"})
           end
           #if has row and confirmed mods, not a correction, assumed multivolume, just move to correct place
           Version.update_row(ctsurn, label, description, "auto_importer")
@@ -107,20 +109,15 @@ class PendingRecordImporter
           #remove the successfully imported file from catalog_pending
           FileUtils.rm(file_path)     
         else
-          if vers.length == 0
-            #has a ctsurn but no cite row, for whatever reason, needs to be added
-            info_hash = find_basic_info(mods_xml, mods)           
-            if info_hash
-              add_to_cite_tables(info_hash, mods_xml)
-              #add to versions table
-              puts "going into add version"
-              add_to_vers_table(info_hash, mods_xml)
-              #remove the successfully imported file from catalog_pending
-              FileUtils.rm(file_path)
-            end
-          else
-            message = "For file #{file_path}: has more than one of the same cts_urn"
-            error_handler(message, file_path, ctsurn)
+          #has a ctsurn but no cite row, for whatever reason, needs to be added
+          info_hash = find_basic_info(mods_xml, mods)           
+          if info_hash
+            add_to_cite_tables(info_hash, mods_xml)
+            #add to versions table
+            puts "going into add version"
+            add_to_vers_table(info_hash, mods_xml)
+            #remove the successfully imported file from catalog_pending
+            FileUtils.rm(file_path)
           end
         end
       else

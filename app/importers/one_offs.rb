@@ -39,30 +39,32 @@ class OneOffs
   def mads_rel_works
     auths = Author.all
     auths.each do |auth|
-      
-      works = []
-      mads_xml = get_xml("#{BASE_DIR}/catalog_data/mads/#{auth.mads_file}")
-      ns = mads_xml.collect_namespaces
-      rel_works_nodes = mads_xml.xpath("//mads:extension/identifier", ns)
-      unless rel_works_nodes.empty?
-        begin
-          rel_works_nodes.each do |node|
-            if node.attribute("type")
-              id = clean_id(node)
-              works << id
-            else
-              puts "Error for #{auth.urn}, no type for rel work id in MADS"
-              next
+      if auth.urn_status == "published"
+        works = []
+        mads_xml = get_xml("#{BASE_DIR}/catalog_data/mads/#{auth.mads_file}")
+        ns = mads_xml.collect_namespaces
+        rel_works_nodes = mads_xml.xpath("//mads:extension/identifier", ns)
+        unless rel_works_nodes.empty?
+          begin
+            rel_works_nodes.each do |node|
+              if node.attribute("type")
+                id = clean_id(node)
+                works << id
+              else
+                puts "Error for #{auth.urn}, no type for rel work id in MADS"
+                next
+              end
             end
-          end
-          w_list = works.join(';')
-          unless w_list == auth.related_works
-            auth.related_works = w_list
+            rw_list = auth.related_works.split(';')
+            works.delete_if {|w| rw_list.include?(w)}
+            rw_list.concat(works)
+            auth.related_works = rw_list.join(';')
             auth.edited_by = "related_work_finder"
             auth.save
+            
+          rescue
+            puts "Error for #{auth.urn}, #{$!}"
           end
-        rescue
-          puts "Error for #{auth.urn}, #{$!}"
         end
       end
     end 

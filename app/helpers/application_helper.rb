@@ -226,7 +226,7 @@ module ApplicationHelper
         unless id == "none" || id == "" || id =~ /0000|\D000$/ || id =~ /\?/ || id =~ /urn:cts/
           alt_ids << id
 
-          if id =~ /tlg|phi|stoa|lccn|viaf/i #!!will need to expand this to other standards
+          if id =~ /tlg|phi|stoa|lccn|viaf|mrurn/i #!!will need to expand this to other standards
             if found_id =~ /tlg|phi|stoa/
               #skip, having a hell of a time making it work with 'unless'
             else
@@ -319,7 +319,7 @@ module ApplicationHelper
     if node.attribute('type')
       val = node.attribute('type').value
       if val
-        id = node.inner_text
+        id = node.inner_text.strip
         unless id == "none" || id == "" || id =~ /\?/
           #stoas only need the - removed
           if id =~/(stoa\d+[a-z]*-|stoa\d+[a-z]*)/
@@ -359,10 +359,12 @@ module ApplicationHelper
     empty_test = nodes.class == "Nokogiri::XML::NodeSet" ? nodes.empty? : nodes.blank?
     unless empty_test
       cleaner = ""
-      nodes.children.each do |x| 
+      nodes.children.each do |x|
         cleaner << x.inner_text + sep
+        #this step removes any XML escaped characters, don't know why parse doesn't do it
+        even_cleaner = Nokogiri::XML.fragment(cleaner).inner_text
       end
-      clean = cleaner.gsub(/\s+#{sep}|\s{2, 5}|#{sep}$/, " ").strip
+      clean = even_cleaner.gsub(/\s+#{sep}|\s{2, 5}|#{sep}$/, " ").strip
       return clean
     else
       return ""

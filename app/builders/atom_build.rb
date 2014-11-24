@@ -71,17 +71,20 @@ class AtomBuild
           work_marker = find_node("//cts:textgroup", work_xml)
           work_builder = add_work_node(work_marker)
 
-          mads_cts = Author.find(:all, :conditions => ["canonical_id = ?", @tg_id])
+          mads_cts = Author.find(:all, :conditions => ["related_works rlike ?", @w_id])
           mads_num = 1
           @mads_arr =[]
           unless mads_cts.empty?
-            mads_cts.each do |author|          
-              mads_path  = author.mads_file
-              mads_xml = get_xml("#{catalog_dir}/mads/#{mads_path}")
-              mads_urn = author.canonical_id
-              @mads_arr << [mads_urn, mads_num, mads_path, mads_xml]
-              mads_num += 1            
+            mads_cts.each do |author| 
+              if author.urn_status == "published"         
+                mads_path  = author.mads_file
+                mads_xml = get_xml("#{catalog_dir}/mads/#{mads_path}")
+                mads_urn = author.canonical_id
+                @mads_arr << [mads_urn, mads_num, mads_path, mads_xml]
+                mads_num += 1  
+              end          
             end
+
           end
 
           #grab all mods files for the current work and iterate through
@@ -110,18 +113,7 @@ class AtomBuild
 
                     #open the mods file once we have it
                     mods_xml = get_xml("#{work_mods_dir}/#{sub_dir}/#{m_f}") if m_f =~ /\.xml/
-                    #if it is a perseus version, get the relevant info from the perseus_xml
-                    if m_f =~ /perseus/ 
-                      #open the perseus cts file
-                      perseus_xml = get_xml("#{catalog_dir}/perseus/perseuscts.xml")
-                      #have to remove the namespaces or it is impossible to find anything with xpath
-                      perseus_xml.remove_namespaces!
-                      ed_node = perseus_xml.search("#{ver_type}[@urn='#{@ver_urn}']") 
-                      #this is accounting for new epidoc editions that don't appear in the perseus xml file
-                      ed_node = nil if ed_node.empty?
-                    else
-                      ed_node = nil
-                    end
+                    
                     #TO DO: need to add a re assignment of @ver_urn if more than one mods for an ed?
                     label, description = create_label_desc (mods_xml)
                     
@@ -130,8 +122,7 @@ class AtomBuild
                       "label" => label,
                       "description" => description,
                       "lang" => @w_lang,
-                      "type" =>ver_type,
-                      "perseus_info" => ed_node
+                      "type" =>ver_type
                     }
                     
                     add_ver_node(params)
@@ -176,7 +167,7 @@ class AtomBuild
       end
       puts "Feed build started at #{st}"
     rescue Exception => e
-      puts "Something went wrong! #{$!}"
+      puts "Something went wrong for work_row #{work_row}! #{$!}"
       error_file << "#{$!}\n#{e.backtrace}\n\n"
       error_file.close
       error_file = File.open("#{feed_directories}/errors.txt", 'a')
@@ -312,7 +303,7 @@ class AtomBuild
 
   def add_ver_node(params)
     #params hash: "docs" => [tg_builder, work_builder, ver_builder], "label" => label, "description" => description,
-    #             "lang" => orig_lang, "type" =>ver_type, "perseus_info" => ed_node
+    #             "lang" => orig_lang, "type" =>ver_type
     params["docs"].each do |doc|
       node = find_node("//cts:work", doc.doc, true)
       builder = Nokogiri::XML::Builder.with(node) do |feed|
