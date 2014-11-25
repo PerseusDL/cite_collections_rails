@@ -51,10 +51,9 @@ module Api
 
     def search
       received = params.permit(:urn, :textgroup, :groupname_eng, :has_mads, :mads_possible, :notes, :urn_status, :redirect_to, :created_by, :edited_by)
-      query_string = ""
-      params_string = received.values.join(", ")
-      received.each {|key, value| query_string << (query_string.empty? ? "#{key} RLIKE ?" : " AND #{key} RLIKE ?")}
-      @response = Textgroup.where(query_string, params_string)
+      query = []
+      received.each  {|k, v| query << "#{k} rlike #{ActiveRecord::Base.sanitize("#{v}")}"}
+      @response = Textgroup.where(query.join(" AND "))
       respond_with(@response, except: :id)
     end
 

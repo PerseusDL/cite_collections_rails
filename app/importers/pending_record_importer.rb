@@ -219,7 +219,11 @@ class PendingRecordImporter
             w_o_cts = info_hash[:w_id][/\w+\.\w+$/]
             s_rel_w = cite_auth.related_works
             unless s_rel_w =~ /#{w_o_cts}/
-              rel_w = (s_rel_w == nil || s_rel_w.empty?) ? w_o_cts : (s_rel_w << ";#{w_o_cts}")
+              if (s_rel_w == nil || s_rel_w.empty?) 
+                rel_w = w_o_cts 
+              else
+                rel_w = "#{s_rel_w};#{w_o_cts}"
+              end
               Author.update(cite_auth.id, {:related_works => rel_w})
             end
           end

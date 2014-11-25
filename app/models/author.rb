@@ -17,7 +17,7 @@ class Author < ActiveRecord::Base
 
   def self.get_by_id(id)
     found_id = Author.find(:all, :conditions => ["canonical_id = ?", id]) 
-    found_id = Author.find(:all, :conditions => ["alt_ids rlike ?", id]) unless found_id
+    found_id = Author.find(:all, :conditions => ["alt_ids rlike ?", id]) if found_id.empty?
     #returns an array of Author(s)
     return found_id
   end

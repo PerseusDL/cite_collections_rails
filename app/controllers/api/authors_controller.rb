@@ -50,8 +50,15 @@ module Api
     end
 
     def search
-      received = params.permit(:urn, :authority_name, :canonical_id, :mads_file, :alt_ids, :related_works, :urn_status, :redirect_to, :created_by, :edited_by)
-      @response = Author.where(received)
+      received = params.permit(:urn, :authority_name, :canonical_id, :mads_file, :alt_ids, :related_works, :urn_status, :redirect_to, :created_by, :edited_by) 
+      query = []
+      received.each {|k, v| query << "#{k} rlike #{ActiveRecord::Base.sanitize("#{v}")}"}
+      if params.key?("canonical_id") && params.key?("alt_ids")
+        query_string = query.join(" OR ")
+      else
+        query_string = query.join(" AND ")
+      end
+      @response = Author.where(query_string)
       respond_with(@response, except: :id)
     end
 

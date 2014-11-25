@@ -55,3 +55,19 @@ task :remove_cts_urn => :environment do
     end
   end
 end
+
+desc "make sure all catalog data is in the cite tables"
+task :catalog_data_double_check => :environment do
+  mods = Dir.glob("/#{BASE_DIR}/catalog_data/mods/**/*.xml")
+  mads = Dir.glob("/#{BASE_DIR}/catalog_data/mads/**/*.xml")
+  of = OneOffs.new
+  mads.each do |file_name|
+    f_n = file_name[/(\/[\w\s\.\(\)-]+)?\.xml/]
+    if f_n =~ /mads\.xml|madsxml/
+      of.catalog_data_double_check(file_name)
+    end
+  end
+  mods.each do |file_name|
+    of.catalog_data_double_check(file_name)
+  end
+end

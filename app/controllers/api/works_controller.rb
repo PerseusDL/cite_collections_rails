@@ -52,10 +52,9 @@ module Api
     def search
       received = params.permit(:urn, :work, :title_eng, :orig_lang, :notes, :urn_status, :redirect_to, :created_by, :edited_by)
       #this allows for a bit of fuzzy searching, could input "tlg0012" and get back all works for it     
-      query_string = ""
-      params_string = received.values.join(", ")
-      received.each {|key, value| query_string << (query_string.empty? ? "#{key} RLIKE ?" : " AND #{key} RLIKE ?")}
-      @response = Work.where(query_string, params_string)
+      query = []
+      received.each  {|k, v| query << "#{k} rlike #{ActiveRecord::Base.sanitize("#{v}")}"}
+      @response = Work.where(query.join(" AND "))
       respond_with(@response, except: :id)
     end
 

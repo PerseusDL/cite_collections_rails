@@ -24,19 +24,19 @@ class AtomBuild
 
 
       #create the feed directory if it doesn't exist
-      feed_directories = "#{BASE_DIR}/FRBR.feeds.all.#{today_date}"
-      unless File.directory?(feed_directories)
-        Dir.mkdir(feed_directories)
-        Dir.mkdir("#{feed_directories}/greekLit")
-        Dir.mkdir("#{feed_directories}/latinLit")
+      @feed_directories = "#{BASE_DIR}/FRBR.feeds.all.#{today_date}"
+      unless File.directory?(@feed_directories)
+        Dir.mkdir(@feed_directories)
+        Dir.mkdir("#{@feed_directories}/greekLit")
+        Dir.mkdir("#{@feed_directories}/latinLit")
       end
 
-      @mads_directory = "#{feed_directories}/mads"
+      @mads_directory = "#{@feed_directories}/mads"
       unless File.directory?(@mads_directory)
         Dir.mkdir(@mads_directory)
       end
 
-      error_file = File.new("#{feed_directories}/errors.txt", 'w')
+      @error_file = File.new("#{@feed_directories}/errors.txt", 'w')
 
      
       
@@ -52,10 +52,10 @@ class AtomBuild
           @tg_name = Textgroup.find_by_id(@tg_urn).groupname_eng
           @w_id = @w_urn[/\w+\d+[a-z0-9]*$/]
            
-          tg_dir = "#{feed_directories}/#{@lit_type}/#{@tg_id}"
+          tg_dir = "#{@feed_directories}/#{@lit_type}/#{@tg_id}"
           unless File.directory?(tg_dir)
             #create the tg_feed and populate the header          
-            make_dir_and_feed(tg_dir, "#{feed_directories}/#{@lit_type}", "textgroup")         
+            make_dir_and_feed(tg_dir, "#{@feed_directories}/#{@lit_type}", "textgroup")         
           end
 
           #open tg_feed for current state and make sure that the formatting will be nice
@@ -66,12 +66,12 @@ class AtomBuild
 
           #create the work_feed and open the file for proper formatting of info to be added
           work_dir = "#{tg_dir}/#{@w_id}"
-          make_dir_and_feed(work_dir, feed_directories, "work")
-          work_xml = get_xml("#{feed_directories}/#{@tg_id}.#{@w_id}.atom.xml")
+          make_dir_and_feed(work_dir, @feed_directories, "work")
+          work_xml = get_xml("#{@feed_directories}/#{@tg_id}.#{@w_id}.atom.xml")
           work_marker = find_node("//cts:textgroup", work_xml)
           work_builder = add_work_node(work_marker)
 
-          mads_cts = Author.find(:all, :conditions => ["related_works rlike ?", @w_id])
+          mads_cts = Author.find(:all, :conditions => ["canonical_id = ?", @tg_id])
           mads_num = 1
           @mads_arr =[]
           unless mads_cts.empty?
@@ -148,29 +148,29 @@ class AtomBuild
               tg_mads = build_mads_head(tg_builder)
               add_mads_node(tg_builder, tg_mads)
             end
-            tg_file = File.open("#{feed_directories}/#{@lit_type}/#{@tg_id}.atom.xml", 'w')
+            tg_file = File.open("#{@feed_directories}/#{@lit_type}/#{@tg_id}.atom.xml", 'w')
             tg_file << tg_builder.to_xml
             tg_file.close
 
             work_mads = build_mads_head(work_builder)
             add_mads_node(work_builder, work_mads)
-            work_file = File.open("#{feed_directories}/#{@tg_id}.#{@w_id}.atom.xml", 'w')
+            work_file = File.open("#{@feed_directories}/#{@tg_id}.#{@w_id}.atom.xml", 'w')
             work_file << work_builder.to_xml
             work_file.close
           end
         rescue Exception => e
           puts "Something went wrong! #{$!}"
-          error_file << "#{$!}\n#{e.backtrace}\n\n"
-          error_file.close
-          error_file = File.open("#{feed_directories}/errors.txt", 'a')
+          @error_file << "#{$!}\n#{e.backtrace}\n\n"
+          @error_file.close
+          @error_file = File.open("#{@feed_directories}/errors.txt", 'a')
         end
       end
       puts "Feed build started at #{st}"
     rescue Exception => e
       puts "Something went wrong for work_row #{work_row}! #{$!}"
-      error_file << "#{$!}\n#{e.backtrace}\n\n"
-      error_file.close
-      error_file = File.open("#{feed_directories}/errors.txt", 'a')
+      @error_file << "#{$!}\n#{e.backtrace}\n\n"
+      @error_file.close
+      @error_file = File.open("#{@feed_directories}/errors.txt", 'a')
     end
     puts "Feed build completed at #{Time.now}"
   end
@@ -336,23 +336,30 @@ class AtomBuild
 
 
   def add_mods_node(builders, mods_head)
-    builders.each do |builder|
+    begin
+      builders.each do |builder|
+        if has_mads?(builder)
+          first_mads = builder.doc.xpath("//atom:link[@href='http://data.perseus.org/collections/#{@mads_arr[0][0]}']")
+          right_entry = first_mads[0].parent
+          right_entry.add_previous_sibling(find_node("//atom:entry", mods_head.doc).clone)
+        else
+          builder.doc.root.add_child(find_node("//atom:entry", mods_head.doc).clone)  
+          
+          #for some reason the mods prefix definition is removed when adding perseus records, have to add it back
+          if @ver_id =~ /perseus/
+            perseus_mods = find_node("//atom:entry/atom:content", builder.doc).child
+            perseus_mods.add_namespace_definition('mods', 'http://www.loc.gov/mods/v3')
+          end
 
-      if has_mads?(builder)
-        first_mads = builder.doc.xpath("//atom:link[@href='http://data.perseus.org/collections/#{@mads_arr[0][0]}']")
-        right_entry = first_mads[0].parent
-        right_entry.add_previous_sibling(find_node("//atom:entry", mods_head.doc).clone)
-      else
-        builder.doc.root.add_child(find_node("//atom:entry", mods_head.doc).clone)  
-        
-        #for some reason the mods prefix definition is removed when adding perseus records, have to add it back
-        if @ver_id =~ /perseus/
-          perseus_mods = find_node("//atom:entry/atom:content", builder.doc).child
-          perseus_mods.add_namespace_definition('mods', 'http://www.loc.gov/mods/v3')
         end
-
       end
+    rescue Exception => e
+      puts "Something went wrong for #{@w_urn}! #{$!}"
+      @error_file << "#{$!}\n#{e.backtrace}\n\n"
+      @error_file.close
+      @error_file = File.open("#{@feed_directories}/errors.txt", 'a')
     end
+
   end
 
 

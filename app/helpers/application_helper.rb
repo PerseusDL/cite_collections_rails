@@ -140,18 +140,26 @@ module ApplicationHelper
         return info_hash       
       end
     rescue Exception => e
-      file_name = file_path[/(\/[a-zA-Z0-9\.\(\)]+)?\.xml/]
-      message = "For file #{file_name}: something went wrong, #{$!} #{e.backtrace}"
-      error_handler(message, file_path, file_name)
+      message = "For file #{file_path}: something went wrong, #{$!} #{e.backtrace}"
+      error_handler(message)
       return nil
     end
   end
 
   def find_rec_author(xml_record, file_path, f_n)
     begin
+      ns = xml_record.collect_namespaces
       #grab mads authority name
       if f_n =~ /mads/ 
-        name_ns = xml_record.search("/mads:mads/mads:authority/mads:name/mads:namePart")
+        #handles both regular mads files and those for a work, e.g. Scriptores Historiae Augusta
+        authority_names = xml_record.search("/mads:mads/mads:authority", ns)
+        if authority_names.empty?
+          #so far this is only the Appendix Vergiliana
+          name_ns = xml_record.search("mads:mads/mads:variant", ns)[0]
+        else
+          name_ns = authority_names.search("mads:name/mads:namePart", ns)
+          name_ns = authority_names.search("mads:titleInfo/mads:title", ns) if name_ns.empty?
+        end
         n = [] 
         unless name_ns.empty?
           name_ns.each {|x| n << x.inner_text}
@@ -166,13 +174,13 @@ module ApplicationHelper
       #grab the name with the "creator" role      
         names = {}
      
-        name_ns = xml_record.search("/mods:mods/mods:name")
+        name_ns = xml_record.search("/mods:mods/mods:name", ns)
         unless name_ns.empty?
           name_ns.each do |node|
-            a_type = node.search("./mods:role/mods:roleTerm").inner_text
+            a_type = node.search("./mods:role/mods:roleTerm", ns).inner_text
             if a_type =~ /creator$|author/
               n = []
-              node.search("./mods:namePart").each {|x| n << x.inner_text}
+              node.search("./mods:namePart", ns).each {|x| n << x.inner_text}
               names[a_type] = n.join(" ")             
             end
           end
@@ -211,7 +219,6 @@ module ApplicationHelper
 
       #parsing found ids, take tlg or phi over stoa unless there is an empty string or "none"
       ids.each do |node|
-
         #this is a stopgap until we have a procedure for assigning ids to commentaries
         if node.attribute('displayLabel')
           val = node.attribute('displayLabel').value
@@ -219,6 +226,11 @@ module ApplicationHelper
             message = "#{f_n} is a commentary, saving for another time"
             error_handler(message)
             return
+          elsif val == "Pseudo"
+            #Pseudo author in main author MADS, need to add a separate cite row
+            id = clean_id(node)
+            add_pseudo_auth(id, xml_record, file_path, f_n)
+            next
           end
         end
         id = clean_id(node)
@@ -288,6 +300,21 @@ module ApplicationHelper
     return label, description
   end
 
+  def add_pseudo_auth(id, xml_record, file_path, f_n)
+    auth_arr = []
+    auth_arr << Author.generate_urn
+    auth_arr << find_rec_author(xml_record, file_path, f_n)
+    auth_arr << id
+    auth_arr << file_path[/PrimaryAuthors.+/]
+    alt_ids = xml_record.search("/mads:mads/mads:identifier[not(@type='Pseudo')]")
+    auth_arr << alt_ids.join(";")
+    rel_works = xml_record.search("/mads:mads/mads:extension/mads:identifier")
+    w_match = rel_works.collect {|rw| rw =~ id} if rel_works
+    auth_arr << w_match.join(";")
+    auth_arr << ["published", "", "auto_import", ""]
+    Author.add_cite_row(auth_arr)    
+  end
+
   def add_mods_prefix(mods_xml)    
     mods_xml.root.add_namespace_definition("mods", "http://www.loc.gov/mods/v3")
     mods_xml.root.name = "mods:#{mods_xml.root.name}"
@@ -332,9 +359,15 @@ module ApplicationHelper
                 #add in tlgs or phis
                 id = id_step.map {|x| val + x}.join(".")
               else
-                #I hate that the ids aren't padded with 0s...           
+                #I hate that the ids aren't always padded with 0s...           
                 id_step = id.split(".")
-                id_step.each_with_index {|x, i| i == 0 ? id_step[0] = sprintf("%04d", x.to_i) : id_step[1] = sprintf("%03d", x.to_i)}
+                id_step.each_with_index do |x, i| 
+                  if i == 0
+                    id_step[0] = sprintf("%04d", x.to_i) if id_step[0].length < 4 
+                  else
+                    id_step[1] = sprintf("%03d", x.to_i) if id_step[1].length < 3
+                  end
+                end
                 #add in tlgs or phis
                 id = id_step.map {|x| val + x.to_s}.join(".") 
               end             
@@ -345,13 +378,20 @@ module ApplicationHelper
               if id =~ /Perseus:abo/ && id !~ /ltan|bede/
                 id_parts = id.split(",")
                 id_type = id_parts[0].split(":")[2]
-                id = id_type + id_parts[1] + "." + id_type + id_parts[2]
+                if id_parts.length < 3
+                  id = id_type + id_parts[1]
+                else
+                  id = id_type + id_parts[1] + "." + id_type + id_parts[2]
+                end
               end
             end
           end
         end
         return id
       end
+    elsif node.inner_text =~ /Perseus:text/
+      id = node.inner_text.strip
+      return id
     end
   end
 
@@ -359,6 +399,7 @@ module ApplicationHelper
     empty_test = nodes.class == "Nokogiri::XML::NodeSet" ? nodes.empty? : nodes.blank?
     unless empty_test
       cleaner = ""
+      even_cleaner = ""
       nodes.children.each do |x|
         cleaner << x.inner_text + sep
         #this step removes any XML escaped characters, don't know why parse doesn't do it
