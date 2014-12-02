@@ -74,8 +74,25 @@ class OneOffs
   def catalog_data_double_check(file_path)
     begin
       @error_report = File.open("#{BASE_DIR}/catalog_pending/errors/error_log#{Date.today}.txt", 'w')
-      editor = "auto_import"
+      editor = "double_check"
       xml = get_xml(file_path)
+      if file_path =~ /mods/
+        namespaces = xml.namespaces
+        unless namespaces.include?("xmlns:mods")
+          add_mods_prefix(xml)
+          File.open(file_path, "w"){|file| file << xml}
+          new_xml = get_xml(file_path)
+          it_worked = new_xml.search("/mods:mods/mods:titleInfo")
+          if it_worked == nil || it_worked.empty?
+            message = "For file #{file_path}: tried adding prefix to mods but something went wrong, please check"
+            error_handler(message)
+            
+          else
+            xml = new_xml
+          end
+        end
+      end
+
       info_hash = find_basic_info(xml, file_path)
       if info_hash
         if file_path =~ /mads/ 

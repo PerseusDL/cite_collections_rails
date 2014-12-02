@@ -76,7 +76,8 @@ module ApplicationHelper
       if id
         #search for and compare author values
         auth_name = find_rec_author(xml_record, file_path, f_n)
-        auth_nset = Author.get_by_id(canon_id)      
+        auth_nset = Author.get_by_id(canon_id) 
+        auth_nset = Author.get_by_name(auth_name) if auth_nset.empty?     
         tg_nset = Textgroup.find_by_id(a_id)   
         
         info_hash = { :file_name => f_n,
@@ -126,15 +127,14 @@ module ApplicationHelper
                         :v_langs => vers_langs)
         else
           #related works, find <mads:description>List of related work identifiers and grab siblings
-          extensions = xml_record.search("/mads:mads/mads:extension/mads:description")
-          extensions.each do |ex|
-            if ex.inner_text == "List of related work identifiers"
-              related_works = []
-              ex.parent.children.each {|x| related_works << clean_id(x) if x.name == "identifier"}
-              info_hash.merge!(:related_works => related_works.join(';'))
-              break
+          extensions = xml_record.search("/mads:mads/mads:extension")
+          related_works = []
+          extensions.children.each do |node|           
+            unless node.inner_text =~ /related work identifiers/
+              related_works << clean_id(node) if node.name == "identifier"
             end
           end
+          info_hash.merge!(:related_works => related_works.join(';'))
         end
         
         return info_hash       
@@ -152,13 +152,13 @@ module ApplicationHelper
       #grab mads authority name
       if f_n =~ /mads/ 
         #handles both regular mads files and those for a work, e.g. Scriptores Historiae Augusta
-        authority_names = xml_record.search("/mads:mads/mads:authority", ns)
+        authority_names = xml_record.search(".//mads:mads/mads:authority", ns)
         if authority_names.empty?
           #so far this is only the Appendix Vergiliana
-          name_ns = xml_record.search("mads:mads/mads:variant", ns)[0]
+          name_ns = xml_record.search(".//mads:mads/mads:variant", ns)[0]
         else
-          name_ns = authority_names.search("mads:name/mads:namePart", ns)
-          name_ns = authority_names.search("mads:titleInfo/mads:title", ns) if name_ns.empty?
+          name_ns = authority_names.search(".//mads:name/mads:namePart", ns)
+          name_ns = authority_names.search(".//mads:titleInfo/mads:title", ns) if name_ns.empty?
         end
         n = [] 
         unless name_ns.empty?
@@ -216,6 +216,7 @@ module ApplicationHelper
       ids = f_n =~ /mads/ ? xml_record.search("/mads:mads/mads:identifier") : xml_record.search("/mods:mods/mods:identifier")
       found_id = nil
       alt_ids = []
+      main_type = ""
 
       #parsing found ids, take tlg or phi over stoa unless there is an empty string or "none"
       ids.each do |node|
@@ -235,11 +236,12 @@ module ApplicationHelper
         end
         id = clean_id(node)
         
-        unless id == "none" || id == "" || id =~ /0000|\D000$/ || id =~ /\?/ || id =~ /urn:cts/
-          alt_ids << id
-
+        unless id =~ /none/i || id == "" || id =~ /0000|\D000$/ || id =~ /\?/ || id =~ /urn:cts|urn:cite/
+          alt_ids << id         
           if id =~ /tlg|phi|stoa|lccn|viaf|mrurn/i #!!will need to expand this to other standards
-            if found_id =~ /tlg|phi|stoa/
+            if found_id =~ /stoa/ && id =~ /phi/
+              found_id = id
+            elsif found_id =~ /tlg|phi|stoa/                
               #skip, having a hell of a time making it work with 'unless'
             else
               found_id = id 
@@ -247,6 +249,7 @@ module ApplicationHelper
           end         
         end
       end
+
       #if no id found throw an error   
       unless found_id    
         message = "For file #{f_n} : Could not find a suitable id, please check 
@@ -353,7 +356,7 @@ module ApplicationHelper
             id = id.gsub('-', '.')      
           else
             if val =~ /tlg|phi/
-              if id =~ /\d+x\d+$/i #catching 0012X01 type of ids
+              if id =~ /^\d+x\d+$/i #catching 0012X01 type of ids
                 id_step = id.split(/x/i)
                 id_step[1]= "X"+id_step[1]
                 #add in tlgs or phis

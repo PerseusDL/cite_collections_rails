@@ -22,9 +22,15 @@ class Author < ActiveRecord::Base
     return found_id
   end
 
+  def self.get_by_name(name)
+    found_name = Author.find(:all, :conditions => ["authority_name = ?", name])
+    return found_name
+  end
+
   def self.update_row(info_hash, editor)
     info_hash[:cite_auth].each do |auth|
-      auth_hash = {}           
+      auth_hash = {}          
+      auth_hash[:canonical_id] = info_hash[:canon_id] if auth.canonical_id != info_hash[:canon_id] 
       auth_hash[:authority_name] = info_hash[:a_name] if auth.authority_name != info_hash[:a_name]
       auth_hash[:alt_ids] = info_hash[:alt_ids] if auth.alt_ids != info_hash[:alt_ids]
       auth_hash[:related_works] = info_hash[:related_works] if auth.related_works != info_hash[:related_works]

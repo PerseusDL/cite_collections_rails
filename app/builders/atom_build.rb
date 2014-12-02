@@ -51,7 +51,6 @@ class AtomBuild
           @tg_id = @tg_urn[/\w+\d{4}([a-z])?/]
           @tg_name = Textgroup.find_by_id(@tg_urn).groupname_eng
           @w_id = @w_urn[/\w+\d+[a-z0-9]*$/]
-           
           tg_dir = "#{@feed_directories}/#{@lit_type}/#{@tg_id}"
           unless File.directory?(tg_dir)
             #create the tg_feed and populate the header          
@@ -71,7 +70,7 @@ class AtomBuild
           work_marker = find_node("//cts:textgroup", work_xml)
           work_builder = add_work_node(work_marker)
 
-          mads_cts = Author.find(:all, :conditions => ["canonical_id = ?", @tg_id])
+          mads_cts = Author.get_by_id(@tg_id)
           mads_num = 1
           @mads_arr =[]
           unless mads_cts.empty?
