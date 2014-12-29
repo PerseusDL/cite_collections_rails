@@ -85,7 +85,7 @@ class OneOffs
           it_worked = new_xml.search("/mods:mods/mods:titleInfo")
           if it_worked == nil || it_worked.empty?
             message = "For file #{file_path}: tried adding prefix to mods but something went wrong, please check"
-            error_handler(message)
+            error_handler(message, true)
             
           else
             xml = new_xml
@@ -107,20 +107,20 @@ class OneOffs
         else
           unless info_hash[:cite_tg]
             if info_hash[:a_name]
-              if info_hash[:a_id]
+              if info_hash[:tg_id]
                 #no row for this textgroup, add a row
                 t_urn = Textgroup.generate_urn
-                t_values = ["#{t_urn}", "#{info_hash[:a_id]}", "#{info_hash[:a_name]}", "#{info_hash[:cite_auth] == nil}", 'true','', 'published', '', 'auto_importer','']
+                t_values = ["#{t_urn}", "#{info_hash[:tg_id]}", "#{info_hash[:a_name]}", "#{info_hash[:cite_auth] == nil}", 'true','', 'published', '', 'auto_importer','']
                 Textgroup.add_cite_row(t_values)
               else
                 #!!This will need to change once we establish how to coin urns for these sorts of authors
                 message = "LCCN id found in record, this is probably an editor, can not create textgroup"
-                error_handler(message, info_hash[:path], info_hash[:file_name])
+                error_handler(message, true)
                 return
               end
             else
               message = "No author name found in record, can not create textgroup"
-              error_handler(message, info_hash[:path], info_hash[:file_name])
+              error_handler(message, true)
               return
             end
           else

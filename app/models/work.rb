@@ -25,8 +25,11 @@ class Work < ActiveRecord::Base
     if work.title_eng != info_hash[:w_title]
       w_hash[:title_eng] = info_hash[:w_title]
       w_hash[:edited_by] = editor
-      Work.update(work.id, w_hash)
     end
+    unless work.orig_lang
+      w_hash[:orig_lang] = info_hash[:w_lang]
+    end
+    Work.update(work.id, w_hash) unless w_hash.empty?
   end
 
   def self.add_cite_row(v)

@@ -39,14 +39,14 @@ class ArabicRecordBuilder
     #
     # notes
     # 40REC_MISC  41REC_NOTE  42REC_OTHER_AUTHORS 43REC_MISC_INFO
-    byebug
-    @auth_authority = File.read("#{BASE_DIR}/arabic_authors.csv").split("\n")
+
+    @auth_authority = File.read("#{BASE_DIR}/arabic_records/arabic_authors.csv").split("\n")
     
     File.foreach(file) do |line|
       unless line =~ /record_uri/i
         line_arr = line.split("\t")
         xml_file, urn = build_mods_record(line_arr)       
-        f = File.new("#{BASE_DIR}/catalog_pending/mods/arabic/#{urn}.mods.xml", 'w')     
+        f = File.new("#{BASE_DIR}/arabic_records/#{urn}.mods.xml", 'w')     
         if xml_file
           f << xml_file
           f.close
@@ -155,11 +155,11 @@ class ArabicRecordBuilder
               title_string.split("::::").each_with_index do |title, i|
                 if i == 0
                   new_mods['mods'].titleInfo(:lang => 'ara'){
-                    new_mods['mods'].title(line_arr[19])
+                    new_mods['mods'].title(title)
                   } 
                 else
                   new_mods['mods'].titleInfo(:type => "alternative", :lang => 'ara'){
-                    new_mods['mods'].title(line_arr[19])
+                    new_mods['mods'].title(title)
                   } 
                 end
               end
@@ -231,7 +231,8 @@ class ArabicRecordBuilder
             }
 
             #origin info
-              unless line_arr[27] == "nodata"            
+              unless line_arr[27] == "nodata"
+                #byebug if mrurn =~ /#0204\.HishamKalbi\.JamharaAnsab\.Hathi/            
                 place, publisher, year = ed_info(line_arr[27])
               else
                 place = line_arr[31] == "nodata" ? "s.n." : line_arr[31] 
@@ -327,9 +328,9 @@ class ArabicRecordBuilder
         }
       end
 
-      return builder.to_xml, urn
-    rescue
-      puts "issue with #{urn}, #{$!}"
+      return builder.to_xml, urn.split(":").last
+    rescue Exception => e
+      puts "issue with #{urn}, #{$!}\n#{e.backtrace}"
       return nil, nil
     end
   end
@@ -347,30 +348,35 @@ class ArabicRecordBuilder
     # 15AUTHOR_NAME_TRSIM 16AUTHOR_NAME_AR      
 
     #directory catalog_pending/mads/#{authorname}/#{file}
-    mads_dir = "#{BASE_DIR}/catalog_pending/mads"
-    auth_csv = File.read("#{BASE_DIR}/arabic_authors.csv").split("\n")
-    
+    mads_dir = "#{BASE_DIR}/arabic_records/mads"
+    auth_csv = File.read("#{BASE_DIR}/arabic_records/arabic_authors.csv").split("\n")
     mads_cts = urn.split('.')[0]
     mads_mr = mrurn.split('.')[0..1].join('.')
+    work_cts = urn.split(':').last[/^\w+\.\w+/]
 
     i = auth_csv.index{|r| r =~ /#{mads_mr}/}
-    #need to double check that below is what I actually want
-    ar_auth_row = auth_csv[i].scan(/([^",]+)|"([^"]+)"|((?<=^|,)(?=,|$))/) #because I don't want to bother with the csv gem...
+    ar_auth_row = auth_csv[i].split("\t")
     auth_name =  line_arr[15]
-    auth_file_nm = auth_name.split(",")[0]
+    auth_file_nm = auth_name.split(",")[0].gsub("/", "_")
     auth_dir = "#{mads_dir}/#{auth_file_nm}" 
-    file_path = "#{auth_dir}/#{mads_cts}.mads.xml"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+    file_path = "#{auth_dir}/#{mads_cts.split(':').last}.mads.xml"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
 
     if File.directory?(auth_dir) and File.exists?(file_path)
       #directory and mads file exist, need to add the work id to relatedworks section
-      #open existing file
-      #find last related work node
-      #use builder with that node
       f_xml = get_xml(file_path)
-      rel_work_node = f_xml.xpath("//mads:extension/mads:description/mads:identifier")
-
-      builder = Nokogiri::XML::Builder.with() do |new_node|
-
+      rel_work_nodes = f_xml.xpath("//mads:extension/mads:identifier")
+      already_there = false
+      rel_work_nodes.each {|node| already_there = true if node.inner_text == work_cts}
+      unless already_there
+        n_id = Nokogiri::XML::Node.new "mads:identifier", f_xml
+        n_id.add_namespace_definition("mads", "http://www.loc.gov/mads/v2")
+        n_id.content = work_cts
+        n_id.set_attribute("type", "ctsurn")
+        rel_work_nodes.last.add_next_sibling(n_id)
+      
+        m_file = File.open(file_path, 'w')
+        m_file << f_xml
+        m_file.close
       end
 
     else
@@ -428,15 +434,16 @@ class ArabicRecordBuilder
             new_mads['mads'].extension{
               new_mads['mads'].description("List of related work identifiers")
               new_mads.identifier(:type => "ctsurn"){
-                new_mads.text(urn)
+                new_mads.text(work_cts)
               }
             }
         }
       end
+      f = File.open(file_path, "w")
+      f << builder.to_xml
+      f.close
     end
-    f = File.open(file_path, "w")
-    f << builder.to_xml
-    f.close
+    
   end
 
   def ctsurn_creation(mrurn, work_mrurn)
@@ -444,7 +451,7 @@ class ArabicRecordBuilder
     #be possible to look up the last urn in the table.
     #For now just creating a variable to carry the last assigned urn.
 
-    cts_file = File.open("#{BASE_DIR}/arabic_urns.txt", 'a+')
+    cts_file = File.open("#{BASE_DIR}/arabic_records/arabic_urns.txt", 'a+')
     cts_list = cts_file.read
     ms_suffix = mrurn =~ /MS\d+/ ? mrurn[/MS\d+/] : ""
     mrurnc = mrurn.sub(/\./, "")
@@ -463,10 +470,10 @@ class ArabicRecordBuilder
             cts = last_cts + (num + 1).to_s
           else
             #new lib edition
-            cts = "cts:urn:arabicLit:#{cts_ed}-ara1"
+            cts = "urn:cts:arabicLit:#{cts_ed}-ara1"
           end
         else
-          cts = "cts:urn:arabicLit:#{cts_ed}-ara1"
+          cts = "urn:cts:arabicLit:#{cts_ed}-ara1"
         end
         cts_file << "\n#{cts},#{mrurn}"
       else
@@ -474,7 +481,7 @@ class ArabicRecordBuilder
         cts = cts_list.scan(/^.+#{mrurn}$/).last.split(',')[0]
       end
     else
-      cts = "cts:urn:arabicLit:#{cts_ed}-ara1"
+      cts = "urn:cts:arabicLit:#{cts_ed}-ara1"
       cts_file << "#{cts},#{mrurn}"  
     end
     cts_file.close
@@ -508,7 +515,6 @@ class ArabicRecordBuilder
   end
 
   def name_and_date(full_name)
-    byebug
     name = full_name.split(/\(|\)/)
     if name[1] =~ /\d+/
       name_date = name.delete_at(1)
@@ -523,8 +529,9 @@ class ArabicRecordBuilder
     if cell =~ /.+\:.+[,:;]/
       p1 = cell.split(":")
       place = p1[0].strip
-      date = p1[1][/\[?\d+-?\s?(or|i. e.)*\s?\d*\]?\??/]
-      publisher = p1[1].gsub(/#{date}|,|\.|:|;/, "").strip
+      date = p1[1][/\[?\d+-?\s?(or|i. e.)*\s?\d*\??\]?/]
+      p1[1].gsub!("#{date}", "")
+      publisher = p1[1].gsub(/,|\.|:|;/, "").strip
     else
       if cell =~ /,|;/
         p1 = cell.split(/,|;/)

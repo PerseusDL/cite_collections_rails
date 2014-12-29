@@ -56,6 +56,8 @@ task :remove_cts_urn => :environment do
   end
 end
 
+
+#Never should use this again, was truly one time!
 desc "make sure all catalog data is in the cite tables"
 task :catalog_data_double_check => :environment do
   mods = Dir.glob("/#{BASE_DIR}/catalog_data/mods/**/*.xml")

@@ -15,14 +15,14 @@ module ApplicationHelper
 #create directory path
   def create_mods_path(ctsurn)  
     path_name = "#{BASE_DIR}/catalog_data/mods/"
-    ctsmain = ctsurn[/(greekLit|latinLit).+/]
+    ctsmain = ctsurn[/(greekLit|latinLit|arabicLit).+/]
     path_name << "#{ctsmain.gsub(/:|\./, "/")}"
     unless File.exists?(path_name)
       FileUtils.mkdir_p(path_name)
     end
     if File.exists?(path_name)
       Dir.chdir(path_name)
-      sansgl = ctsmain.gsub(/greekLit:|latinLit:/, "")
+      sansgl = ctsmain.gsub(/greekLit:|latinLit:|arabicLit:/, "")
       mods = Dir["#{sansgl}.*"]
       mods_num = 0
       mods.each {|x| mods_num = mods_num < x[/\d+\.xml/].chr.to_i ? x[/\d+\.xml/].chr.to_i : mods_num}
@@ -52,25 +52,28 @@ module ApplicationHelper
 
 #find things in the XML
 
-  def find_basic_info(xml_record, file_path)
+  def find_basic_info(xml_record, file_path, ctsurn=nil)
     begin
       #get a file name that I had earlier but cleverly turned into the path that I needed then...
       f_n = file_path[/(\/[\w\s\.\(\)-]+)?\.xml/]
       id, alt_ids = find_rec_id(xml_record, file_path, f_n)
+      #if a work level cts urn is provided in the record, default to that
+      if ctsurn
+        id = ctsurn
+      end
       #this and the find_rec_id will need to be updated to accommodate different ids
-      unless id =~ /lccn/i
-        lit_type = id =~ /tlg/ ? "greek" : "latin"
-        lit_abbr = lit_type == "greek" ? "grc" : "lat"
-        #for mads the w_id and a_id will be the same
-        w_id = id =~ /cts/ ? id[/urn:cts:\w+:\w+\d+[a-z]*\.\w+\d+[a-z0-9]*/] : "urn:cts:#{lit_type}Lit:#{id}"
-        if f_n =~ /mads/ && id =~ /cts/
-          a_id = id
-        else
-          a_id = w_id[/urn:cts:\w+:\w+\d+[a-z]*/]
+      unless f_n =~ /mads/
+        lit_type, lit_abbr = get_lang_info(id)
+        if lit_type.empty? && lit_abbr.empty?
+          message = "Unrecognized id type, #{id}"
+          error_handler(message, true)
         end
-        canon_id = a_id[/\w+\d+[a-z]*$/]
+        w_id = id =~ /cts/ ? id[/urn:cts:\w+:\w+\.\w+/] : "urn:cts:#{lit_type}Lit:#{id}"
+        tg_id = w_id[/urn:cts:\w+:\w+/]
+        canon_id = tg_id[/\w+$/]
       else
-        a_id = nil
+        w_id = nil
+        tg_id = nil
         canon_id = id
       end
       if id
@@ -78,13 +81,13 @@ module ApplicationHelper
         auth_name = find_rec_author(xml_record, file_path, f_n)
         auth_nset = Author.get_by_id(canon_id) 
         auth_nset = Author.get_by_name(auth_name) if auth_nset.empty?     
-        tg_nset = Textgroup.find_by_id(a_id)   
+        tg_nset = Textgroup.find_by_id(tg_id)   
         
         info_hash = { :file_name => f_n,
                       :path => file_path,
                       :canon_id => canon_id,
                       :a_name => auth_name,
-                      :a_id => a_id,
+                      :tg_id => tg_id,
                       :alt_ids => alt_ids,
                       :cite_auth => auth_nset,
                       :cite_tg => tg_nset}
@@ -108,9 +111,14 @@ module ApplicationHelper
           work_row = Work.find_by_id(w_id)   
           if work_row     
             orig_lang = work_row.orig_lang ? work_row.orig_lang : lit_abbr
+          else
+            orig_lang = lit_abbr
           end
           vers_langs = []
-          xml_record.search("/mods:mods/mods:relatedItem/mods:language").each do |x|
+          lang_nodes = xml_record.search("/mods:mods/mods:relatedItem/mods:language")
+          #sometimes there are no host items so no language is found, this kills the import
+          lang_nodes = xml_record.search("/mods:mods/mods:language") if lang_nodes.empty?
+          lang_nodes.each do |x|
             attri = x.attribute("objectPart")
             #want to only get text language when the designation is there, as opposed to the preface
             if attri
@@ -141,10 +149,25 @@ module ApplicationHelper
       end
     rescue Exception => e
       message = "For file #{file_path}: something went wrong, #{$!} #{e.backtrace}"
-      error_handler(message)
+      error_handler(message, false)
       return nil
     end
   end
+
+  def get_lang_info(id)
+    ids_file = File.read("#{BASE_DIR}/cite_collections_rails/data/id_to_lang.csv").split("\n")
+    lang = ""
+    lang_abbr = ""
+    ids_file.each do |line|
+      line_arr = line.split(',')
+      if id =~ /#{line_arr[0]}/
+        lang = line_arr[1] 
+        lang_abbr = line_arr[2]
+      end
+    end
+    return lang, lang_abbr
+  end
+
 
   def find_rec_author(xml_record, file_path, f_n)
     begin
@@ -166,7 +189,7 @@ module ApplicationHelper
           a_name = n.join(" ")
         else
           message = "For file #{f_n} : Could not find an authority name, please check the record."
-          error_handler(message, file_path, f_n)
+          error_handler(message, false)
           return
         end
       else   
@@ -186,7 +209,7 @@ module ApplicationHelper
           end
           if names.empty?
             message = "For file #{f_n} : Could not find an author name, please check the record."
-            error_handler(message, file_path, f_n)
+            error_handler(message, false)
             return
           else
             if names.size == 1
@@ -197,14 +220,14 @@ module ApplicationHelper
           end
         else
           message = "For file #{f_n} : Could not find an author name, please check the record."
-          error_handler(message, file_path, f_n)
+          error_handler(message, false)
           return
         end
       end
       return a_name
     rescue
       message = "For file #{f_n} : There was an error while trying to find the author, error message was #{$!}."
-      error_handler(message, file_path, f_n)
+      error_handler(message, true)
     end
   end
 
@@ -225,7 +248,7 @@ module ApplicationHelper
           val = node.attribute('displayLabel').value
           if val == 'isCommentaryOn'
             message = "#{f_n} is a commentary, saving for another time"
-            error_handler(message)
+            error_handler(message, false)
             return
           elsif val == "Pseudo"
             #Pseudo author in main author MADS, need to add a separate cite row
@@ -238,7 +261,7 @@ module ApplicationHelper
         
         unless id =~ /none/i || id == "" || id =~ /0000|\D000$/ || id =~ /\?/ || id =~ /urn:cts|urn:cite/
           alt_ids << id         
-          if id =~ /tlg|phi|stoa|lccn|viaf|mrurn/i #!!will need to expand this to other standards
+          if id =~ /tlg|phi|stoa|lccn|viaf|mrurn|fhg/i #!!will need to expand this to other standards
             if found_id =~ /stoa/ && id =~ /phi/
               found_id = id
             elsif found_id =~ /tlg|phi|stoa/                
@@ -254,7 +277,7 @@ module ApplicationHelper
       unless found_id    
         message = "For file #{f_n} : Could not find a suitable id, please check 
         that there is a tlg, phi, or stoa id, that there are no ?'s or that, if a mads, the mads namespace is present."
-        error_handler(message, file_path, f_n)
+        error_handler(message, true)
         return
       else
         alt_ids.delete(found_id)
@@ -262,7 +285,7 @@ module ApplicationHelper
       end
     rescue 
       message = "For file #{f_n} : There was an error while trying to find an id, error message was #{$!}."
-      error_handler(message, file_path, f_n)
+      error_handler(message, true)
       return
     end
   end
@@ -416,11 +439,12 @@ module ApplicationHelper
   end
 
 #errors
-  def error_handler(message, *file_info)
+  def error_handler(message, to_raise)
     puts message
     @error_report << "#{message}\n\n"
     @error_report.close
-    @error_report = File.open("#{BASE_DIR}/catalog_pending/errors/error_log#{Date.today}.txt", 'a')
+    @error_report = File.open("#{BASE_DIR}/catalog_pending/errors/error_log#{Date.today}.txt", 'a')   
+    raise if to_raise
     #`mv "#{file_path}" "#{BASE_DIR}/catalog_pending/errors/#{f_n}"`
   end
 
