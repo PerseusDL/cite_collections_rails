@@ -1,25 +1,25 @@
 CiteCollections::Application.routes.draw do
   
   get "cite/index"
-  resources :versions do
+  resources :versions, :constraints => {:id => /urn:cite:\w+:\w+\.*\w*\.*\w*-*\w*/}, only: [:index, :show, :edit, :update] do
     collection do
       get 'search'
     end
   end
 
-  resources :works do
+  resources :works, :constraints => {:id => /urn:cite:\w+:\w+\.*\w*\.*\w*-*\w*/}, only: [:index, :show, :edit, :update] do
     collection do
         get 'search'
       end
     end
 
-  resources :textgroups do
+  resources :textgroups, :constraints => {:id => /urn:cite:\w+:\w+\.*\w*\.*\w*-*\w*/}, only: [:index, :show, :edit, :update] do
     collection do
       get 'search'
     end
   end
 
-  resources :authors do
+  resources :authors, :constraints => {:id => /urn:cite:\w+:\w+\.*\w*\.*\w*-*\w*/}, only: [:index, :show, :edit, :update] do
     collection do
       get 'search'
     end

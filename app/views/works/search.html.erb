@@ -18,8 +18,8 @@
           <td><%= work.urn %></td>
           <td><%= work.work %></td>
           <td><%= work.title_eng %></td>
-          <td><%= link_to 'Show', work %></td>
-          <td><%= link_to 'Edit', edit_work_path(work) %></td>
+          <td><%= link_to 'Show', work_path(work.urn) %></td>
+          <td><%= link_to 'Edit', edit_work_path(work.urn) %></td>
         </tr>
       <% end %>
     </tbody>

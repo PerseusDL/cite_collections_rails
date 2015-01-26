@@ -45,7 +45,7 @@
   <%= @work.edited_by %>
 </p>
 
-<%= link_to 'Edit', edit_work_path(@work) %> |
+<%= link_to 'Edit', edit_work_path(@work.urn) %> |
 <% if request.referer =~ /edit/%>
   <%= link_to 'Back', session[:search_results] %>
 <% else %>

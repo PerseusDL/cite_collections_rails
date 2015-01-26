@@ -50,7 +50,7 @@
   <%= @author.edited_by %>
 </p>
 
-<%= link_to 'Edit', edit_author_path(@author) %> |
+<%= link_to 'Edit', edit_author_path(@author.urn) %> |
 <% if request.referer =~ /edit/%>
   <%= link_to 'Back', session[:search_results] %>
 <% else %>

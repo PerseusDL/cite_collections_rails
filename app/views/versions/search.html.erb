@@ -20,8 +20,8 @@
           <td><%= version.version %></td>
           <td><%= version.label_eng %></td>
           <td><%= version.desc_eng %></td>
-          <td><%= link_to 'Show', version %></td>
-          <td><%= link_to 'Edit', edit_version_path(version) %></td>
+          <td><%= link_to 'Show', version_path(version.urn) %></td>
+          <td><%= link_to 'Edit', edit_version_path(version.urn) %></td>
         </tr>
       <% end %>
     </tbody>

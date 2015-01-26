@@ -50,7 +50,7 @@
   <%= @textgroup.edited_by %>
 </p>
 
-<%= link_to 'Edit', edit_textgroup_path(@textgroup) %> |
+<%= link_to 'Edit', edit_textgroup_path(@textgroup.urn) %> |
 <% if request.referer =~ /edit/%>
   <%= link_to 'Back', session[:search_results] %>
 <% else %>

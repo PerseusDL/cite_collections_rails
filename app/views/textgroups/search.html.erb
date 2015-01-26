@@ -18,8 +18,8 @@
           <td><%= textgroup.urn %></td>
           <td><%= textgroup.textgroup %></td>
           <td><%= textgroup.groupname_eng %></td>
-          <td><%= link_to 'Show', textgroup %></td>
-          <td><%= link_to 'Edit', edit_textgroup_path(textgroup) %></td>
+          <td><%= link_to 'Show', textgroup_path(textgroup.urn) %></td>
+          <td><%= link_to 'Edit', edit_textgroup_path(textgroup.urn) %></td>
         </tr>
       <% end %>
     </tbody>

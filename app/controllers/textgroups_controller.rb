@@ -71,7 +71,7 @@ class TextgroupsController < ApplicationController
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_textgroup
-      @textgroup = Textgroup.find(params[:id])
+      @textgroup = Textgroup.find_by_urn(params[:id])
     end
 
     # Never trust parameters from the scary internet, only allow the white list through.

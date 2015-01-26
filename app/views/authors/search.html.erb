@@ -19,8 +19,8 @@
           <td><%= author.urn %></td>
           <td><%= author.authority_name %></td>
           <td><%= author.canonical_id %></td>
-          <td><%= link_to 'Show', author %></td>
-          <td><%= link_to 'Edit', edit_author_path(author) %></td>
+          <td><%= link_to 'Show', author_path(author.urn) %></td>
+          <td><%= link_to 'Edit', edit_author_path(author.urn) %></td>
         </tr>
       <% end %>
     </tbody>
