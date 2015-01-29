@@ -43,105 +43,111 @@ class AtomBuild
       work_list = Work.all
       work_list.each do |work_row|
         begin
-          @w_urn = work_row.work
-          @tg_urn = @w_urn[/urn:cts:\w+:\w+\d+[a-z]*/]
-          @w_title = work_row.title_eng
-          @w_lang = work_row.orig_lang
-          @lit_type = @tg_urn[/\w+Lit/]
-          @tg_id = @tg_urn[/\w+\d{4}([a-z])?/]
-          @tg_name = Textgroup.find_by_id(@tg_urn).groupname_eng
-          @w_id = @w_urn[/\w+\d+[a-z0-9]*$/]
-          tg_dir = "#{@feed_directories}/#{@lit_type}/#{@tg_id}"
-          unless File.directory?(tg_dir)
-            #create the tg_feed and populate the header          
-            make_dir_and_feed(tg_dir, "#{@feed_directories}/#{@lit_type}", "textgroup")         
-          end
-
-          #open tg_feed for current state and make sure that the formatting will be nice
-          tg_xml = get_xml("#{tg_dir}.atom.xml")
-          tg_marker = find_node("//cts:textgroup", tg_xml)
-          #add the work info to the tg_feed header
-          tg_builder = add_work_node(tg_marker)
-
-          #create the work_feed and open the file for proper formatting of info to be added
-          work_dir = "#{tg_dir}/#{@w_id}"
-          make_dir_and_feed(work_dir, @feed_directories, "work")
-          work_xml = get_xml("#{@feed_directories}/#{@tg_id}.#{@w_id}.atom.xml")
-          work_marker = find_node("//cts:textgroup", work_xml)
-          work_builder = add_work_node(work_marker)
-
-          mads_cts = Author.get_by_id(@tg_id)
-          mads_num = 1
-          @mads_arr =[]
-          unless mads_cts.empty?
-            mads_cts.each do |author| 
-              if author.urn_status == "published"         
-                mads_path  = author.mads_file
-                mads_xml = get_xml("#{catalog_dir}/mads/#{mads_path}")
-                mads_urn = author.canonical_id
-                @mads_arr << [mads_urn, mads_num, mads_path, mads_xml]
-                mads_num += 1  
-              end          
+          if work_row.urn_status == "published"
+            @w_urn = work_row.work
+            @tg_urn = @w_urn[/urn:cts:\w+:\w+\d+[a-z]*/]
+            @w_title = work_row.title_eng
+            @w_lang = work_row.orig_lang
+            @lit_type = @tg_urn[/\w+Lit/]
+            @tg_id = @tg_urn[/\w+\d{4}([a-z])?/]
+            @tg_name = Textgroup.find_by_id(@tg_urn).groupname_eng
+            @w_id = @w_urn[/\w+\d+[a-z0-9]*$/]
+            tg_dir = "#{@feed_directories}/#{@lit_type}/#{@tg_id}"
+            unless File.directory?(tg_dir)
+              #create the tg_feed and populate the header          
+              make_dir_and_feed(tg_dir, "#{@feed_directories}/#{@lit_type}", "textgroup")         
             end
 
-          end
+            #open tg_feed for current state and make sure that the formatting will be nice
+            tg_xml = get_xml("#{tg_dir}.atom.xml")
+            tg_marker = find_node("//cts:textgroup", tg_xml)
+            #add the work info to the tg_feed header
+            tg_builder = add_work_node(tg_marker)
 
-          #grab all mods files for the current work and iterate through
-          work_mods_dir = "#{catalog_dir}/mods/#{@lit_type}/#{@tg_id}/#{@w_id}"
-          if File.directory?(work_mods_dir)
-            entries_arr = Dir.entries(work_mods_dir)
-            entries_arr.each do |sub_dir|
-              unless sub_dir == "." or sub_dir ==".." or sub_dir == ".DS_Store"
-                
-                mods_arr = Dir.entries("#{work_mods_dir}/#{sub_dir}")
-                mods_arr.each do |m_f|   
+            #create the work_feed and open the file for proper formatting of info to be added
+            work_dir = "#{tg_dir}/#{@w_id}"
+            make_dir_and_feed(work_dir, @feed_directories, "work")
+            work_xml = get_xml("#{@feed_directories}/#{@tg_id}.#{@w_id}.atom.xml")
+            work_marker = find_node("//cts:textgroup", work_xml)
+            work_builder = add_work_node(work_marker)
 
-                  unless m_f == "." or m_f ==".." or m_f == ".DS_Store"
-                    @ver_id = sub_dir
-                    @ver_urn = "#{@w_urn}.#{@ver_id}"
-                    ver_row = Version.find_by_version(@ver_urn)
-                    ver_type = ver_row.ver_type
-                    @mods_num = m_f[/mods\d+/] #need to add in a dash between the mods and the number
-                    
-                    #create ver_feed head
-                    make_dir_and_feed(work_dir, work_dir, ver_type)
-                    ver_xml = get_xml("#{work_dir}/#{@tg_id}.#{@w_id}.#{@ver_id}.atom.xml")
-                    ver_marker = find_node("//cts:textgroup", ver_xml)
-                    #add the work info to the ver_feed header
-                    ver_builder = add_work_node(ver_marker)
+            mads_cts = Author.get_by_id(@tg_id)
+            mads_num = 1
+            @mads_arr =[]
+            unless mads_cts.empty?
+              mads_cts.each do |author| 
+                if author.urn_status == "published"         
+                  mads_path  = author.mads_file
+                  mads_xml = get_xml("#{catalog_dir}/mads/#{mads_path}")
+                  mads_urn = author.canonical_id
+                  @mads_arr << [mads_urn, mads_num, mads_path, mads_xml]
+                  mads_num += 1  
+                end          
+              end
 
-                    #open the mods file once we have it
-                    mods_xml = get_xml("#{work_mods_dir}/#{sub_dir}/#{m_f}") if m_f =~ /\.xml/
-                    
-                    #TO DO: need to add a re assignment of @ver_urn if more than one mods for an ed?
-                    label, description = create_label_desc (mods_xml)
-                    
-                    params = {
-                      "docs" => [tg_builder, work_builder, ver_builder],
-                      "label" => label,
-                      "description" => description,
-                      "lang" => @w_lang,
-                      "type" =>ver_type
-                    }
-                    
-                    add_ver_node(params)
-                    
-                    mods_head = build_mods_head(ver_type)
-                    content = find_node("//atom:content", mods_head.doc)
-                    content.add_child(mods_xml.root)
-                    add_mods_node(params['docs'], mods_head)
+            end
 
-                    ver_mads = build_mads_head(ver_builder)
-                    add_mads_node(ver_builder, ver_mads)
+            #grab all mods files for the current work and iterate through
+            work_mods_dir = "#{catalog_dir}/mods/#{@lit_type}/#{@tg_id}/#{@w_id}"
+            if File.directory?(work_mods_dir)
+              entries_arr = Dir.entries(work_mods_dir)
+              entries_arr.each do |sub_dir|
+                unless sub_dir == "." or sub_dir ==".." or sub_dir == ".DS_Store"
+                  
+                  mods_arr = Dir.entries("#{work_mods_dir}/#{sub_dir}")
+                  mods_arr.each do |m_f|   
+
+                    unless m_f == "." or m_f ==".." or m_f == ".DS_Store"
+                      @ver_id = sub_dir
+                      @ver_urn = "#{@w_urn}.#{@ver_id}"
+                      ver_row = Version.find_by_version(@ver_urn)
+                      ver_type = ver_row.ver_type
+                      @mods_num = m_f[/mods\d+/] #need to add in a dash between the mods and the number
+                      
+                      #create ver_feed head
+                      make_dir_and_feed(work_dir, work_dir, ver_type)
+                      ver_xml = get_xml("#{work_dir}/#{@tg_id}.#{@w_id}.#{@ver_id}.atom.xml")
+                      ver_marker = find_node("//cts:textgroup", ver_xml)
+                      #add the work info to the ver_feed header
+                      ver_builder = add_work_node(ver_marker)
+
+                      #open the mods file once we have it
+                      mods_xml = get_xml("#{work_mods_dir}/#{sub_dir}/#{m_f}") if m_f =~ /\.xml/
+                      
+                      #TO DO: need to add a re assignment of @ver_urn if more than one mods for an ed?
+                      label, description = create_label_desc (mods_xml)
+                      full_label = @w_title + ", " + label
+                     
+                      params = {
+                        "docs" => [tg_builder, work_builder, ver_builder],
+                        "label" => full_label,
+                        "description" => description,
+                        "lang" => @w_lang,
+                        "type" =>ver_type
+                      }
+                      
+                      add_ver_node(params)
+                      
+                      mods_head = build_mods_head(ver_type)
+                      content = find_node("//atom:content", mods_head.doc)
+                      content.add_child(mods_xml.root)
+                      add_mods_node(params['docs'], mods_head)
+
+                      ver_mads = build_mads_head(ver_builder)
+                      add_mads_node(ver_builder, ver_mads)
 
 
-                    ver_file = File.open("#{work_dir}/#{@tg_id}.#{@w_id}.#{@ver_id}.atom.xml", 'w')
-                    ver_file << ver_builder.to_xml
-                    ver_file.close
+                      ver_file = File.open("#{work_dir}/#{@tg_id}.#{@w_id}.#{@ver_id}.atom.xml", 'w')
+                      ver_file << ver_builder.to_xml
+                      ver_file.close
+                    end
                   end
                 end
-              end
+              end 
+              #could also have versions without mods, need to catch those too
+
             end
+            #putting this here so we can save works without versions and not have weird stub atom files
             #since the tg feed is opened and added to each don't want to do that multiple times
             unless has_mads?(tg_builder)
               tg_mads = build_mads_head(tg_builder)
@@ -158,7 +164,7 @@ class AtomBuild
             work_file.close
           end
         rescue Exception => e
-          puts "Something went wrong! #{$!}"
+          puts "Something went wrong for #{work_row.work}! #{$!}"
           @error_file << "#{$!}\n#{e.backtrace}\n\n"
           @error_file.close
           @error_file = File.open("#{@feed_directories}/errors.txt", 'a')
@@ -166,7 +172,7 @@ class AtomBuild
       end
       puts "Feed build started at #{st}"
     rescue Exception => e
-      puts "Something went wrong for work_row #{work_row}! #{$!}"
+      puts "Something went wrong for work_row #{work_row.work}! #{$!}"
       @error_file << "#{$!}\n#{e.backtrace}\n\n"
       @error_file.close
       @error_file = File.open("#{@feed_directories}/errors.txt", 'a')

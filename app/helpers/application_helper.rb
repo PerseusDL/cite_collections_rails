@@ -50,6 +50,15 @@ module ApplicationHelper
     fl.close
   end
 
+#find files changed within the last week
+  def get_recent_changes(path)  
+    today = Time.now
+    week_earlier = today - (60 * 60 * 24 * 7)
+    changes = []
+    Dir.glob("#{path}/**/*.xml") {|f| changes << f if (File.mtime(f) <=> week_earlier) == 1}
+    return changes
+  end
+
 #find things in the XML
 
   def find_basic_info(xml_record, file_path, ctsurn=nil)

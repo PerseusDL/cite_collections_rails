@@ -13,4 +13,6 @@ desc "Build Atom feed"
 task :build_atom_feed => :environment do
   builder = AtomBuild.new
   builder.build_feeds
+  #would like to add in passing a variable of just the recently changed records 
+  #in the CITE tables, but becomes extremely complex for managing authors, so leaving it for now
 end

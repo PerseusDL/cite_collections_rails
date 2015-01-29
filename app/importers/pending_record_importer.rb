@@ -21,7 +21,7 @@ class PendingRecordImporter
     corrections = "#{BASE_DIR}/catalog_data"
 
     #update_git_dir("catalog_pending") UNCOMMENT THIS
-    #update_from_catalog_data(corrections)
+    update_from_catalog_data(corrections)
     mads_import(pending_mads)
     mods_import(pending_mods)
 
@@ -120,7 +120,9 @@ class PendingRecordImporter
         same = nil
         vers.each {|v| same = ((v.version == ctsurn && v.urn_status == "published") ? v : nil) if v}
         if same
+          work_row = Work.find_by_work(ctsurn[/urn:cts:\w+:\w+\.\w+/])
           label, description = create_label_desc(mods_xml)
+          full_label = work_row.title_eng + ", " + label
           if same.has_mods == "false"
             #has cite row, lacking a mods, update accordingly 
             Version.update(same.id, {:has_mods => "true", :edited_by => "auto_importer"})
@@ -128,7 +130,7 @@ class PendingRecordImporter
             move_file(modspath, mods_xml)
           else
             #if has row and confirmed mods, not a correction, assumed multivolume, just move to correct place
-            Version.update_row(ctsurn, label, description, "auto_importer")
+            Version.update_row(ctsurn, full_label, description, "auto_importer")
             modspath = create_mods_path(ctsurn)                           
             move_file(modspath, mods_xml)
           end
@@ -294,6 +296,7 @@ class PendingRecordImporter
       info_hash[:v_langs].each do |lang|
         puts "in add version"
         vers_label, vers_desc = create_label_desc(mods_xml)
+        full_label = info_hash[:w_title] + ", " + vers_label
         vers_urn = ""
         vers_type = lang == info_hash[:w_lang] ? "edition" : "translation"
         unless cts_urn
@@ -316,7 +319,7 @@ class PendingRecordImporter
               curr_urn = line[:version][/#{vers_urn_wo_num}\d+/]
               urn_num = curr_urn[/\d+$/].to_i
               num = urn_num + 1
-              if line[:label_eng] =~ /#{vers_label}/ && line[:desc_eng] =~ /#{vers_desc}/
+              if line[:label_eng] =~ /#{full_label}/ && line[:desc_eng] =~ /#{vers_desc}/
                 #this means that the pulled label and description match the current row, not good?
                 message = "#{curr_urn} and #{vers_urn_wo_num} have the same label and description, please check!"
                 error_handler(message, true)
@@ -331,7 +334,7 @@ class PendingRecordImporter
         #insert row in table
         vers_cite = Version.generate_urn
         puts "got cite urn #{vers_cite}"
-        v_values = ["#{vers_cite}", "#{vers_urn}", "#{vers_label}", "#{vers_desc}", "#{vers_type}", 'true', 'published','','','auto_importer', '']
+        v_values = ["#{vers_cite}", "#{vers_urn}", "#{full_label}", "#{vers_desc}", "#{vers_type}", 'true', 'published','','','auto_importer', '']
         Version.add_cite_row(v_values)
 
         add_cts_urn(mods_xml, vers_urn)
@@ -393,46 +396,30 @@ class PendingRecordImporter
   end
 
 
-  def update_from_catalog_data(path)
-    today = Time.now
-    #first time running this the time needs to be from the beginning of edits to catalog_data
-    #first time from July 9, 2013
-    #after that, need a set time, will we run this as a chron job?
-    since = "2013-07-08T00:00:00Z" #(today - seconds).to_s
-    url = "https://api.github.com/repos/PerseusDL/catalog_data/commits?since=#{since}"
-    agent = Mechanize.new
-    gh_results = agent.get(url)
-    json = JSON.parse(gh_results.body)
-    json.each do |commit|
-      #working with a hash of hashes
-      message = commit["commit"]["message"]
-      editor = commit["commit"]["author"]["name"]
+  def update_from_catalog_data(path)   
+    changes = get_recent_changes(path)      
+    changes.each do |file_path|
       begin
-        if message =~ /Update/ #!!assuming one commit = one file  BAD ASSUMPTION
-          parts = message.split(/\s/)
-          file = parts[1] if parts[1] =~ /\.xml/
-          file_path = Dir.glob("#{path}/**/#{file}")[0]
-          mods_xml = get_xml(file_path)
+        mods_xml = get_xml(file_path)
+        info_hash = find_basic_info(mods_xml, file_path)
+        if info_hash
+          if file_path =~ /mads/              
+            Author.update_row(info_hash, editor)
+          else
+            Textgroup.update_row(info_hash, editor)             
+            Work.update_row(info_hash, editor)
 
-          info_hash = find_basic_info(mods_xml, file_path)
-          if info_hash
-            if file_path =~ /mads/              
-              Author.update_row(info_hash, editor)
-            else
-              Textgroup.update_row(info_hash, editor)             
-              Work.update_row(info_hash, editor)
-
-              cts = file_path[/\w+\.\w+\.\w+-\w+\d+/]
-              vers_label, vers_desc = create_label_desc(mods_xml)
-              Version.update_row(cts, vers_label, vers_desc, editor)
-            end
+            cts = file_path[/\w+\.\w+\.\w+-\w+\d+/]
+            vers_label, vers_desc = create_label_desc(mods_xml)
+            full_label = info_hash[:w_title] + ", " + vers_label
+            Version.update_row(cts, full_label, vers_desc, editor)
           end
         end
       rescue
-        message = "Error for catalog_data update, commit was #{commit["sha"]}, error message was: #{$!}"
+        message = "Error for catalog_data update, file was was #{commit["sha"]}, error message was: #{$!}"
         error_handler(message, false)
       end
-    end
+    end 
   end
 
 

@@ -150,7 +150,8 @@ class OneOffs
 
           cts = file_path[/\w+\.\w+\.\w+-\w+\d+/]
           vers_label, vers_desc = create_label_desc(xml)
-          Version.update_row(cts, vers_label, vers_desc, editor)
+          v_label = info_hash[:w_title] + ", " + vers_label
+          Version.update_row(cts, v_label, vers_desc, editor)
         end
       end
     rescue Exception => e
