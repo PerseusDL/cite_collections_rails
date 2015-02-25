@@ -160,4 +160,108 @@ class OneOffs
     end
   end
 
+
+  def work_title_correction
+    work_files = Dir.glob("#{BASE_DIR}/catalog_data/mods/**/*.xml")
+    work_files.each do |file_name|
+      begin
+        mods_xml = get_xml(file_name)
+        has_cts = mods_xml.search("/mods:mods/mods:identifier[@type='ctsurn']")
+        if has_cts
+          ctsurn = has_cts.inner_text
+          info_hash = find_basic_info(mods_xml, file_name, ctsurn)
+          work = info_hash[:cite_work]
+          unless work.title_eng == info_hash[:w_title]
+            work.title_eng = info_hash[:w_title]
+            work.edited_by = "title_corrector"
+            work.save
+          end
+
+          vers_arr = Version.find(:all, :conditions => ["version = ? and urn_status = 'published'", ctsurn])
+          if vers_arr.length == 1
+            vers = vers_arr[0]
+          else
+            puts "Either more than one or no versions returned for #{ctsurn} in #{file_name}"
+            next
+          end
+          label, description = create_label_desc(mods_xml)
+          full_label = work.title_eng + ", " + label
+          unless vers.label_eng == full_label
+            vers.label_eng = full_label
+            vers.edited_by = "title_corrector"
+            vers.save
+          end
+          unless vers.desc_eng == description
+            vers.desc_eng = description
+            vers.edited_by = "title_corrector"
+            vers.save
+          end
+        else
+          puts "Error, no cts urn for #{file_name}"
+        end
+
+      rescue
+        puts "Error, #{$!}"
+      end
+    end
+
+  end
+
+
+  def match_old_auth_ids
+    file = File.open("#{BASE_DIR}/dumps/old_auth.csv", "r").read
+    output = File.new("#{BASE_DIR}/dumps/old_auth_matches.csv", "w")
+    rows = file.split("\n")
+    rows.each do |row|
+      row_arr = row.split(/,/)
+      old_id = row_arr[0]
+      main_id = old_id[/(phi|tlg|stoa)\d+[a-z]?/]
+      if old_id =~ /^M/
+        auth_arr = Author.get_by_id(main_id)
+        if auth_arr.length == 1
+          auth = auth_arr[0]
+        else
+          if auth_arr.empty?
+            puts "got nothing for #{main_id} in Authors table"
+            next
+          else
+            auth_arr.each do |auth_row|
+              if row_arr[1] =~ /#{auth_row.urn}/
+                auth = auth_row
+                break
+              end
+            end
+          end
+          
+        end
+      elsif old_id =~ /^A/
+        auth_arr = Author.get_by_id(main_id)
+        if auth_arr.empty?
+          auth_arr = Textgroup.find(:all, :conditions => ["textgroup rlike ? and has_mads = 'false'", main_id])
+        end
+        if auth_arr.length == 1
+          auth = auth_arr[0]
+        else
+          if auth_arr.empty?
+            puts "got nothing for #{main_id} in Textgroup table"
+            next
+          else
+            auth_arr.each do |auth_row|
+              if row_arr[1] =~ /#{auth_row.urn}/
+                auth = auth_row
+                break
+              end
+            end
+          end  
+        end
+      else
+        puts "Something is wrong with #{row}"
+        next
+      end
+      match_string = old_id + "," + auth.urn + "\n"
+      output << match_string
+    end
+    output.close      
+  end
+
 end

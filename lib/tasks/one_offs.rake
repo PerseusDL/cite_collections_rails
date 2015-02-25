@@ -23,6 +23,12 @@ task :mads_related_works => :environment do
 
 end
 
+desc "work title correction"
+task :work_title_correction => :environment do
+  of = OneOffs.new
+  of.work_title_correction
+end
+
 
 desc "add column to work table"
 task :add_orig_lang => :environment do
@@ -54,6 +60,12 @@ task :remove_cts_urn => :environment do
       File.open(file_name, "w") { |file| file.puts replace }
     end
   end
+end
+
+desc "match up old ids"
+task :match_old_ids => :environment do
+  matcher = OneOffs.new
+  matcher.match_old_auth_ids
 end
 
 
