@@ -155,17 +155,17 @@ class ArabicRecordBuilder
               title_string.split("::::").each_with_index do |title, i|
                 if i == 0
                   new_mods['mods'].titleInfo(:lang => 'ara'){
-                    new_mods['mods'].title(title)
+                    new_mods['mods'].title("&rlm;" + title)
                   } 
                 else
                   new_mods['mods'].titleInfo(:type => "alternative", :lang => 'ara'){
-                    new_mods['mods'].title(title)
+                    new_mods['mods'].title("&rlm;" + title)
                   } 
                 end
               end
             else
               new_mods['mods'].titleInfo(:lang => 'ara', :script => "Arabic"){
-                new_mods['mods'].title(line_arr[5])
+                new_mods['mods'].title("&rlm;" + line_arr[5])
               }
             end
 
