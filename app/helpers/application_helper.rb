@@ -83,7 +83,7 @@ module ApplicationHelper
       else
         w_id = nil
         tg_id = nil
-        canon_id = id
+        canon_id = id[/\w+$/]
       end
       if id
         #search for and compare author values
@@ -108,8 +108,8 @@ module ApplicationHelper
             type = title_node.attribute("type")
             if type && type.value == "uniform"
               work_title = title_node.search("./mods:title").inner_text
-            end
-            unless work_title && type
+              break
+            elsif work_title == nil && type == nil
               work_title = title_node.search("./mods:title").inner_text
             end
             unless work_title
@@ -118,11 +118,7 @@ module ApplicationHelper
           end
 
           work_row = Work.find_by_id(w_id)   
-          if work_row     
-            orig_lang = work_row.orig_lang ? work_row.orig_lang : lit_abbr
-          else
-            orig_lang = lit_abbr
-          end
+          orig_lang = lit_abbr
           vers_langs = []
           lang_nodes = xml_record.search("/mods:mods/mods:relatedItem/mods:language")
           #sometimes there are no host items so no language is found, this kills the import
@@ -170,6 +166,10 @@ module ApplicationHelper
     ids_file.each do |line|
       line_arr = line.split(',')
       if id =~ /#{line_arr[0]}/
+        lang = line_arr[1] 
+        lang_abbr = line_arr[2]
+      elsif id =~ /#{line_arr[1]}/ || id =~ /#{line_arr[2]}/
+        #for if a cts urn gets passed in, or one like Maxim's ids
         lang = line_arr[1] 
         lang_abbr = line_arr[2]
       end
@@ -267,13 +267,14 @@ module ApplicationHelper
           end
         end
         id = clean_id(node)
+        type = node.attribute("type") ? node.attribute("type").value : nil
         
         unless id =~ /none/i || id == "" || id =~ /0000|\D000$/ || id =~ /\?/ || id =~ /urn:cts|urn:cite/
           alt_ids << id         
-          if id =~ /tlg|phi|stoa|lccn|viaf|mrurn|fhg/i #!!will need to expand this to other standards
+          if id =~ /tlg|phi|stoa|lccn|viaf|#|fhg/i || type =~ /tlg|phi|stoa|lccn|viaf|mrurn|fhg/i#!!will need to expand this to other standards
             if found_id =~ /stoa/ && id =~ /phi/
               found_id = id
-            elsif found_id =~ /tlg|phi|stoa/                
+            elsif found_id =~ /tlg|phi|stoa|#|fhg/                
               #skip, having a hell of a time making it work with 'unless'
             else
               found_id = id 
@@ -303,8 +304,8 @@ module ApplicationHelper
     ns = mods_xml.collect_namespaces
     if !mods_xml.search('//mods:relatedItem[@type="host"]/mods:titleInfo', ns).empty?
       raw_title = mods_xml.search('//mods:relatedItem[@type="host"]/mods:titleInfo', ns).first
-    elsif !mods_xml.search('//mods:titleInfo', ns).empty?
-      raw_title = mods_xml.search('//mods:titleInfo', ns).first
+    elsif !mods_xml.search('//mods:titleInfo[not(@type)]', ns).empty?
+      raw_title = mods_xml.search('//mods:titleInfo[not(@type)]', ns).first
     elsif !mods_xml.search('//mods:titleInfo[@type="alternative"]', ns).empty?
       raw_title = mods_xml.search('//mods:titleInfo[@type="alternative"]', ns).first
     elsif !mods_xml.search('//mods:titleInfo[@type="translated"]', ns).empty?
@@ -329,7 +330,8 @@ module ApplicationHelper
         author_arr << author_n
       end
     end
-    
+    ed_trans_arr.uniq!
+    author_arr.uniq!
     description = "#{author_arr.join('; ')}; #{ed_trans_arr.join('; ')}"
     
     return label, description
