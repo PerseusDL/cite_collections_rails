@@ -37,7 +37,13 @@ class PendingRecordImporter
     mads_files.each do |mads|
       begin
         mads_xml = get_xml(mads)
-        info_hash = find_basic_info(mads_xml, mads)
+        has_cts = mads_xml.search("/mads:mads/mads:identifier[@type='ctsurn']")
+        unless has_cts.empty? || has_cts.inner_text == ""
+          ctsurn = has_cts.inner_text
+          info_hash = find_basic_info(mads_xml, mads, ctsurn)
+        else
+          info_hash = find_basic_info(mads_xml, mads)
+        end
         #if it already exists we don't need to add it to the table again
         if info_hash
           unless info_hash[:cite_auth].empty?
@@ -228,7 +234,7 @@ class PendingRecordImporter
           if info_hash[:tg_id]
             #no row for this textgroup, add a row
             t_urn = Textgroup.generate_urn
-            t_values = ["#{t_urn}", "#{info_hash[:tg_id]}", "#{info_hash[:a_name]}", "#{info_hash[:cite_auth] == nil}", 'true','', 'published', '', 'auto_importer','']
+            t_values = ["#{t_urn}", "#{info_hash[:tg_id]}", "#{info_hash[:a_name]}", "#{info_hash[:cite_auth] != nil}", 'true','', 'published', '', 'auto_importer','']
             Textgroup.add_cite_row(t_values)
           else
             #!!This will need to change once we establish how to coin urns for these sorts of authors
@@ -255,7 +261,7 @@ class PendingRecordImporter
         unless info_hash[:cite_work]
           #no row for this work, add a row
           w_urn = Work.generate_urn
-          w_values = [w_urn, info_hash[:w_id], info_hash[:w_title], info_hash[:orig_lang], '', 'published', '', 'auto_importer','']
+          w_values = [w_urn, info_hash[:w_id], info_hash[:w_title], info_hash[:w_lang], '', 'published', '', 'auto_importer','']
           Work.add_cite_row(w_values)
           #check that the work is listed in Author.related_works, if not, add it 
           cite_auth_arr.each do |cite_auth|
@@ -336,8 +342,9 @@ class PendingRecordImporter
         puts "got cite urn #{vers_cite}"
         v_values = ["#{vers_cite}", "#{vers_urn}", "#{full_label}", "#{vers_desc}", "#{vers_type}", 'true', 'published','','','auto_importer', '']
         Version.add_cite_row(v_values)
-
-        add_cts_urn(mods_xml, vers_urn)
+        unless cts_urn
+          add_cts_urn(mods_xml, vers_urn)
+        end
         modspath = create_mods_path(vers_urn)                           
         move_file(modspath, mods_xml)
       end
@@ -383,32 +390,46 @@ class PendingRecordImporter
 
       info_hash = find_basic_info(builder.doc, file_path)
       if info_hash
-        add_to_cite_tables(info_hash, builder.doc)
-        add_to_vers_table(info_hash, builder.doc)
+        begin
+          add_to_cite_tables(info_hash, builder.doc)
+          add_to_vers_table(info_hash, builder.doc)
+        rescue Exception => e
+          split_const_error(file_path, builder.doc, i)
+        end
       else
-        new_path = file_path.chomp(".xml") + "const#{i}.xml"
-        move_file(new_path, builder.doc)
-        new_name = new_path[/(\/[a-zA-Z0-9\s\.\(\)-]+)?\.xml/]
-        message = "For file #{new_path}: no info_hash returned, saving new constituent record in errors"
-        error_handler(message, false)
+        split_const_error(file_path, builder.doc, i)
       end
     end
   end
 
+  def split_const_error(file_path, doc, i)
+    new_path = file_path.chomp(".xml") + "const#{i}.xml"
+    move_file(new_path, doc)
+    new_name = new_path[/(\/[a-zA-Z0-9\s\.\(\)-]+)?\.xml/]
+    message = "For file #{new_path}: constituent failed, saving new constituent record"
+    error_handler(message, false)
+  end
 
   def update_from_catalog_data(path)   
-    changes = get_recent_changes(path)      
+    changes = get_recent_changes(path) 
+    editor = "auto_importer"     
     changes.each do |file_path|
       begin
         mods_xml = get_xml(file_path)
-        info_hash = find_basic_info(mods_xml, file_path)
+        has_cts = mods_xml.search("/mods:mods/mods:identifier[@type='ctsurn']")
+        unless has_cts.empty? || has_cts.inner_text == ""
+          ctsurn = has_cts.inner_text
+          info_hash = find_basic_info(mods_xml, file_path, ctsurn)
+        else
+          info_hash = find_basic_info(mods_xml, file_path)
+        end
+        
         if info_hash
           if file_path =~ /mads/              
             Author.update_row(info_hash, editor)
           else
             Textgroup.update_row(info_hash, editor)             
             Work.update_row(info_hash, editor)
-
             cts = file_path[/\w+\.\w+\.\w+-\w+\d+/]
             vers_label, vers_desc = create_label_desc(mods_xml)
             full_label = info_hash[:w_title] + ", " + vers_label
@@ -416,7 +437,7 @@ class PendingRecordImporter
           end
         end
       rescue
-        message = "Error for catalog_data update, file was was #{commit["sha"]}, error message was: #{$!}"
+        message = "Error for catalog_data update, file was was #{file_path}, error message was: #{$!}"
         error_handler(message, false)
       end
     end 
