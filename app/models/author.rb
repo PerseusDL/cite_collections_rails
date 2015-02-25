@@ -16,8 +16,8 @@ class Author < ActiveRecord::Base
   end
 
   def self.get_by_id(id)
-    found_id = Author.find(:all, :conditions => ["canonical_id = ?", id]) 
-    found_id = Author.find(:all, :conditions => ["alt_ids rlike ?", id]) if found_id.empty?
+    found_id = Author.find(:all, :conditions => ["canonical_id = ? and urn_status = 'published'", id]) 
+    found_id = Author.find(:all, :conditions => ["alt_ids rlike ? and urn_status = 'published'", id]) if found_id.empty?
     #returns an array of Author(s)
     return found_id
   end
