@@ -4,41 +4,42 @@
 <%= link_to "Return to main page", root_path %>
 <br>
 
-<table>
-  <thead>
-    <tr>
-      <th>Urn</th>
-      <th>Work</th>
-      <th>Title eng</th>
-      <th>Original language</th>
-      <th>Notes</th>
-      <th>Urn status</th>
-      <th>Redirect to</th>
-      <th>Created by</th>
-      <th>Edited by</th>
-      <th></th>
-      <th></th>
-      <th></th>
-    </tr>
-  </thead>
-
-  <tbody>
-    <% @works.each do |work| %>
+<div class="index_table">
+  <table>
+    <thead>
       <tr>
-        <td><%= work.urn %></td>
-        <td><%= work.work %></td>
-        <td><%= work.title_eng %></td>
-        <td><%= work.orig_lang %></td>
-        <td><%= work.notes %></td>
-        <td><%= work.urn_status %></td>
-        <td><%= work.redirect_to %></td>
-        <td><%= work.created_by %></td>
-        <td><%= work.edited_by %></td>
-        <td><%= link_to 'Show', work %></td>
-        <td><%= link_to 'Edit', edit_work_path(work) %></td>
+        <th>Urn</th>
+        <th>Work</th>
+        <th>Title eng</th>
+        <th>Original language</th>
+        <th>Notes</th>
+        <th>Urn status</th>
+        <th>Redirect to</th>
+        <th>Created by</th>
+        <th>Edited by</th>
+        <th></th>
+        <th></th>
       </tr>
-    <% end %>
-  </tbody>
-</table>
+    </thead>
+
+    <tbody>
+      <% @works.each do |work| %>
+        <tr>
+          <td><%= work.urn %></td>
+          <td><%= work.work %></td>
+          <td><%= work.title_eng %></td>
+          <td><%= work.orig_lang %></td>
+          <td><%= work.notes %></td>
+          <td><%= work.urn_status %></td>
+          <td><%= work.redirect_to %></td>
+          <td><%= work.created_by %></td>
+          <td><%= work.edited_by %></td>
+          <td><%= link_to 'Show', work_path(work.urn) %></td>
+          <td><%= link_to 'Edit', edit_work_path(work.urn) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
 
 

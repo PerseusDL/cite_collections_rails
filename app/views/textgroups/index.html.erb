@@ -3,43 +3,43 @@
 <br>
 <%= link_to "Return to main page", root_path %>
 <br>
-
-<table>
-  <thead>
-    <tr>
-      <th>Urn</th>
-      <th>Textgroup</th>
-      <th>Groupname eng</th>
-      <th>Has mads</th>
-      <th>Mads possible</th>
-      <th>Notes</th>
-      <th>Urn status</th>
-      <th>Redirect to</th>
-      <th>Created by</th>
-      <th>Edited by</th>
-      <th></th>
-      <th></th>
-      <th></th>
-    </tr>
-  </thead>
-
-  <tbody>
-    <% @textgroups.each do |textgroup| %>
+<div class="index_table">
+  <table>
+    <thead>
       <tr>
-        <td><%= textgroup.urn %></td>
-        <td><%= textgroup.textgroup %></td>
-        <td><%= textgroup.groupname_eng %></td>
-        <td><%= textgroup.has_mads %></td>
-        <td><%= textgroup.mads_possible %></td>
-        <td><%= textgroup.notes %></td>
-        <td><%= textgroup.urn_status %></td>
-        <td><%= textgroup.redirect_to %></td>
-        <td><%= textgroup.created_by %></td>
-        <td><%= textgroup.edited_by %></td>
-        <td><%= link_to 'Show', textgroup %></td>
-        <td><%= link_to 'Edit', edit_textgroup_path(textgroup) %></td>
+        <th>Urn</th>
+        <th>Textgroup</th>
+        <th>Groupname eng</th>
+        <th>Has mads</th>
+        <th>Mads possible</th>
+        <th>Notes</th>
+        <th>Urn status</th>
+        <th>Redirect to</th>
+        <th>Created by</th>
+        <th>Edited by</th>
+        <th></th>
+        <th></th>
+        <th></th>
       </tr>
-    <% end %>
-  </tbody>
-</table>
+    </thead>
 
+    <tbody>
+      <% @textgroups.each do |textgroup| %>
+        <tr>
+          <td><%= textgroup.urn %></td>
+          <td><%= textgroup.textgroup %></td>
+          <td><%= textgroup.groupname_eng %></td>
+          <td><%= textgroup.has_mads %></td>
+          <td><%= textgroup.mads_possible %></td>
+          <td><%= textgroup.notes %></td>
+          <td><%= textgroup.urn_status %></td>
+          <td><%= textgroup.redirect_to %></td>
+          <td><%= textgroup.created_by %></td>
+          <td><%= textgroup.edited_by %></td>
+          <td><%= link_to 'Show', textgroup_path(textgroup.urn) %></td>
+          <td><%= link_to 'Edit', edit_textgroup_path(textgroup.urn) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+</div>
