@@ -6,7 +6,7 @@ class WorksController < ApplicationController
   # GET /works.json
   def index
     session[:search_results] = request.url
-    @works = Work.all
+    @works = Work.where(urn_status: "published").load
   end
 
   # GET /works/1

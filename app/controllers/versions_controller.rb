@@ -6,7 +6,7 @@ class VersionsController < ApplicationController
   # GET /versions.json
   def index
     session[:search_results] = request.url
-    @versions = Version.all
+    @versions = Version.where(urn_status: "published").load
   end
 
   # GET /versions/1

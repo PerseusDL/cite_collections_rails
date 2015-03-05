@@ -6,7 +6,7 @@ class TextgroupsController < ApplicationController
   # GET /textgroups.json
   def index
     session[:search_results] = request.url
-    @textgroups = Textgroup.all
+    @textgroups = Textgroup.where(urn_status: "published").load
   end
 
   # GET /textgroups/1

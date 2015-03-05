@@ -14,3 +14,16 @@
 
 @import "bootstrap-sprockets";
 @import "bootstrap";
+
+div.index_table {
+  
+  table {
+    border: 1px solid black;
+    table-layout: auto;
+    word-wrap: break-word;
+
+    td {
+      max-width: 400px;
+    }
+  } 
+}

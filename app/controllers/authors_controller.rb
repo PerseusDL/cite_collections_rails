@@ -6,7 +6,7 @@ class AuthorsController < ApplicationController
   # GET /authors.json
   def index
     session[:search_results] = request.url
-    @authors = Author.all
+    @authors = Author.where(urn_status: "published").load
   end
 
   # GET /authors/1
@@ -71,7 +71,13 @@ class AuthorsController < ApplicationController
   private
     # Use callbacks to share common setup or constraints between actions.
     def set_author
-        @author = Author.find_by_urn(params[:id])
+      @author = Author.find_by_urn(params[:id])
+      unless @author
+        auth_list = Author.find(:all, :conditions => ["urn rlike ? and urn_status = 'published'", params[:id]])
+        auth_list.each do |auth|
+          @author = auth if auth.urn =~ /#{params[:id]}\.\d+/
+        end
+      end
     end
 
     # Never trust parameters from the scary internet, only allow the white list through.
