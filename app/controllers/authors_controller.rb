@@ -77,6 +77,7 @@ class AuthorsController < ApplicationController
         auth_list.each do |auth|
           @author = auth if auth.urn =~ /#{params[:id]}\.\d+/
         end
+        redirect_to author_path(@author.urn)
       end
     end
 
