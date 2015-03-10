@@ -24,7 +24,7 @@
     </thead>
 
     <tbody>
-      <% @versions.each do |version| %>
+      <% Version.find_each(batch_size: 5000) do |version| %>
         <tr>
           <td><%= version.urn %></td>
           <td><%= version.version %></td>

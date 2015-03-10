@@ -30,7 +30,7 @@ class TextgroupsController < ApplicationController
 
     respond_to do |format|
       if @textgroup.save
-        format.html { redirect_to @textgroup, notice: 'Textgroup was successfully created.' }
+        format.html { redirect_to textgroup_path(@textgroup.urn), notice: 'Textgroup was successfully created.' }
         format.json { render action: 'show', status: :created, location: @textgroup }
       else
         format.html { render action: 'new' }

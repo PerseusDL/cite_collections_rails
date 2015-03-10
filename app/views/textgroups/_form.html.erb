@@ -1,4 +1,4 @@
-<%= form_for(@textgroup, url: {id: @textgroup.urn}) do |f| %>
+<%= form_for @textgroup, :url => textgroup_path do |f| %>
   <% if @textgroup.errors.any? %>
     <div id="error_explanation">
       <h2><%= pluralize(@textgroup.errors.count, "error") %> prohibited this textgroup from being saved:</h2>

@@ -6,7 +6,9 @@ class VersionsController < ApplicationController
   # GET /versions.json
   def index
     session[:search_results] = request.url
-    @versions = Version.where(urn_status: "published").load
+    if request.url =~ /json/
+      @versions = Version.where(urn_status: "published")
+    end
   end
 
   # GET /versions/1
@@ -44,7 +46,7 @@ class VersionsController < ApplicationController
   def update
     respond_to do |format|
       if @version.update(version_params)
-        format.html { redirect_to @version, notice: 'Version was successfully updated.' }
+        format.html { redirect_to version_path(@version.urn), notice: 'Version was successfully updated.' }
         format.json { head :no_content }
       else
         format.html { render action: 'edit' }
@@ -76,6 +78,6 @@ class VersionsController < ApplicationController
 
     # Never trust parameters from the scary internet, only allow the white list through.
     def version_params
-      params.require(:version).permit(:urn, :version, :label_eng, :desc_eng, :type, :has_mods, :urn_status, :redirect_to, :member_of, :created_by, :edited_by)
+      params.require(:version).permit(:urn, :version, :label_eng, :desc_eng, :ver_type, :has_mods, :urn_status, :redirect_to, :member_of, :created_by, :edited_by)
     end
 end

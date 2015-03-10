@@ -1,4 +1,4 @@
-<%= form_for(@author, url: {id: @author.urn}) do |f| %>
+<%= form_for @author, :url => author_path(@author.urn) do |f| %>
   <% if @author.errors.any? %>
     <div id="error_explanation">
       <h2><%= pluralize(@author.errors.count, "error") %> prohibited this author from being saved:</h2>
