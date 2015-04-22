@@ -140,13 +140,7 @@ module ApplicationHelper
                         :v_langs => vers_langs)
         else
           #related works, find <mads:description>List of related work identifiers and grab siblings
-          extensions = xml_record.search("/mads:mads/mads:extension")
-          related_works = []
-          extensions.children.each do |node|           
-            unless node.inner_text =~ /related work identifiers/
-              related_works << clean_id(node) if node.name == "identifier"
-            end
-          end
+          related_works = collect_rel_works(xml_record)
           info_hash.merge!(:related_works => related_works.join(';'))
         end
         
@@ -157,6 +151,17 @@ module ApplicationHelper
       error_handler(message, false)
       return nil
     end
+  end
+
+  def collect_rel_works(xml_record)
+    extensions = xml_record.search("/mads:mads/mads:extension")
+    related_works = []
+    extensions.children.each do |node|           
+      unless node.inner_text =~ /related work identifiers/
+        related_works << clean_id(node) if node.name == "identifier"
+      end
+    end
+    return related_works
   end
 
   def get_lang_info(id)
@@ -249,6 +254,7 @@ module ApplicationHelper
       found_id = nil
       alt_ids = []
       main_type = ""
+      related_works = collect_rel_works(xml_record) if f_n =~ /mads/
 
       #parsing found ids, take tlg or phi over stoa unless there is an empty string or "none"
       ids.each do |node|
@@ -268,16 +274,45 @@ module ApplicationHelper
         end
         id = clean_id(node)
         type = node.attribute("type") ? node.attribute("type").value : nil
-        
+      
         unless id =~ /none/i || id == "" || id =~ /0000|\D000$/ || id =~ /\?/ || id =~ /urn:cts|urn:cite/
-          alt_ids << id         
-          if id =~ /tlg|phi|stoa|lccn|viaf|#|fhg/i || type =~ /tlg|phi|stoa|lccn|viaf|mrurn|fhg/i#!!will need to expand this to other standards
-            if found_id =~ /stoa/ && id =~ /phi/
-              found_id = id
-            elsif found_id =~ /tlg|phi|stoa|#|fhg/                
-              #skip, having a hell of a time making it work with 'unless'
+          alt_ids << id  
+                 
+          unless f_n =~ /mads/
+            test_arr = id.split(".")
+            if test_arr.length == 2
+              if found_id =~ /stoa/ && id =~ /phi/
+                found_id = id
+              else
+                found_id = id 
+              end
+            end
+          else
+            #compare id to rel_works if they exist, if matches most common, found_id = id
+            unless related_works.empty?
+              res = related_works.select{|cont| cont =~ /#{id}/}
+              if ((related_works.length - res.length) <= (related_works.length / 2))
+                found_id = id
+              end
             else
-              found_id = id 
+              #if no rel_works take whatever with priority to the regular ones
+              #if it has a lccn or viaf id in found try to replace it
+              if found_id =~ /lccn|viaf/i
+                unless id =~ /lccn|viaf/i
+                  found_id = id
+                end
+              #if the new id is lccn or viaf and the found is not don't replace
+              else
+                unless id =~ /lccn|viaf/i
+                  if found_id =~ /stoa/ && id =~ /phi/
+                    found_id = id
+                  else
+                    found_id = id 
+                  end
+                else
+                  found_id = id if found_id == nil
+                end           
+              end
             end
           end         
         end
@@ -286,7 +321,7 @@ module ApplicationHelper
       #if no id found throw an error   
       unless found_id    
         message = "For file #{f_n} : Could not find a suitable id, please check 
-        that there is a tlg, phi, or stoa id, that there are no ?'s or that, if a mads, the mads namespace is present."
+        that there is a standard id, that there are no ?'s, or that, if a mads, the mads namespace is present."
         error_handler(message, true)
         return
       else
