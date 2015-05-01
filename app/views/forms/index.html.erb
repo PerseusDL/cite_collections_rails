@@ -1,0 +1,24 @@
+<h1>Reserve URNs or Create New Records</h1>
+
+  <div id="firstPart">
+    <%= form_tag forms_path, :id => "init_search", :remote => "true" do %>
+      <%= label_tag("Is this a new version from an existing edition or translation?") %>
+      <%= select_tag :field_type, options_for_select([["Yes", :version], ["No", :work]]) %><br>
+      <%= label_tag("Enter the Work ID") %>
+      <%= text_field_tag(:search) %>
+      <%= submit_tag("Search", :id => "s_button") %>
+      
+    <% end %>
+  </div>
+  <div id="secondPart">
+    <%= render 'search'%>
+  </div>
+
+  <div id="thirdPart">
+    <%= render 'reserve' %>
+  </div>
+
+<div id="otherSearch">
+  <p>Don't have a Work ID to search by?</p>
+</div>
+

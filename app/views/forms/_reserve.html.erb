@@ -1,0 +1,26 @@
+
+<% if @w_row %>
+
+  <table>
+    <tr>
+      <%= render "w_table", row: @w_row %>
+    </tr>
+  </table>
+  <h5>Please enter the following information for your new edition of the work you selected.</h5><br>
+  <div id="reserve_container">
+    <%= form_tag forms_reserve_path, :id => "reserve_form", :remote => "true" do %>
+      <%= label_tag("Enter the type of version") %>
+      <%= text_field_tag(:v_type, nil, :placeholder => "edition or translation") %><br>
+      <%= label_tag("Enter the language code for the version") %>
+      <%= text_field_tag(:lang_code, nil, :placeholder => "lat, grc, eng, etc.") %><br>
+      <%= label_tag("Is this a Perseus edition? ") %>
+      <%= select_tag(:perseus_check, options_for_select([["Yes", :perseus], ["No", :opp]])) %><br>
+      <%= label_tag("Enter your name") %>
+      <%= text_field_tag(:name) %><br>
+      <%= hidden_field_tag :w_cts, @w_row.work %>
+      <%= hidden_field_tag :w_title, @w_row.title_eng %>
+      <%= hidden_field_tag :w_lang, @w_row.orig_lang %>
+      <%= submit_tag("Reserve URN", :id => "res_button") %>
+    <% end %>
+  </div>
+<% end %>
