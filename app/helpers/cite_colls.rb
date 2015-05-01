@@ -10,17 +10,6 @@
 module CiteColls
   require 'nokogiri'
   require 'mechanize'
-  require 'google/api_client'
-  require 'google/api_client/client_secrets'
-
-
-  def cite_base(search = false)
-    cite_url = "http://sosol.perseus.tufts.edu/testcoll/"
-    if search
-      cite_url = "#{cite_url}list?withXslt=citequery.xsl&coll=urn:cite:perseus:"
-    end
-    return cite_url
-  end
 
 
   def set_agent(a_alias = 'Mac Safari')
@@ -64,206 +53,7 @@ module CiteColls
     return page
   end
 
-  def fusion_auth
-    #if anyone else implements this:
-    #for this to work, you will need to obtain the private key for the google dev service account
-    
-    @client=Google::APIClient.new(:application_name => 'autoImport', :application_version => '1.0.0')
-    @ft = @client.discovered_api('fusiontables')
-    path_to_key = "#{BASE_DIR}/gkey/9aa4bd6b8f715613724b1e61d9c99a37f5d7722b-privatekey.p12"
-    key = Google::APIClient::KeyUtils.load_from_pkcs12(path_to_key, 'notasecret')
-    @client.authorization=Signet::OAuth2::Client.new(:token_credential_uri => 'https://accounts.google.com/o/oauth2/token', :audience => 'https://accounts.google.com/o/oauth2/token', :scope => 'https://www.googleapis.com/auth/fusiontables', :issuer => '202250365961-4r8cli9tm8dkaudk3rm6jl5ol3t9tcdt@developer.gserviceaccount.com', :signing_key => key)
-    @client.authorization.fetch_access_token!
-  end
 
-
-  def cite_key
-    key = "&key=AIzaSyDo63Clfa5Z9Mf1rw1uKdA-mNVADg49Oic"
-  end
-
-  def table_keys
-    keys = {:Authors => "1JKDi1OHvxWoh1w38mnQfUDey2pB_nx3UnRITvcA", 
-            :Textgroups => "1I0Zkm1mAfydn6TfFEWH2h0D3boAd4q7zC-4vuUY", 
-            :Works => "1PQY6nVHZV8Ng42-qrbiLKXwDz9XoNlStKi3xKfU",
-            :Versions => "1STn9raQzWZDeIC4f_LHuLDUPPW3BDkpFfyKrKtw"
-            }
-  end
-
-  def cite_tables_backup 
-    #backup the current cite tables and upload to github
-    #maintain number of backups at 5
-    update_git_dir("cite_collections")
-    cite_dir = "#{BASE_DIR}/cite_collections"
-    cite_backups_dir = "#{cite_dir}/csv_backups"
-
-    #0authors table, 1textgroups, 2works, 3versions
-    t_ks = table_keys
-    #grab the csv files of the tables
-    t_ks.each_pair do |name, key|
-      table_csv = @agent.get"https://www.google.com/fusiontables/exporttable?query=select+*+from+#{key}"
-      saved_file = File.new("#{cite_backups_dir}/Perseus#{name}Collection_#{Date.today}.csv", "w")
-      saved_file.close
-    end
-
-    #check that we only have the last 5 backups
-    file_list = Dir.entries(cite_backups_dir).map {|e| File.join(cite_backups_dir, e)}.select {|f| File.file? f}.sort_by {|f| File.mtime f}
-    if file_list.length >= 24
-      to_delete = file_list.first(4)
-      to_delete.each {|x| File.delete(x)}
-    end 
-
-    #push to git
-    `git --git-dir=#{cite_dir}/.git --work-tree=#{cite_dir} commit -a -m "csv backups for #{Date.today}"`
-    `git --git-dir=#{cite_dir}/.git --work-tree=#{cite_dir} push`
-  end
-
-
-  def get_all_works
-    puts "processing Works CITE collection"
-    
-    #CITE collection 
-    begin  
-      result = multi_get("#{cite_base}api?req=GetValidReff&urn=urn:cite:perseus:catwk#{cite_key}")
-    rescue Mechanize::ResponseCodeError => e
-      if e.response_code =~ /500/
-        puts "500, retry in 1 second"
-        sleep 1
-        retry
-      end
-    end
-    #'result' will be a Mechanize::XML document which is based upon Nokogiri::XML::Document
-    #before returning we have to dig to get to the level we want, namely the result, get a nokogiri NodeSet
-    works_list = result.search("reply").children
-   
-    return works_list
-  end
-
-  #I could abstract these into a cts query method, but dealing with the urls is a little tricky, so not doing it right now
-  def find_work(work_urn)
-    begin
-      work_raw = multi_get("#{cite_base(true)}catwk&prop=work&work=#{work_urn}#{cite_key}")
-    rescue Mechanize::ResponseCodeError => e
-      if e.response_code =~ /500/
-        puts "500, retry in 1 second"
-        retry
-      end
-    end
-    
-    noko_work = work_raw.search("reply")
-    if noko_work.children.empty?
-      #work not found, row needs to be added
-      return []
-    else
-      return noko_work
-    end
-  end
-
-
-  def find_textgroup(tg_urn)
-    #locates and matches textgroup urn input
-    begin
-      tg_raw = multi_get("#{cite_base(true)}cattg&prop=textgroup&textgroup=#{tg_urn}#{cite_key}")
-      sleep 1
-    rescue Mechanize::ResponseCodeError => e
-      if e.response_code =~ /500/
-        puts "500, retry in 1 second"
-        retry
-      end
-    end
-    noko_tg = tg_raw.search("reply")
-    if noko_tg.children.empty?
-      tg_cts = []
-    else
-      tg_cts = noko_tg.children
-    end
-    return tg_cts
-  end
-
-  def find_textgroup_name(tg_urn)
-    tg_nodes = find_textgroup(tg_urn)
-    unless tg_nodes.empty?
-      tg_name = noko_tg.children.xpath("cite:citeProperty[@label='Groupname (English)']").inner_text
-    else
-      tg_name = nil
-    end
-    return tg_name
-  end
-
-  def find_author(tg_id)
-    begin
-      auth_raw = multi_get("#{cite_base(true)}author&prop=canonical_id&canonical_id=#{tg_id}#{cite_key}")
-      noko_auth = auth_raw.search("reply")
-      if noko_auth.children.empty?
-        #serch alt ids
-        auth_raw = multi_get("#{cite_base(true)}author&prop=alt_ids&alt_ids=#{tg_id}:CONTAINS#{cite_key}")
-        noko_auth = auth_raw.search("reply")
-      end
-
-      unless noko_auth.children.empty?
-        auth_cts = noko_auth
-        #auth_mads = noko_auth.children.xpath("cite:citeProperty[@label='MADS File']")
-        #will return a full or empty nodeset
-        #also ideally I'd want to search on related_works, but none of them have that atm
-      else
-        auth_cts = []
-      end
-      return auth_cts
-    rescue Mechanize::ResponseCodeError => e
-      if e.response_code =~ /500/
-        puts "500, retry in 1 second"
-        sleep 1
-        retry
-      end
-    end
-  end
-
-  def find_auth_by_path(mads_path)
-    begin
-      mads_path = mads_path[/\d+\.mads\.xml/] if mads_path =~ /\+/
-      auth_raw = multi_get("#{cite_base(true)}author&prop=mads_file&mads_file=#{mads_path}:CONTAINS#{cite_key}")
-      noko_auth = auth_raw.search("reply")
-      unless noko_auth.children.empty?
-        auth_cts = noko_auth
-      else
-        auth_cts = []
-      end
-      return auth_cts
-    rescue Mechanize::ResponseCodeError => e
-      if e.response_code =~ /500|403/
-        puts "bad response, retry in 2 seconds"
-        sleep 2
-        retry
-      end
-    end
-  end
-
-
-  def find_vers_by_cts(table_key, cts_urn)
-    query = "SELECT * FROM #{table_key} WHERE 'version' LIKE '#{cts_urn}'"
-    response = @client.execute(:api_method => @ft.query.sql, :parameters => {:sql => query, :alt => "csv"})
-    csv_res = response.body.split("\n")
-  end
-
-  def add_cite_row(table_key, columns, values)
-    query = "INSERT INTO #{table_key} (#{columns}) VALUES (#{values})"
-    response = @client.execute(:api_method => @ft.query.sql, :parameters => {:sql => query})
-  end
-
-  def update_cite_row(table_key, col_val_pairs, row_id)
-    query = "UPDATE #{table_key} SET #{col_val_pairs.join(', ')} WHERE ROWID = #{row_id}"
-    response = @client.execute(:api_method => @ft.query.sql, :parameters => {:sql => query})
-  end
-
-  def generate_urn(table_key, code)
-    query = "SELECT urn FROM #{table_key} ORDER BY urn DESC"
-    response = @agent.get("https://www.googleapis.com/fusiontables/v1/query?sql=#{query}&alt=csv#{cite_key}")
-    last_urn = response.body.split("\n")[1]
-    unless last_urn
-      new_urn = "urn:cite:perseus:#{code}.1.1"
-    else
-      new_urn = inc_urn(last_urn, code)
-    end
-  end
 
   def inc_urn(last_urn, code)
     count = last_urn.split(".")[1].to_i + 1
@@ -271,21 +61,180 @@ module CiteColls
   end
 
 
-  def get_row_id(table_key, urn)
-    query ="SELECT ROWID FROM #{table_key} WHERE urn = '#{urn}'"
-    response = @agent.get("https://www.googleapis.com/fusiontables/v1/query?sql=#{query}&alt=csv#{cite_key}")
-    row_id = response.body.split("\n")[1]
+  def add_to_cite_tables(info_hash, mods_xml=nil)
+    begin
+      #cite table columns are...
+      #auth_col = "urn, authority_name, canonical_id, mads_file, alt_ids, related_works, urn_status, redirect_to, created_by, edited_by"
+      #tg_col = "urn, textgroup, groupname_eng, has_mads, mads_possible, notes, urn_status, redirect_to, created_by, edited_by"
+      #work_col = "urn, work, title_eng, notes, urn_status, redirect_to, created_by, edited_by"
+
+      #reminder! there can be more than one author, so authors are handled in arrays
+      cite_auth_arr = info_hash[:cite_auth]
+
+      if cite_auth_arr.empty?
+        #no row for this author, add a row       
+        unless mods_xml
+          #only creates rows in the authors table for mads files, so authors acts as an index of our mads, 
+          #tgs can cover everyone mentioned in mods files
+          a_urn = Author.generate_urn
+          mads_path = create_mads_path(info_hash[:path])[/PrimaryAuthors.+\.xml/]         
+          a_values = ["#{a_urn}", "#{info_hash[:a_name]}", "#{info_hash[:canon_id]}", "#{mads_path}", "#{info_hash[:alt_ids]}", "#{info_hash[:related_works]}", 'published','', 'auto_importer', '']
+          info_hash[:cite_auth] << Author.add_cite_row(a_values)
+        end
+        
+      else
+        cite_auth_arr.each do |cite_auth|
+          #find name returned from cite tables, compare to name from record
+          #if they aren't equal, throw an error
+          cite_name = cite_auth.authority_name
+          cite_auth_id = cite_auth.canonical_id 
+          unless cite_auth_id == info_hash[:canon_id] || cite_auth.alt_ids.include?(info_hash[:canon_id])
+            message = "For file #{info_hash[:file_name]}: The author id saved in the CITE table doesn't match the id in the file, please check."
+            error_handler(message, true)
+            return
+          end
+        end
+        Author.update_row(info_hash, "auto_importer") unless mods_xml
+      end
+
+      unless info_hash[:cite_tg]
+        if info_hash[:a_name]
+          if info_hash[:tg_id]
+            #no row for this textgroup, add a row
+            t_urn = Textgroup.generate_urn
+            t_values = ["#{t_urn}", "#{info_hash[:tg_id]}", "#{info_hash[:a_name]}", "#{info_hash[:cite_auth] != nil}", 'true','', 'published', '', 'auto_importer','']
+            Textgroup.add_cite_row(t_values)
+          else
+            #!!This will need to change once we establish how to coin urns for these sorts of authors
+            message = "LCCN id found in record, this is probably an editor, can not create textgroup"
+            error_handler(message, false)
+            return
+          end
+        else
+          message = "No author name found in record, can not create textgroup"
+          error_handler(message, false)
+          return
+        end
+      else
+        #if mads, check if mads is marked true, update to true if false
+        unless mods_xml
+          tg = info_hash[:cite_tg]
+          mads_stat = tg.has_mads
+          if mads_stat == false
+            Textgroup.update(tg.id, {:has_mads => 'true', :edited_by => "auto_importer"})
+          end
+        end
+      end
+      if mods_xml
+        unless info_hash[:cite_work]
+          #no row for this work, add a row
+          w_urn = Work.generate_urn
+          w_values = [w_urn, info_hash[:w_id], info_hash[:w_title], info_hash[:w_lang], '', 'published', '', 'auto_importer','']
+          Work.add_cite_row(w_values)
+          #check that the work is listed in Author.related_works, if not, add it 
+          cite_auth_arr.each do |cite_auth|
+            w_o_cts = info_hash[:w_id][/\w+\.\w+$/]
+            s_rel_w = cite_auth.related_works
+            unless s_rel_w =~ /#{w_o_cts}/
+              if (s_rel_w == nil || s_rel_w.empty?) 
+                rel_w = w_o_cts 
+              else
+                rel_w = "#{s_rel_w};#{w_o_cts}"
+              end
+              Author.update(cite_auth.id, {:related_works => rel_w})
+            end
+          end
+          puts "added work"
+        else
+          Work.update_row(info_hash, "auto_importer")
+        end
+
+      end
+
+    rescue Exception => e
+      if e.message
+        message = "#{e.message}, #{e.backtrace}"
+      else
+        message = "For file #{info_hash[:file_name]}: something went wrong, #{$!}"
+      end
+      error_handler(message, true)
+      return
+    end
   end
 
-  def download_table (table_key)
-    query ="SELECT * FROM #{table_key}"
-    response = @agent.get("https://www.googleapis.com/fusiontables/v1/query?sql=#{query}&alt=csv#{cite_key}")
-    csv = response.body
+
+  def add_to_vers_table(info_hash, mods_xml, cts_urn=nil)
+    begin      
+      #vers_col = "urn, version, label_eng, desc_eng, type, has_mods, urn_status, redirect_to, member_of, created_by, edited_by"           
+      #two (or more) languages listed, create more records
+      info_hash[:v_langs].each do |lang|
+        puts "in add version"
+        vers_label, vers_desc = create_label_desc(mods_xml)
+        full_label = info_hash[:w_title] + ", " + vers_label
+        vers_urn = ""
+        vers_type = lang == info_hash[:w_lang] ? "edition" : "translation"
+        unless cts_urn
+          #is it a Perseus edition?
+          pers_ed = false
+          mods_xml.search("//mods:identifier").each {|node| pers_ed = true if (node.inner_text =~ /Perseus:text/ || node.inner_text =~ /cts:.+perseus-/)}
+          coll = pers_ed ? "perseus" : "opp"
+          
+          vers_urn_wo_num = "#{info_hash[:w_id]}.#{coll}-#{lang}"
+
+          puts "got urn, #{vers_urn_wo_num}"
+          #pull all versions that have the work id, returns csv w/first row of column names
+          existing_vers = Version.find_by_cts(vers_urn_wo_num)
+          #create cts urn off of preexisting entries in version column
+          if existing_vers.length == 0
+            vers_urn = "#{vers_urn_wo_num}1"
+          else
+            num = nil
+            existing_vers.each_with_index do |line, i|
+              curr_urn = line[:version][/#{vers_urn_wo_num}\d+/]
+              urn_num = curr_urn[/\d+$/].to_i
+              num = urn_num + 1
+              if line[:label_eng] =~ /#{full_label}/ && line[:desc_eng] =~ /#{vers_desc}/
+                #this means that the pulled label and description match the current row, not good?
+                message = "#{curr_urn} and #{vers_urn_wo_num} have the same label and description, please check!"
+                error_handler(message, true)
+                return
+              end
+            end
+            vers_urn = "#{vers_urn_wo_num}#{num}"
+          end
+        else
+          vers_urn = cts_urn
+        end
+        #insert row in table
+        vers_cite = Version.generate_urn
+        puts "got cite urn #{vers_cite}"
+        v_values = ["#{vers_cite}", "#{vers_urn}", "#{full_label}", "#{vers_desc}", "#{vers_type}", 'true', 'published','','','auto_importer', '']
+        Version.add_cite_row(v_values)
+        unless cts_urn
+          add_cts_urn(mods_xml, vers_urn)
+        end
+        modspath = create_mods_path(vers_urn)                           
+        move_file(modspath, mods_xml)
+      end
+    rescue Exception => e
+      message = "For file #{info_hash[:file_name]} : There was an error while trying to save the version, error message was: #{$!}. \n\n #{e.backtrace}"
+      error_handler(message, true)
+    end
   end
 
-  def find_mods(work, textgroup)
-    #locates and returns mods records in process_pending list matching work
-    #iterate through list
-      #look for work and textgroup ids in file
+  def add_cts_urn(mods_xml, vers_urn)
+    #add cts urn to record
+    id_line = mods_xml.search("/mods:mods/mods:identifier").last
+    #there can only be one ctsurn in a record (this is really for creating records with facing translations)
+    if id_line.attribute("type").value == "ctsurn"
+      id_line.content = vers_urn
+    else
+      n_id = Nokogiri::XML::Node.new "mods:identifier", mods_xml
+      n_id.add_namespace_definition("mods", "http://www.loc.gov/mods/v3")
+      n_id.content = vers_urn
+      n_id.set_attribute("type", "ctsurn")
+      id_line.add_next_sibling(n_id)
+    end
   end
+
 end
