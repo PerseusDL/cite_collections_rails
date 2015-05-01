@@ -120,10 +120,14 @@ module ApplicationHelper
           work_row = Work.find_by_id(w_id)   
           orig_lang = lit_abbr
           vers_langs = []
-          lang_nodes = xml_record.search("/mods:mods/mods:relatedItem/mods:language")
-          #sometimes there are no host items so no language is found, this kills the import
-          lang_nodes = xml_record.search("/mods:mods/mods:language") if lang_nodes.empty?
-          lang_nodes.each do |x|
+          #take language nodes from the edition not the host (need to be careful of constituent records?)
+          ed_lang_nodes = xml_record.search("/mods:mods/mods:language")
+          #if no languages throw error
+          if ed_lang_nodes.empty?
+            message = "No language found for the edition, please review!"
+            error_handler(message, true)
+          end
+          ed_lang_nodes.each do |x|
             attri = x.attribute("objectPart")
             #want to only get text language when the designation is there, as opposed to the preface
             if attri

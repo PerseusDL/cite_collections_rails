@@ -4,3 +4,4 @@ stoa,latin,lat
 mrurn,arabic,ara
 fhg,greek,grc
 egf,greek,grc
+ota,latin,lat,NOTE the oxford text archive does have Greek texts but most are by major authors so we are assuming that if we take any texts from here they are going to be Latin this assumption might be wrong but it is how we are operating as of 4/22/2015
