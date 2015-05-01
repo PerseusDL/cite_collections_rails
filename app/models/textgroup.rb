@@ -1,5 +1,7 @@
 class Textgroup < ActiveRecord::Base
-
+  has_many :works
+  has_many :authors
+  
   def self.latest_urn
     latest_urn = Textgroup.last['urn']
   end

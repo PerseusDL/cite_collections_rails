@@ -1,5 +1,6 @@
 class Author < ActiveRecord::Base
-
+  belongs_to :textgroup
+  
   def self.latest_urn
     latest_urn = Author.last['urn']
   end

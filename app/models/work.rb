@@ -1,4 +1,6 @@
 class Work < ActiveRecord::Base
+  has_many :versions
+  belongs_to :textgroup
 
   def self.latest_urn
     latest_urn = Work.last['urn']

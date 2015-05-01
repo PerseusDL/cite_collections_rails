@@ -1,5 +1,6 @@
 class Version < ActiveRecord::Base
-
+  belongs_to :work
+  
   def self.latest_urn
     latest_urn = Version.last['urn']
   end
