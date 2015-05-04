@@ -28,6 +28,7 @@ CiteCollections::Application.routes.draw do
   get 'forms' => 'forms#index'
   post 'forms' => 'forms#index'
   post 'forms/reserve' => 'forms#reserve'
+  post 'forms/create' => 'forms#create'
 
   namespace :api do
     resources :authors, :works, :textgroups, :versions, :constraints => {:id => /urn:cite:\w+:\w+\.*\w*\.*\w*-*\w*/}, only: [:index, :show] do

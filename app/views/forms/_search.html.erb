@@ -1,7 +1,6 @@
 
-<%#byebug%>
-
 <% if @s_res %>
+
 <h5>Find the correct work for your new edition below, and then please select if you would like to reserve a URN or create a full MODS record.</h5>
 <div id="s_tbl">
   <table>
@@ -10,15 +9,24 @@
     <tr>
       <% if params[:field_type] == "work" %>
         <%= render "w_table", row: row %>
+        <td><%= form_tag forms_path, :id => "reserve", :remote => "true" do %>
+              <%= hidden_field_tag :obj, row.urn %>
+              <%= submit_tag("Reserve URN", :id => "r_button") %>      
+              <% end %>
+        </td>
+        <td><%= button_to("Create New MODS", forms_path, :id => "mods", :remote => true )%></td>
       <% elsif params[:field_type] == "version" %>
         <%= render "v_table", row: row %>
+      
+        <td><%= form_tag forms_reserve_path, :id => "reserve", :remote => "true" do %>
+              <%= hidden_field_tag :obj, row.urn %>
+              <%= label_tag("Enter your name") %>
+              <%= text_field_tag(:name) %>
+              <%= submit_tag("Reserve URN", :id => "r_button") %>      
+            <% end %>
+        </td>
+        <td><%= button_to("Create New MODS", forms_path, :id => "mods", :remote => true )%></td>
       <% end %>
-      <td><%= form_tag forms_path, :id => "reserve", :remote => "true" do %>
-            <%= hidden_field_tag :obj, row.urn %>
-            <%= submit_tag("Reserve URN", :id => "r_button") %>      
-          <% end %>
-      </td>
-      <td><%= button_to("Create New MODS", forms_path, :id => "mods", :remote => true )%></td>
     </tr>
     <% end %>
   </table>

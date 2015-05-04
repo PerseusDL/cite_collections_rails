@@ -1,1 +1,10 @@
-<h4>Success!</h4>
+<% if @new_row %>
+  <h4>Success!</h4>
+  <h5>Your created URNs are:</h5>
+    <ul style="list-style-type:none">
+      <li>CITE URN <%= puts "placeholder" %></li>
+      <li>CTS URN <%= puts "placeholder" %></li>
+    </ul>
+    <p>Please make note of these URNs and include your CTS URN with your new edition and its catalog record.</p>
+  
+<% end %>

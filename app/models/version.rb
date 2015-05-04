@@ -16,6 +16,16 @@ class Version < ActiveRecord::Base
     end
   end
 
+  def self.cts_num_incr(existing_vers, v_cts_no_num)
+    num = nil
+    existing_vers.each do |line|
+      curr_urn = line[:version][/#{v_cts_no_num}\d+/]
+      urn_num = curr_urn[/\d+$/].to_i
+      num = urn_num + 1
+    end
+    return num
+  end
+
   def self.find_by_cts(id)
     found_ids = Version.find(:all, :conditions => ["version rlike ?", id])
   end

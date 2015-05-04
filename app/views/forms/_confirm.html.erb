@@ -16,6 +16,10 @@
 
   <h5>If these values look correct, click the 'Create Row' button. If not, please consult the <%= link_to "CITE Tables", root_path  %> and begin again. Or contact us for help.</h5><br>
 
-  <%= button_to "Create Row", forms_reserve_path, :id => "create_row", :remote => true%>
+  <%= form_tag forms_create_path, :id => "create", :remote => "true" do %>
+    <% arr_str = @v_arr[1].to_s %>
+    <%= hidden_field_tag :arr, arr_str %>
+    <%= submit_tag("Create Row", :id => "c_button") %>      
+  <% end %>
   <%= button_to "Go Back", forms_path, :id => "back"%>
 <% end %>

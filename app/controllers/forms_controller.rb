@@ -7,10 +7,7 @@ class FormsController < ApplicationController
       @s_res = Form.search(params)
     else
       obj = params[:obj]
-      if obj =~ /catver/
-        #reproducing an existing version
-
-      elsif obj =~ /catwk/
+      if obj =~ /catwk/
         #new edition of work
         @w_row = Work.find_by_urn(obj)
       else
@@ -32,14 +29,24 @@ class FormsController < ApplicationController
   end
 
   def create
-    @form = Form.new
+    if params[:commit] == "Create Row"
+      re_arr = params[:arr].gsub(/\[|"| "|\]/, '').split(',')
+      @new_row = Form.build_row(re_arr)
+    end
   end
   def reserve
-    if params[:commit] == "Reserve URN"
+    if params[:obj]
+      obj = params[:obj]
+      if obj =~ /catver/
+        #reproducing an existing version
+        v_row = Version.find_by_urn(obj)
+        @v_arr = Form.build_vers_info(params, v_row)
+      else
+        #something is wrong
+      end
+    elsif params[:commit] == "Reserve URN"
       #need to go back and add confirmation for values
       @v_arr = Form.build_vers_info(params)
-    elsif params[:commit] == "Create Row"
-      new_row = Form.build_row(@v_arr)
     end
   end
 end
