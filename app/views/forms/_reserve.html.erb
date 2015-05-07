@@ -23,4 +23,21 @@
       <%= submit_tag("Reserve URN", :id => "res_button") %>
     <% end %>
   </div>
+<% elsif @v_row %>
+  <table>
+    <tr>
+      <%= render "v_table", row: @v_row %>
+    </tr>
+  </table>
+  <div id="v_reserve_container">
+    <%= form_tag forms_reserve_path, :id => "v_reserve_form", :remote => "true" do %>
+      <%= label_tag("Enter your name") %>
+      <%= text_field_tag(:name) %>
+      <%= hidden_field_tag :v_cts, @v_row.version %>
+      <%= hidden_field_tag :v_label, @v_row.label_eng %>
+      <%= hidden_field_tag :v_desc, @v_row.desc_eng %>
+      <%= hidden_field_tag :v_type, @v_row.ver_type %>
+      <%= submit_tag("Reserve URN", :id => "v_res_button") %>
+    <% end %>
+  </div>
 <% end %>

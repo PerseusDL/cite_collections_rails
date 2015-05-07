@@ -2,19 +2,6 @@ class FormsController < ApplicationController
   respond_to :json, :html, :xml 
   #before_filter :authenticate
   def index
-    unless params[:obj]
-      #initial search
-      @s_res = Form.search(params)
-    else
-      obj = params[:obj]
-      if obj =~ /catwk/
-        #new edition of work
-        @w_row = Work.find_by_urn(obj)
-      else
-        #something is wrong...
-      end
-          
-    end
     
   end
 
@@ -34,13 +21,20 @@ class FormsController < ApplicationController
       @new_row = Form.build_row(re_arr)
     end
   end
+
+  def search
+    @s_res = Form.search(params)
+  end
+
   def reserve
     if params[:obj]
       obj = params[:obj]
-      if obj =~ /catver/
+      if obj =~ /catwk/
+        #new edition of work
+        @w_row = Work.find_by_urn(obj)
+      elsif obj =~ /catver/
         #reproducing an existing version
-        v_row = Version.find_by_urn(obj)
-        @v_arr = Form.build_vers_info(params, v_row)
+        @v_row = Version.find_by_urn(obj)
       else
         #something is wrong
       end

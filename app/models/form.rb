@@ -4,29 +4,60 @@ class Form
   attr_accessor :field_type
 
   def self.search(params)
-    if params['field_type'] == "work"
-      #search works
-      res = Work.lookup(params)
-    else
+    wrks = nil
+    if params[:title_eng]
+      wrks = Work.where("title_eng rlike ?", params[:title_eng]).to_a
+      res = wrks
+    end
+    if params[:authority_name]
+      res = Author.where("authority_name rlike ?", params[:authority_name])
+      combo = []
+      
+      res.each do |a|
+        combo_start =[]
+        combo_start << a
+        if wrks
+          wrks.each do |w|
+            if w.work =~ /#{a.canonical_id}/
+              combo_start << w
+            end
+          end
+        else
+          w_arr = a.related_works.split(';')
+          w_arr.each do |w_id|
+            rel_works = Work.where("work rlike ?", w_id)
+            rel_works.each {|w| combo_start << w} if rel_works
+          end
+        end
+        if combo_start.length > 1
+          combo_start.map {|c| combo << c}
+        end
+      end  
+      res = combo
+      res = "" if res == []
+    elsif params[:field_type] == "work"
+        #search works
+        res = Work.lookup(params)
+    elsif params[:field_type] == "version"
       #search versions
       res = Version.lookup(params)
     end
     return res
   end
 
-  def self.build_vers_info(params, ex_row = nil)
+  def self.build_vers_info(params)
     #v_type, lang_code, perseus_check, name, w_cts, w_title, w_lang
     vers_info = [["urn", "version", "label_eng", "desc_eng", "type", "has_mods", "urn_status", "redirect_to", "member_of", "created_by", "edited_by"]]
     vers_cite = Version.generate_urn
-    unless ex_row
+    unless params[:v_cts]
       vers_urn = Form.cts_urn_build(params[:w_cts], params[:perseus_check], params[:lang_code])
       vers_info << ["#{vers_cite}", "#{vers_urn}", "#{params[:w_title]}", "", "#{params[:v_type]}", 'false', 'reserved','','',"#{params[:name]}", '']
     else
-      vers_no_num = ex_row.version[/[\w|:|\.]+-[a-z]+/]
+      vers_no_num = params[:v_cts][/[\w|:|\.]+-[a-z]+/]
       existing_vers = Version.find_by_cts(vers_no_num)
       num = Version.cts_num_incr(existing_vers, vers_no_num)
       vers_urn = "#{vers_no_num}#{num}"
-      vers_info << ["#{vers_cite}", "#{vers_urn}", "#{ex_row.label_eng}", "#{ex_row.desc_eng}", "#{ex_row.ver_type}", 'false', 'reserved','','',"#{params[:name]}", '']
+      vers_info << ["#{vers_cite}", "#{vers_urn}", "#{params[:v_label]}", "#{params[:v_desc]}", "#{params[:v_type]}", 'false', 'reserved','','',"#{params[:name]}", '']
     end
     return vers_info
   end

@@ -1,34 +1,50 @@
 
 <% if @s_res %>
-
-<h5>Find the correct work for your new edition below, and then please select if you would like to reserve a URN or create a full MODS record.</h5>
-<div id="s_tbl">
-  <table>
-
-    <% @s_res.each do |row| %>
-    <tr>
-      <% if params[:field_type] == "work" %>
-        <%= render "w_table", row: row %>
-        <td><%= form_tag forms_path, :id => "reserve", :remote => "true" do %>
-              <%= hidden_field_tag :obj, row.urn %>
-              <%= submit_tag("Reserve URN", :id => "r_button") %>      
-              <% end %>
-        </td>
-        <td><%= button_to("Create New MODS", forms_path, :id => "mods", :remote => true )%></td>
-      <% elsif params[:field_type] == "version" %>
-        <%= render "v_table", row: row %>
-      
-        <td><%= form_tag forms_reserve_path, :id => "reserve", :remote => "true" do %>
-              <%= hidden_field_tag :obj, row.urn %>
-              <%= label_tag("Enter your name") %>
-              <%= text_field_tag(:name) %>
-              <%= submit_tag("Reserve URN", :id => "r_button") %>      
-            <% end %>
-        </td>
-        <td><%= button_to("Create New MODS", forms_path, :id => "mods", :remote => true )%></td>
-      <% end %>
-    </tr>
+  <% if @s_res == [] %>
+    <h5>The work id that you provided is not in the database, please search by other criteria to find your desired work.</h5>
+    <%= form_tag forms_search_path, :id => "alt_search", :remote => "true" do %>
+      <%= label_tag("Author Name") %>
+      <%= text_field_tag(:authority_name) %>
+      <%= label_tag("Work Title") %>
+      <%= text_field_tag(:title_eng) %>
+      <%= submit_tag("Search", :id => "add_search") %>
     <% end %>
-  </table>
-</div>
+  <% elsif @s_res == "" %>
+    <h5>Your provided work and/or author returned no results, if you are sure of the spelling and want to add a new record, please click here, or <%= link_to "go back", forms_path %>.</h5>  
+  <% else %>
+    <h5>Find the correct work for your new edition below, and then please select if you would like to reserve a URN or create a full MODS record.</h5>
+    <% if params[:authority_name] && params[:title_eng] %>
+      <h5>If you still do not see the work you are looking for and have a work id, add the work.</h5>
+    <% end %>
+    <div id="s_tbl">
+      <table>
+        
+
+        <% @s_res.each do |row| %>        
+        <tr>
+          <% if row.class == Author %>
+            <%= render "a_table", row: row %>
+          <% elsif params[:field_type] == "work" || row.class == Work %>
+            <%= render "w_table", row: row %>
+            <td><%= form_tag forms_reserve_path, :id => "reserve", :remote => "true" do %>
+                  <%= hidden_field_tag :obj, row.urn %>
+                  <%= submit_tag("Reserve URN", :id => "r_button") %>      
+                  <% end %>
+            </td>
+            <td><%= button_to("Create New MODS", forms_path, :id => "mods", :remote => true )%></td>
+          <% elsif params[:field_type] == "version" %>
+            <%= render "v_table", row: row %>
+          
+            <td><%= form_tag forms_reserve_path, :id => "reserve", :remote => "true" do %>
+                  <%= hidden_field_tag :obj, row.urn %>
+                  <%= submit_tag("Reserve URN", :id => "r_button") %>      
+                <% end %>
+            </td>
+            <td><%= button_to("Create New MODS", forms_path, :id => "mods", :remote => true )%></td>
+          <% end %>
+        </tr>
+        <% end %>
+      </table>
+    </div>
+  <% end %>
 <% end %> 

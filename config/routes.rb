@@ -26,7 +26,7 @@ CiteCollections::Application.routes.draw do
   end
 
   get 'forms' => 'forms#index'
-  post 'forms' => 'forms#index'
+  post 'forms/search' => 'forms#search'
   post 'forms/reserve' => 'forms#reserve'
   post 'forms/create' => 'forms#create'
 
