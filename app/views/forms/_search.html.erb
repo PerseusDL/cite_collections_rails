@@ -18,8 +18,6 @@
     <% end %>
     <div id="s_tbl">
       <table>
-        
-
         <% @s_res.each do |row| %>        
         <tr>
           <% if row.class == Author %>
@@ -29,7 +27,7 @@
             <td><%= form_tag forms_reserve_path, :id => "reserve", :remote => "true" do %>
                   <%= hidden_field_tag :obj, row.urn %>
                   <%= submit_tag("Reserve URN", :id => "r_button") %>      
-                  <% end %>
+                <% end %>
             </td>
             <td><%= button_to("Create New MODS", forms_path, :id => "mods", :remote => true )%></td>
           <% elsif params[:field_type] == "version" %>
