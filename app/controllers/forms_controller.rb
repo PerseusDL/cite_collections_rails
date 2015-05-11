@@ -43,4 +43,10 @@ class FormsController < ApplicationController
       @v_arr = Form.build_vers_info(params)
     end
   end
+
+  def mods
+    if params["commit"] == "Create MODS"
+      @mods = Form.mods_creation(params)
+    end
+  end
 end

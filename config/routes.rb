@@ -29,6 +29,7 @@ CiteCollections::Application.routes.draw do
   post 'forms/search' => 'forms#search'
   post 'forms/reserve' => 'forms#reserve'
   post 'forms/create' => 'forms#create'
+  post 'forms/mods' => 'forms#mods'
 
   namespace :api do
     resources :authors, :works, :textgroups, :versions, :constraints => {:id => /urn:cite:\w+:\w+\.*\w*\.*\w*-*\w*/}, only: [:index, :show] do

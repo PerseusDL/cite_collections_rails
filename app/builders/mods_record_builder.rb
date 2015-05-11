@@ -193,7 +193,6 @@ class ModsRecordBuilder
           subj.each do |topic|
             new_mods['mods'].subject{
                 new_mods['mods'].topic(topic)
-              end
             }
           end
         end

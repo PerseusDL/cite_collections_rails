@@ -1,10 +1,14 @@
-  
-  <%= form_tag forms_reserve_path, :id => "mods_form", :remote => "true" do %>
+<% unless @mods %>  
+  <%= form_tag forms_mods_path, :id => "mods_form", :remote => "true" do %>
     <%= label_tag("Primary ID") %>
-    <%= text_field_tag(:p_id) %><br>
+    <%= text_field_tag(:p_id) %>
+    <%= label_tag("ID type") %>
+    <%= text_field_tag(:p_id_type) %><br>
     <%= label_tag("Alternate ID") %>
     <%= text_field_tag(:alt_id) %><br>
-    <%= label_tag("Uniform Title") %>
+    <%= label_tag("ID type") %>
+    <%= text_field_tag(:alt_id_type) %><br>
+    <%= label_tag("Primary Title") %>
     <%= text_field_tag(:title) %><br>
     <%= label_tag("Author Name") %>
     <%= text_field_tag(:a_name) %><br>
@@ -21,13 +25,17 @@
     <%= label_tag("Publisher City") %>
     <%= text_field_tag(:p_city) %><br>
     <%= label_tag("Publisher Country") %>
-    <%= text_field_tag(:p_country) %><br>
-    <%= label_tag("Date Issued") %>
+    <%= text_field_tag(:p_country) %>
+    <%= link_to "Country code list", "http://www.loc.gov/marc/countries/countries_name.html" %><br>
+    <%= label_tag("Manuscript?") %>
+    <%= select_tag :manuscript, options_for_select([["Yes", :true], ["No", :false]]) %><br>
+    <%= label_tag("Date") %>
     <%= text_field_tag(:date) %><br>
     <%= label_tag("Edition") %>
     <%= text_field_tag(:edition) %><br>
     <%= label_tag("Text Language") %>
-    <%= text_field_tag(:lang) %><br>
+    <%= text_field_tag(:lang) %>
+    <%= link_to "Language code list", "http://www.loc.gov/marc/languages/language_name.html" %><br>
     <%= label_tag("Physical Description") %>
     <%= text_field_tag(:phys_desc) %><br>
     <%= label_tag("Series") %>
@@ -38,3 +46,8 @@
     <%= text_field_tag(:url_label) %><br>
     <%= submit_tag("Create MODS", :id => "mods_button") %>
   <% end %>
+<% else %>
+  <h5>Please double check the generated XML file</h5>
+  <% byebug %>
+  <%= render :partial => "mods_prev" %>
+<% end %>

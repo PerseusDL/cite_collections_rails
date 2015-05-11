@@ -1,5 +1,6 @@
 class Form
   include ActiveModel::Model
+  require 'mods_record_builder.rb'
 
   attr_accessor :field_type
 
@@ -75,11 +76,48 @@ class Form
     return vers_urn   
   end
 
-  
 
   def self.build_row(vers_arr)
     #row = Version.add_cite_row(vers_arr)
     row = "Wheee"
   end 
+
+
+  def self.mods_creation(p)
+    byebug
+    info_arr = [p[:p_id], 
+                p[:p_id_type], 
+                p[:alt_id] == "" ? "" : p[:alt_id] + "|" + p[:alt_id_type] , 
+                p[:title], 
+                "", 
+                p[:a_name],
+                p[:t_o_a],
+                p[:a_dates],
+                "",
+                p[:e_name] == "" ? "" : "editor",
+                p[:e_name],
+                "", "", "",
+                p[:t_name] == "" ? "" : "translator",
+                p[:t_name],
+                "", "", "",
+                "", "", "", "", "",
+                p[:manuscript],
+                p[:p_country],
+                p[:p_city],
+                p[:publisher],
+                p[:manuscript] == "false" ? p[:date] : "",
+                p[:manuscript] == "true" ? p[:date] : "",
+                "",
+                p[:edition],
+                p[:lang],
+                "", 
+                p[:phys_desc],
+                 "", "", "", "",
+                p[:series],
+                p[:url] == "" ? "" : p[:url_label] + "|" + p[:url]
+              ]
+    build = ModsRecordBuilder.new
+    mods_xml = build.mods_builder(info_arr)
+  end
 
 end
