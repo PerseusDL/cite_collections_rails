@@ -46,19 +46,19 @@ class Form
     return res
   end
 
-  def self.build_vers_info(params)
+  def self.build_vers_info(p)
     #v_type, lang_code, perseus_check, name, w_cts, w_title, w_lang
     vers_info = [["urn", "version", "label_eng", "desc_eng", "type", "has_mods", "urn_status", "redirect_to", "member_of", "created_by", "edited_by"]]
     vers_cite = Version.generate_urn
     unless params[:v_cts]
-      vers_urn = Form.cts_urn_build(params[:w_cts], params[:perseus_check], params[:lang_code])
-      vers_info << ["#{vers_cite}", "#{vers_urn}", "#{params[:w_title]}", "", "#{params[:v_type]}", 'false', 'reserved','','',"#{params[:name]}", '']
+      vers_urn = Form.cts_urn_build(p[:w_cts], p[:perseus_check], p[:lang_code])
+      vers_info << ["#{vers_cite}", "#{vers_urn}", "#{p[:w_title]}", "", "#{p[:v_type]}", 'false', 'reserved','','',"#{p[:name]}", '']
     else
       vers_no_num = params[:v_cts][/[\w|:|\.]+-[a-z]+/]
       existing_vers = Version.find_by_cts(vers_no_num)
       num = Version.cts_num_incr(existing_vers, vers_no_num)
       vers_urn = "#{vers_no_num}#{num}"
-      vers_info << ["#{vers_cite}", "#{vers_urn}", "#{params[:v_label]}", "#{params[:v_desc]}", "#{params[:v_type]}", 'false', 'reserved','','',"#{params[:name]}", '']
+      vers_info << ["#{vers_cite}", "#{vers_urn}", "#{p[:v_label]}", "#{p[:v_desc]}", "#{p[:v_type]}", 'false', 'reserved','','',"#{p[:name]}", '']
     end
     return vers_info
   end
@@ -84,7 +84,6 @@ class Form
 
 
   def self.mods_creation(p)
-    byebug
     info_arr = [p[:p_id], 
                 p[:p_id_type], 
                 p[:alt_id] == "" ? "" : p[:alt_id] + "|" + p[:alt_id_type] , 
@@ -118,6 +117,24 @@ class Form
               ]
     build = ModsRecordBuilder.new
     mods_xml = build.mods_builder(info_arr)
+
+    #perseus_check, namespace, o_namespace
+    #build work cts
+    w_cts = namespace != "" ? "urn:cts:#{p[:namespace]}:#{p[:p_id]}" : "urn:cts:#{p[:o_namespace]}:#{p[:p_id]}"
+    #need to continue building this, then can get rid of urn build below it
+    vb_arr = {:w_cts => w_cts, :lang_code => p[:lang]}
+    v_cts_urn = Form.cts_urn_build(w_cts, p[:perseus_check], p[:lang])
+    v_cite = Version.generate_urn
+    id_node = mods_xml.search("/mods:mods/mods:identifier").last
+    n_id = Nokogiri::XML::Node.new "mods:identifier", mods_xml
+    n_id.add_namespace_definition("mods", "http://www.loc.gov/mods/v3")
+    n_id.content = v_cts_urn
+    n_id.set_attribute("type", "ctsurn")
+    id_node.add_next_sibling(n_id)
+
+    #need hash of v_type, lang_code, perseus_check, name, w_cts, w_title, w_lang
+    #arr = Forms.build_vers_info()
+    return mods_xml
   end
 
 end

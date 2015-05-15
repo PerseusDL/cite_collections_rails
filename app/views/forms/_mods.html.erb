@@ -1,7 +1,22 @@
 <% unless @mods %>  
   <%= form_tag forms_mods_path, :id => "mods_form", :remote => "true" do %>
+    <%= label_tag("Enter your name") %>
+    <%= text_field_tag(:name) %><br>
+    <% if @w_row %>
+      <% coll_id = @w_row.work %>
+      <% coll_title = @w_row.title_eng %>
+      <% coll_auth = Textgroup.find_by_textgroup(coll_id[/urn:cts:\w+:\w+/]).groupname_eng %>
+      <% coll_lang = @w_row.orig_lang %>
+    <% else %>
+      <%= label_tag("Is this a Perseus edition? ") %>
+      <%= select_tag(:perseus_check, options_for_select([["Yes", :perseus], ["No", :opp]])) %><br>
+      <%= label_tag("What namespace does this edition belong to? ") %>
+      <%= select_tag(:namespace, options_for_select([["greekLit", :greekLit], ["latinLit", :latinLit], ["arabicLit", :arabicLit]])) %><br>
+      <%= label_tag("If namespace did not appear above, enter it here") %>
+      <%= text_field_tag(:o_namespace) %><br>
+    <% end %>
     <%= label_tag("Primary ID") %>
-    <%= text_field_tag(:p_id) %>
+    <%= text_field_tag(:p_id, coll_id) %>
     <%= label_tag("ID type") %>
     <%= text_field_tag(:p_id_type) %><br>
     <%= label_tag("Alternate ID") %>
@@ -9,9 +24,9 @@
     <%= label_tag("ID type") %>
     <%= text_field_tag(:alt_id_type) %><br>
     <%= label_tag("Primary Title") %>
-    <%= text_field_tag(:title) %><br>
+    <%= text_field_tag(:title, coll_title) %><br>
     <%= label_tag("Author Name") %>
-    <%= text_field_tag(:a_name) %><br>
+    <%= text_field_tag(:a_name, coll_auth) %><br>
     <%= label_tag("Author Term of Address") %>
     <%= text_field_tag(:t_o_a) %><br>
     <%= label_tag("Author Dates") %>
@@ -19,6 +34,8 @@
     <%= label_tag("Editor Name") %>
     <%= text_field_tag(:e_name) %><br>
     <%= label_tag("Translator Name") %>
+    <%= text_field_tag(:t_name) %><br>
+    <%= label_tag("Host Title") %>
     <%= text_field_tag(:t_name) %><br>
     <%= label_tag("Publisher") %>
     <%= text_field_tag(:publisher) %><br>
@@ -34,7 +51,7 @@
     <%= label_tag("Edition") %>
     <%= text_field_tag(:edition) %><br>
     <%= label_tag("Text Language") %>
-    <%= text_field_tag(:lang) %>
+    <%= text_field_tag(:lang, coll_lang) %>
     <%= link_to "Language code list", "http://www.loc.gov/marc/languages/language_name.html" %><br>
     <%= label_tag("Physical Description") %>
     <%= text_field_tag(:phys_desc) %><br>
@@ -48,6 +65,14 @@
   <% end %>
 <% else %>
   <h5>Please double check the generated XML file</h5>
-  <% byebug %>
-  <%= render :partial => "mods_prev" %>
+  <% doc = Nokogiri::XML(@mods) %>
+  <div class="xml_block">
+    <%= doc.to_xml %>
+  </div>
+
+  <h5>If these values look correct, click the 'Create File' button. If not, please consult the <%= link_to "CITE Tables", root_path  %> and begin again. Or contact us for help.</h5><br>
+  <%= form_tag forms_create_path, :id => "mods_create", :remote => "true" do %>
+    <%= hidden_field_tag :mods, @mods %>
+    <%= submit_tag("Create File", :id => "create_file") %>
+  <% end %>
 <% end %>

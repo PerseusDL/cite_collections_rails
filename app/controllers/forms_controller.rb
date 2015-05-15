@@ -45,7 +45,17 @@ class FormsController < ApplicationController
   end
 
   def mods
-    if params["commit"] == "Create MODS"
+    #when and where do I build the array for the version row?
+    if params[:obj]
+      obj = params[:obj]
+      if obj =~ /catwk/
+        #new edition of work
+        @w_row = Work.find_by_urn(obj)
+      elsif obj =~ /catver/
+        #reproducing an existing version
+        #this should get a copy of the existing mods file, copy, add in the new editors and date and urn
+      end
+    elsif params["commit"] == "Create MODS"
       @mods = Form.mods_creation(params)
     end
   end

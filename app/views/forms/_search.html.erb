@@ -10,7 +10,7 @@
       <%= submit_tag("Search", :id => "add_search") %>
     <% end %>
   <% elsif @s_res == "" %>
-    <h5>Your provided work and/or author returned no results, if you are sure of the spelling and want to add a new record, please click here, or <%= link_to "go back", forms_path %>.</h5>  
+    <h5>Your provided work and/or author returned no results, if you are sure of the spelling and want to add a new record, please <%= link_to "click here", forms_mods_path, :remote => "true", :method => "post" %>, or <%= link_to "go back", forms_path %>.</h5>  
   <% else %>
     <h5>Find the correct work for your new edition below, and then please select if you would like to reserve a URN or create a full MODS record.</h5>
     <% if params[:authority_name] && params[:title_eng] %>
@@ -29,7 +29,11 @@
                   <%= submit_tag("Reserve URN", :id => "r_button") %>      
                 <% end %>
             </td>
-            <td><%= button_to("Create New MODS", forms_mods_path, :id => "mods", :remote => true )%></td>
+            <td><%= form_tag forms_mods_path, :id => "mods", :remote => "true" do %>
+                  <%= hidden_field_tag :obj, row.urn %>
+                  <%= submit_tag("Create New MODS", :id => "m_button") %>      
+                <% end %>
+            </td>
           <% elsif params[:field_type] == "version" %>
             <%= render "v_table", row: row %>
           
@@ -38,7 +42,11 @@
                   <%= submit_tag("Reserve URN", :id => "r_button") %>      
                 <% end %>
             </td>
-            <td><%= button_to("Create New MODS", forms_mods_path, :id => "mods", :remote => true )%></td>
+            <td><%= form_tag forms_mods_path, :id => "mods", :remote => "true" do %>
+                  <%= hidden_field_tag :obj, row.urn %>
+                  <%= submit_tag("Create New MODS", :id => "m_button") %>      
+                <% end %>
+            </td>
           <% end %>
         </tr>
         <% end %>
