@@ -5,7 +5,7 @@
       <%= label_tag("Is this a new version from an existing edition or translation?") %>
       <%= select_tag :field_type, options_for_select([["Yes", :version], ["No", :work]]) %><br>
       <%= label_tag("Enter the Work ID") %>
-      <%= text_field_tag(:search) %>
+      <%= text_field_tag(:search, nil, :size => "30") %>
       <%= submit_tag("Search", :id => "s_button") %>
       
     <% end %>

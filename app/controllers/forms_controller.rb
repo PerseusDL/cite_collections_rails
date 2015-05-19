@@ -16,9 +16,14 @@ class FormsController < ApplicationController
   end
 
   def create
-    if params[:commit] == "Create Row"
-      re_arr = params[:arr].gsub(/\[|"| "|\]/, '').split(',')
+    #need to add in creation of work and tg rows
+    re_arr = params[:arr].gsub(/\[|"| "|\]/, '').split(',')
+    if params[:commit] == "Create Row"    
       @new_row = Form.build_row(re_arr)
+    end
+    if params[:mods] && params[:mods] == ""
+      #save mods record to catalog_pending
+      path = Form.save_mods(params[:mods], re_arr)
     end
   end
 
@@ -45,7 +50,6 @@ class FormsController < ApplicationController
   end
 
   def mods
-    #when and where do I build the array for the version row?
     if params[:obj]
       obj = params[:obj]
       if obj =~ /catwk/
@@ -56,7 +60,8 @@ class FormsController < ApplicationController
         #this should get a copy of the existing mods file, copy, add in the new editors and date and urn
       end
     elsif params["commit"] == "Create MODS"
-      @mods = Form.mods_creation(params)
+      @mods, @v_arr = Form.mods_creation(params)
     end
+    #add in mads control here or make a new route?
   end
 end

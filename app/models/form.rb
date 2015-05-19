@@ -6,7 +6,7 @@ class Form
 
   def self.search(params)
     wrks = nil
-    if params[:title_eng]
+    if params[:title_eng] && params[:title_eng] != ""
       wrks = Work.where("title_eng rlike ?", params[:title_eng]).to_a
       res = wrks
     end
@@ -50,17 +50,27 @@ class Form
     #v_type, lang_code, perseus_check, name, w_cts, w_title, w_lang
     vers_info = [["urn", "version", "label_eng", "desc_eng", "type", "has_mods", "urn_status", "redirect_to", "member_of", "created_by", "edited_by"]]
     vers_cite = Version.generate_urn
-    unless params[:v_cts]
+    unless p[:v_cts]
       vers_urn = Form.cts_urn_build(p[:w_cts], p[:perseus_check], p[:lang_code])
       vers_info << ["#{vers_cite}", "#{vers_urn}", "#{p[:w_title]}", "", "#{p[:v_type]}", 'false', 'reserved','','',"#{p[:name]}", '']
     else
-      vers_no_num = params[:v_cts][/[\w|:|\.]+-[a-z]+/]
+      vers_no_num = p[:v_cts][/[\w|:|\.]+-[a-z]+/]
       existing_vers = Version.find_by_cts(vers_no_num)
       num = Version.cts_num_incr(existing_vers, vers_no_num)
       vers_urn = "#{vers_no_num}#{num}"
       vers_info << ["#{vers_cite}", "#{vers_urn}", "#{p[:v_label]}", "#{p[:v_desc]}", "#{p[:v_type]}", 'false', 'reserved','','',"#{p[:name]}", '']
     end
     return vers_info
+  end
+
+  def self.build_work_info(p)
+    work_info = [["urn", "work", "title_eng", "orig_lang", "notes", "urn_status", "redirect_to", "created_by", "edited_by"]]
+    work_cite = Work.generate_urn
+  end
+
+  def self.build_tg_info(p)
+    tg_info = [["urn", "textgroup", "groupname_eng", "has_mads", "mads_possible", "notes", "urn_status", "redirect_to", "created_by", "edited_by"]]
+    tg_cite = Textgroup.generate_urn
   end
 
 
@@ -76,11 +86,27 @@ class Form
     return vers_urn   
   end
 
+  def self.build_work_info(work_arr)
+    #row = Work.add_cite_row(work_arr)
+  end
+
+  def self.build_tg_info(tg_arr)
+    #row = Textgroup.add_cite_row(tg_arr)
+  end
 
   def self.build_row(vers_arr)
     #row = Version.add_cite_row(vers_arr)
     row = "Wheee"
   end 
+
+  def self.save_mods(mods, array)
+    path = "#{BASE_DIR}/catalog_pending/for_approval/#{array[1]}.xml"
+    xml = File.new(path, "w")
+    xml << mods
+    xml.save
+    xml.close
+    return path
+  end
 
 
   def self.mods_creation(p)
@@ -120,21 +146,53 @@ class Form
 
     #perseus_check, namespace, o_namespace
     #build work cts
-    w_cts = namespace != "" ? "urn:cts:#{p[:namespace]}:#{p[:p_id]}" : "urn:cts:#{p[:o_namespace]}:#{p[:p_id]}"
-    #need to continue building this, then can get rid of urn build below it
-    vb_arr = {:w_cts => w_cts, :lang_code => p[:lang]}
-    v_cts_urn = Form.cts_urn_build(w_cts, p[:perseus_check], p[:lang])
-    v_cite = Version.generate_urn
+    unless p[:w_cts] == ""
+      w_cts = p[:w_cts]
+    else
+      w_cts = namespace != "" ? "urn:cts:#{p[:namespace]}:#{p[:p_id]}" : "urn:cts:#{p[:o_namespace]}:#{p[:p_id]}"
+    end
+    #need hash of v_type, lang_code, perseus_check, name, w_cts, w_title, w_lang
+    v_type = p[:w_lang] == p[:lang] ? "edition" : "translation"
+    vb_arr = {:v_type => v_type, :lang_code => p[:lang], :perseus_check => p[:perseus_check], 
+      :name => p[:name], :w_cts => w_cts, :w_title => p[:title], :w_lang => p[:w_lang]}
+    arr = Form.build_vers_info(vb_arr)
+    #mods_xml is string, needs to be xml again
+    mods_xml = Nokogiri::XML::Document.parse(mods_xml, &:noblanks)
     id_node = mods_xml.search("/mods:mods/mods:identifier").last
     n_id = Nokogiri::XML::Node.new "mods:identifier", mods_xml
     n_id.add_namespace_definition("mods", "http://www.loc.gov/mods/v3")
-    n_id.content = v_cts_urn
+    n_id.content = arr[1][1]
     n_id.set_attribute("type", "ctsurn")
     id_node.add_next_sibling(n_id)
 
-    #need hash of v_type, lang_code, perseus_check, name, w_cts, w_title, w_lang
-    #arr = Forms.build_vers_info()
-    return mods_xml
+    return mods_xml.to_xml, arr
+  end
+  
+
+  def self.mads_creation(p)
+    #0authority name, 1authority term of address, 2authority dates, 3alt names(parts sep by ;, multi names sep by |),
+    #4main identifier, 5id type, 6alt ids, 7source note, 8field of activity, 
+    #9urls, 10related works
+    alt_names = p[:a_alt_name] + ";" + p[:alt_lang] + ";" + p[:alt_t_o_a] + ";" + p[:alt_a_dates]
+    alt_ids = p[:alt_id] + ";" + p[:alt_id_type]
+    related_works = p[:rel_w] + ";" + p[:rel_id_type]
+    
+    info_arr = [p[:a_name],
+                p[:t_o_a],
+                p[:a_dates],
+                alt_names,
+                p[:p_id],
+                p[:p_id_type],
+                alt_ids,
+                p[:notes],
+                p[:f_o_a],
+                p[:url],
+                p[:url_label],
+                related_works
+              ]
+    build = MadsRecordBuilder.new
+    mads_xml = build.mads_builder(info_arr)
+    #need to add cite urn
   end
 
 end
