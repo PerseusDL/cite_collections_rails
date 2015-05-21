@@ -17,13 +17,21 @@ class FormsController < ApplicationController
 
   def create
     #need to add in creation of work and tg rows
+    #also author row on mads creation
     re_arr = params[:arr].gsub(/\[|"| "|\]/, '').split(',')
     if params[:commit] == "Create Row"    
       @new_row = Form.build_row(re_arr)
     end
-    if params[:mods] && params[:mods] == ""
-      #save mods record to catalog_pending
-      path = Form.save_mods(params[:mods], re_arr)
+
+    if params[:commit] == "Create File"
+      if params[:mods]
+        @new_row = Form.build_row(re_arr)
+        #save mods record to catalog_pending
+        @path = Form.save_xml(params[:mods], re_arr)
+      elsif params[:mads]
+        @new_row = Form.build_auth_row(re_arr)
+        @path = Form.save_xml(params[:mads], re_arr)
+      end 
     end
   end
 
@@ -62,6 +70,11 @@ class FormsController < ApplicationController
     elsif params["commit"] == "Create MODS"
       @mods, @v_arr = Form.mods_creation(params)
     end
-    #add in mads control here or make a new route?
+  end
+
+  def mads
+    if params[:commit] == "Create MADS"
+      @mads, @v_arr = Form.mads_creation(params)
+    end
   end
 end

@@ -8,7 +8,7 @@ class MadsRecordBuilder
     #4main identifier, 5id type, 6alt ids, 7source note, 8field of activity, 
     #9urls, 10related works
     builder = Nokogiri::XML::Builder.new(:encoding => 'UTF-8') do |new_mads|
-    new_mads.mads('xmlns:mads' => "http://www.loc.gov/mads/v2",
+      new_mads.mads('xmlns:mads' => "http://www.loc.gov/mads/v2",
             'xmlns:mods' => "http://www.loc.gov/mods/v3", 
             'xmlns:xsi' => "http://www.w3.org/2001/XMLSchema-instance",
             'xmlns:xlink' => "http://www.w3.org/1999/xlink",
@@ -23,7 +23,7 @@ class MadsRecordBuilder
           new_mads['mads'].namePart(line_arr[0])
           #term of address
           unless line_arr[1] == ""
-            new_mads['mads'].namePart(:type => "date"){
+            new_mads['mads'].namePart(:type => "termsOfAddress"){
               new_mads.text(line_arr[1])
             }
           end
@@ -38,25 +38,27 @@ class MadsRecordBuilder
 
       #variant names, potentially multiple, need each 
       #3alt names(parts sep by ;, multi names sep by |),
-      line_arr[3].split("|").each do |a_name|
-        a_parts = a_name.split(";")
-        #parts 0alt name, 1alt_lang, 2alt_t_o_a, 3alt_a_dates
-        new_mads['mads'].variant(:type => 'other', :lang => "#{a_parts[1]}"){
-          new_mads['mads'].name(:type => 'personal'){
-            new_mads['mads'].namePart(a_parts[0])
-            unless a_parts[2] == ""
-              new_mads['mads'].namePart(:type => "date"){
-                new_mads.text(a_parts[2])
-              }
-            end
-            #dates
-            unless a_parts[3] == ""
-              new_mads['mads'].namePart(:type => "date"){
-                new_mads.text(a_parts[3])
-              }
-            end
+      unless line_arr[3] == ""
+        line_arr[3].split("|").each do |a_name|
+          a_parts = a_name.split(";")
+          #parts 0alt name, 1alt_lang, 2alt_t_o_a, 3alt_a_dates
+          new_mads['mads'].variant(:type => 'other', :lang => "#{a_parts[1]}"){
+            new_mads['mads'].name(:type => 'personal'){
+              new_mads['mads'].namePart(a_parts[0])
+              unless a_parts[2] == ""
+                new_mads['mads'].namePart(:type => "termsOfAddress"){
+                  new_mads.text(a_parts[2])
+                }
+              end
+              #dates
+              unless a_parts[3] == ""
+                new_mads['mads'].namePart(:type => "date"){
+                  new_mads.text(a_parts[3])
+                }
+              end
+            }
           }
-        }
+        end
       end
 
       #identifier
@@ -73,14 +75,18 @@ class MadsRecordBuilder
       end
 
       #source note (potential each for multiple)
-      new_mads['mads'].note(:type => 'source'){
-        new_mads.text(line_arr[7])
-      }
+      unless line_arr[7] == ""
+        new_mads['mads'].note(:type => 'source'){
+          new_mads.text(line_arr[7])
+        }
+      end
         
       #field of activity, add unless empty
-      new_mads['mads'].fieldOfActivity{
-        new_mads.text(line_arr[8])
-      }
+      unless line_arr[8] == ""
+        new_mads['mads'].fieldOfActivity{
+          new_mads.text(line_arr[8])
+        }
+      end
 
       #urls, need each statement
       line_arr[9].split("|").each do |urls|
@@ -99,7 +105,8 @@ class MadsRecordBuilder
             new_mads.text(parts[0])
           }
         }
-      end    
+      end
+      }    
     end
     return builder.to_xml
   end

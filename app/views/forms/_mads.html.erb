@@ -1,41 +1,56 @@
-
-<p>An * indicates a required field</p> 
-<%= form_tag forms_mods_path, :id => "mads_form", :remote => "true" do %>
-  <%= label_tag("Enter your name") %>
-  <%= text_field_tag(:name, nil, :required => true) %>*<br>
-  <%= label_tag("Primary ID") %>
-  <%= text_field_tag(:p_id, nil, :required => true, :size => "30") %>*
-  <%= label_tag("ID type") %>
-  <%= text_field_tag(:p_id_type, nil, :required => true) %>*<br>
-  <%= label_tag("Alternate ID") %>
-  <%= text_field_tag(:alt_id, nil, :size => "30") %>
-  <%= label_tag("ID type") %>
-  <%= text_field_tag(:alt_id_type) %><br>
-  <%= label_tag("Author Name") %>
-  <%= text_field_tag(:a_name, nil, :required => true) %>*<br>
-  <%= label_tag("Author Term of Address") %>
-  <%= text_field_tag(:t_o_a) %><br>
-  <%= label_tag("Author Dates") %>
-  <%= text_field_tag(:a_dates) %><br>
-  <%= label_tag("Author Alt Name") %>
-  <%= text_field_tag(:a_alt_name) %>
-  <%= label_tag("Alt Name Language") %>
-  <%= text_field_tag(:alt_lang) %> <br>
-  <%= label_tag("Term of Address") %>
-  <%= text_field_tag(:alt_t_o_a) %><br>
-  <%= label_tag("Dates") %>
-  <%= text_field_tag(:alt_a_dates) %><br>
-  <%= label_tag("Notes") %>
-  <%= text_field_tag(:notes) %><br>
-  <%= label_tag("Field of Activity") %>
-  <%= text_field_tag(:f_o_a) %><br>
-  <%= label_tag("URL") %>
-  <%= text_field_tag(:url) %><br>
-  <%= label_tag("URL Label") %>
-  <%= text_field_tag(:url_label) %><br>
-  <%= label_tag("Related Work ID") %>
-  <%= text_field_tag(:rel_w, nil, :size => "30") %>
-  <%= label_tag("ID type") %>
-  <%= text_field_tag(:rel_id_type) %><br>
-  <%= submit_tag("Create MODS", :id => "mods_button") %>
+<% unless @mads%>
+  <p>An * indicates a required field</p> 
+  <%= form_tag forms_mads_path, :id => "mads_form", :remote => "true" do %>
+    <%= label_tag("Enter your name") %>
+    <%= text_field_tag(:name, nil, :required => true) %>*<br>
+    <%= label_tag("Primary ID") %>
+    <%= text_field_tag(:p_id, nil, :required => true, :size => "30") %>*
+    <%= label_tag("ID type") %>
+    <%= text_field_tag(:p_id_type, nil, :required => true) %>*<br>
+    <%= label_tag("Alternate ID") %>
+    <%= text_field_tag(:alt_id, nil, :size => "30") %>
+    <%= label_tag("ID type") %>
+    <%= text_field_tag(:alt_id_type) %><br>
+    <%= label_tag("Author Name") %>
+    <%= text_field_tag(:a_name, nil, :required => true) %>*<br>
+    <%= label_tag("Author Term of Address") %>
+    <%= text_field_tag(:t_o_a) %><br>
+    <%= label_tag("Author Dates") %>
+    <%= text_field_tag(:a_dates) %><br>
+    <%= label_tag("Author Alt Name") %>
+    <%= text_field_tag(:a_alt_name) %>
+    <%= label_tag("Alt Name Language") %>
+    <%= text_field_tag(:alt_lang) %> <br>
+    <%= label_tag("Term of Address") %>
+    <%= text_field_tag(:alt_t_o_a) %><br>
+    <%= label_tag("Dates") %>
+    <%= text_field_tag(:alt_a_dates) %><br>
+    <%= label_tag("Notes") %>
+    <%= text_field_tag(:notes) %><br>
+    <%= label_tag("Field of Activity") %>
+    <%= text_field_tag(:f_o_a) %><br>
+    <%= label_tag("URL") %>
+    <%= text_field_tag(:url) %><br>
+    <%= label_tag("URL Label") %>
+    <%= text_field_tag(:url_label) %><br>
+    <%= label_tag("Related Work ID") %>
+    <%= text_field_tag(:rel_w, nil, :size => "30") %>
+    <%= label_tag("ID type") %>
+    <%= text_field_tag(:rel_id_type) %><br>
+    <%= submit_tag("Create MADS", :id => "mads_button") %>
+  <% end %>
+<% else %>
+  <h5>Please double check the generated XML file</h5>
+  <% doc = Nokogiri::XML(@mads) %>
+  <div class="xml_block">
+    <%= doc.to_xml %>
+  </div>
+  <%byebug%>
+  <h5>If these values look correct, click the 'Create File' button. If not, please consult the <%= link_to "CITE Tables", root_path  %> and begin again. Or contact us for help.</h5><br>
+  <%= form_tag forms_create_path, :id => "mads_create", :remote => "true" do %>
+    <%= hidden_field_tag :mads, @mads %>
+    <% arr_str = @v_arr[1].to_s %>
+    <%= hidden_field_tag :arr, arr_str %>
+    <%= submit_tag("Create File", :id => "create_file") %>
+  <% end %>
 <% end %>

@@ -78,7 +78,8 @@
   <h5>If these values look correct, click the 'Create File' button. If not, please consult the <%= link_to "CITE Tables", root_path  %> and begin again. Or contact us for help.</h5><br>
   <%= form_tag forms_create_path, :id => "mods_create", :remote => "true" do %>
     <%= hidden_field_tag :mods, @mods %>
-    <%= hidden_field_tag :arr, @v_arr %>
+    <% arr_str = @v_arr[1].to_s %>
+    <%= hidden_field_tag :arr, arr_str %>
     <%= submit_tag("Create File", :id => "create_file") %>
   <% end %>
 <% end %>

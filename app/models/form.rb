@@ -96,16 +96,16 @@ class Form
 
   def self.build_row(vers_arr)
     #row = Version.add_cite_row(vers_arr)
-    row = "Wheee"
+    return vers_arr
   end 
 
-  def self.save_mods(mods, array)
+  def self.save_xml(mods, array)
     path = "#{BASE_DIR}/catalog_pending/for_approval/#{array[1]}.xml"
-    xml = File.new(path, "w")
-    xml << mods
-    xml.save
-    xml.close
-    return path
+    #xml = File.new(path, "w")
+    #xml << mods
+    #xml.save
+    #xml.close
+    return path[/catalog_pending.+/]
   end
 
 
@@ -146,10 +146,10 @@ class Form
 
     #perseus_check, namespace, o_namespace
     #build work cts
-    unless p[:w_cts] == ""
+    if p[:w_cts] 
       w_cts = p[:w_cts]
     else
-      w_cts = namespace != "" ? "urn:cts:#{p[:namespace]}:#{p[:p_id]}" : "urn:cts:#{p[:o_namespace]}:#{p[:p_id]}"
+      w_cts = p[:namespace] != "" ? "urn:cts:#{p[:namespace]}:#{p[:p_id]}" : "urn:cts:#{p[:o_namespace]}:#{p[:p_id]}"
     end
     #need hash of v_type, lang_code, perseus_check, name, w_cts, w_title, w_lang
     v_type = p[:w_lang] == p[:lang] ? "edition" : "translation"
@@ -167,7 +167,7 @@ class Form
 
     return mods_xml.to_xml, arr
   end
-  
+
 
   def self.mads_creation(p)
     #0authority name, 1authority term of address, 2authority dates, 3alt names(parts sep by ;, multi names sep by |),
@@ -193,6 +193,23 @@ class Form
     build = MadsRecordBuilder.new
     mads_xml = build.mads_builder(info_arr)
     #need to add cite urn
+    byebug
+    v_arr = Form.build_auth_info(p)
+    #to remove once method is built fully
+    v_arr << ["thing", "other thing"]
+    return mads_xml, v_arr
   end
 
+  def self.build_auth_info(p)
+    #"urn", "authority_name", "canonical_id", "mads_file", "alt_ids", "related_works", 
+    #"urn_status", "redirect_to", "created_by", "edited_by"
+    auth_info = [["urn", "authority_name", "canonical_id", "mads_file", "alt_ids", "related_works", "urn_status", "redirect_to", "created_by", "edited_by"]]
+  end
+
+  def self.build_auth_row(auth_arr)
+    #row = Version.add_cite_row(auth_arr)
+    return auth_arr
+  end 
+
 end
+
