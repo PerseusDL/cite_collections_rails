@@ -1,0 +1,15 @@
+<%= form_tag forms_mods_path, :id => "mods_form", :remote => "true" do %>
+  <%= hidden_field_tag :v_cts, row.version %>
+  <%= hidden_field_tag :v_label, row.label_eng %>
+  <%= hidden_field_tag :v_desc, row.desc_eng %>
+  <%= hidden_field_tag :v_type, row.ver_type %>
+  <%= label_tag("Enter your name") %>
+  <%= text_field_tag(:name, nil, :required => true) %>*<br>
+  <%= label_tag("Editor Name") %>
+  <%= text_field_tag(:e_name, nil, :required => true) %>*<br>
+  <%= label_tag("Date") %>
+  <%= text_field_tag(:date, nil, :required => true) %>*<br>
+  <%= label_tag("Edition") %>
+  <%= text_field_tag(:edition, "Epidoc Edition", :required => true) %>*<br>
+  <%= submit_tag("Copy MODS", :id => "mods_button") %>
+<% end %>

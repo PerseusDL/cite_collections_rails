@@ -66,11 +66,13 @@ class Form
   def self.build_work_info(p)
     work_info = [["urn", "work", "title_eng", "orig_lang", "notes", "urn_status", "redirect_to", "created_by", "edited_by"]]
     work_cite = Work.generate_urn
+    work_info << ["#{work_cite}", "#{p[:w_cts]}", "#{p[:title]}", "#{p[:lang]}", "", "reserved", "", "#{p[:name]}", ""]
   end
 
   def self.build_tg_info(p)
     tg_info = [["urn", "textgroup", "groupname_eng", "has_mads", "mads_possible", "notes", "urn_status", "redirect_to", "created_by", "edited_by"]]
     tg_cite = Textgroup.generate_urn
+    tg_info << ["#{tg_cite}", "#{p[:cts]}", "#{p[:tg_name]}", "false", "true", "", "reserved", "", "#{p[:name]}", ""]
   end
 
 
@@ -86,11 +88,11 @@ class Form
     return vers_urn   
   end
 
-  def self.build_work_info(work_arr)
+  def self.build_work_row(work_arr)
     #row = Work.add_cite_row(work_arr)
   end
 
-  def self.build_tg_info(tg_arr)
+  def self.build_tg_row(tg_arr)
     #row = Textgroup.add_cite_row(tg_arr)
   end
 
@@ -165,9 +167,85 @@ class Form
     n_id.set_attribute("type", "ctsurn")
     id_node.add_next_sibling(n_id)
 
-    return mods_xml.to_xml, arr
+    w_arr = []
+    unless p[:w_cts]
+      w_hash = {:w_cts => w_cts, :title => p[:title], :lang => p[:w_lang], :name => p[:name]}
+      w_arr = Form.build_work_info(w_hash)
+    end
+    tg_arr = []
+    unless p[:tg_name]
+      tg_hash = {:cts => w_cts[/urn:cts:\w+:\w+/], :tg_name => p[:tg_name], :name => p[:name]}
+      tg_arr = Form.build_tg_info(tg_hash)
+    end
+
+    return mods_xml.to_xml, arr, w_arr, tg_arr
   end
 
+  def self.copy_mods(p)
+    #params: v_cts, v_label, v_desc, v_type, name, e_name, date, edition 
+    vers = p[:v_cts]
+    cts_parts = vers.split(':')
+    id_parts = cts_parts[3].split('.')
+    path = "#{BASE_DIR}/catalog_data/mods/#{cts_parts[2]}/#{id_parts[0]}/#{id_parts[1]}/#{id_parts[2]}/#{cts_parts[3]}.mods1.xml"
+    #make new cite row
+    v_row = Form.build_vers_info(p)
+    mods_xml = Form.add_xml(path, p, v_row[1][1])   
+    #need these to make it all work...
+    w_arr = []
+    tg_arr = []
+    return mods_xml.to_xml, v_row, w_arr, tg_arr
+  end
+
+  def self.add_xml(path, p, urn)
+    file_string = File.open(path, "r+")
+    mods_xml = Nokogiri::XML::Document.parse(file_string, &:noblanks)
+    file_string.close
+    ns = mods_xml.namespaces
+    
+    #replace ctsurn
+    id_node = mods_xml.xpath("//mods:identifier[@type='ctsurn']", ns)
+    id_node.content = urn
+    #add encoder sibling
+    editor_node = mods_xml.xpath('mods:mods/mods:name', ns).last
+    Nokogiri::XML::Builder.with(mods_xml.xpath('mods:mods', ns).last) do |xml|
+      xml['mods'].name('xmlns:mods' => "http://www.loc.gov/mods/v3", :type => 'personal'){
+        xml['mods'].namePart(p[:e_name])
+        xml['mods'].role{
+          xml['mods'].roleTerm(:authority => "marcrelator", :type => "text"){
+            xml.text("encoder")
+          }
+        }
+      }
+    end
+    n_name = mods_xml.xpath('mods:mods/mods:name', ns).last
+    editor_node.add_next_sibling(n_name)
+    #add originInfo/dateModified and edition
+    Nokogiri::XML::Builder.with(mods_xml.xpath('//mods:originInfo', ns).last) do |xml|
+      xml['mods'].dateModified('xmlns:mods' => "http://www.loc.gov/mods/v3"){
+        xml.text(p[:date])
+      }
+    end
+
+    ed_node = mods_xml.search("//mods:edition").last
+    if ed_node
+      ed_node.content = p[:edition]
+    else
+      Nokogiri::XML::Builder.with(mods_xml.xpath('//mods:originInfo', ns).last) do |xml|
+        xml['mods'].edition('xmlns:mods' => "http://www.loc.gov/mods/v3"){
+        xml.text(p[:edition])
+      }
+      end
+    end
+    #add subTitle of "Epidoc Edition" if edition == Epidoc
+    if p[:edition] =~ /epidoc/i
+      Nokogiri::XML::Builder.with(mods_xml.xpath("mods:titleInfo[@type='uniform']", ns).last) do |xml|
+        xml['mods'].subTitle('xmlns:mods' => "http://www.loc.gov/mods/v3"){
+          xml.text("Epidoc Edition")
+        }
+      end
+    end
+    return mods_xml
+  end
 
   def self.mads_creation(p)
     #0authority name, 1authority term of address, 2authority dates, 3alt names(parts sep by ;, multi names sep by |),
@@ -210,6 +288,10 @@ class Form
     #row = Version.add_cite_row(auth_arr)
     return auth_arr
   end 
+
+  def self.arrayify(string)
+    re_arr = string.gsub(/\[|"| "|\]/, '').split(',')
+  end
 
 end
 

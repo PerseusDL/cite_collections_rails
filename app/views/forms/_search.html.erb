@@ -14,7 +14,7 @@
   <% else %>
     <h5>Find the correct work for your new edition below, and then please select if you would like to reserve a URN or create a full MODS record.</h5>
     <% if params[:authority_name] && params[:title_eng] %>
-      <h5>If you still do not see the work you are looking for and have a work id, add the work.</h5>
+      <h5>If you still do not see the work you are looking for and have a work id, <%= link_to "add the work", forms_mods_path, :remote => "true", :method => "post" %>.</h5>
     <% end %>
     <div id="s_tbl">
       <table>

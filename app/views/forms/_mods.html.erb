@@ -1,74 +1,80 @@
 <% unless @mods %> 
   <p>An * indicates a required field</p> 
-  <%= form_tag forms_mods_path, :id => "mods_form", :remote => "true" do %>
-    <%= label_tag("Enter your name") %>
-    <%= text_field_tag(:name, nil, :required => true) %>*<br>
-    <% if @w_row %>
-      <% coll_id = @w_row.work %>
-      <%= hidden_field_tag :w_cts, coll_id %>
-      <% s_id = coll_id[/\w+\.\w+/] %>
-      <% coll_title = @w_row.title_eng %>
-      <% coll_auth = Textgroup.find_by_textgroup(coll_id[/urn:cts:\w+:\w+/]).groupname_eng %>
-      <% coll_lang = @w_row.orig_lang %>
-    <% else %>
-      <%= label_tag("What namespace does this edition belong to? ") %>
-      <%= select_tag(:namespace, options_for_select([["greekLit", :greekLit], ["latinLit", :latinLit], ["arabicLit", :arabicLit]])) %><br>
-      <%= label_tag("If namespace did not appear above, enter it here") %>
-      <%= text_field_tag(:o_namespace) %><br>
+  <% if @vers_row %>
+    <%= render "vers_form", row: @vers_row %>
+  <% else %>
+    <%= form_tag forms_mods_path, :id => "mods_form", :remote => "true" do %>
+      <%= label_tag("Enter your name") %>
+      <%= text_field_tag(:name, nil, :required => true) %>*<br>
+      <% if @w_row %>
+        <% coll_id = @w_row.work %>
+        <%= hidden_field_tag :w_cts, coll_id %>
+        <% s_id = coll_id[/\w+\.\w+/] %>
+        <% coll_title = @w_row.title_eng %>
+        <% coll_auth = Textgroup.find_by_textgroup(coll_id[/urn:cts:\w+:\w+/]).groupname_eng %>
+        <%= hidden_field_tag :tg_name, coll_auth %>
+        <% coll_lang = @w_row.orig_lang %>
+      <% else %>
+        <%= label_tag("What namespace does this edition belong to? ") %>
+        <%= select_tag(:namespace, options_for_select([["greekLit", :greekLit], ["latinLit", :latinLit], ["arabicLit", :arabicLit]])) %><br>
+        <%= label_tag("If namespace did not appear above, enter it here") %>
+        <%= text_field_tag(:o_namespace) %><br>
+      <% end %>
+      <%= label_tag("Is this a Perseus edition? ") %>
+      <%= select_tag(:perseus_check, options_for_select([["Yes", :perseus], ["No", :opp]]), :required => true) %>*<br>
+      <%= label_tag("Primary ID") %>
+      <%= text_field_tag(:p_id, s_id, :required => true, :size => "30") %>*
+      <%= label_tag("ID type") %>
+      <%= text_field_tag(:p_id_type, nil, :required => true) %>*<br>
+      <%= label_tag("Alternate ID") %>
+      <%= text_field_tag(:alt_id, nil, :size => "30") %>
+      <%= label_tag("ID type") %>
+      <%= text_field_tag(:alt_id_type) %><br>
+      <%= label_tag("Primary Title") %>
+      <%= text_field_tag(:title, coll_title, :required => true, :size => "30") %>*<br>
+      <%= label_tag("Author Name") %>
+      <%= text_field_tag(:a_name, coll_auth, :required => true) %>*<br>
+      <%= label_tag("Author Term of Address") %>
+      <%= text_field_tag(:t_o_a) %><br>
+      <%= label_tag("Author Dates") %>
+      <%= text_field_tag(:a_dates) %><br>
+      <%= label_tag("Editor Name") %>
+      <%= text_field_tag(:e_name) %><br>
+      <%= label_tag("Translator Name") %>
+      <%= text_field_tag(:t_name) %><br>
+      <%= label_tag("Host Title") %>
+      <%= text_field_tag(:t_name) %><br>
+      <%= label_tag("Publisher") %>
+      <%= text_field_tag(:publisher) %><br>
+      <%= label_tag("Publisher City") %>
+      <%= text_field_tag(:p_city) %><br>
+      <%= label_tag("Publisher Country") %>
+      <%= text_field_tag(:p_country) %>
+      <%= link_to "Country code list", "http://www.loc.gov/marc/countries/countries_name.html" %><br>
+      <%= label_tag("Manuscript?") %>
+      <%= select_tag :manuscript, options_for_select([["Yes", :true], ["No", :false]]) %><br>
+      <%= label_tag("Date") %>
+      <%= text_field_tag(:date, nil, :required => true) %>*<br>
+      <%= label_tag("Edition") %>
+      <%= text_field_tag(:edition) %><br>
+      <%= label_tag("Work Original Language") %>
+      <%= text_field_tag(:w_lang, coll_lang, :required => true) %>*
+      <%= link_to "Language code list", "http://www.loc.gov/marc/languages/language_name.html" %><br>
+      <%= label_tag("Version Text Language") %>
+      <%= text_field_tag(:lang, nil, :required => true) %>*<br>
+      <%= label_tag("Physical Description") %>
+      <%= text_field_tag(:phys_desc) %><br>
+      <%= label_tag("Series") %>
+      <%= text_field_tag(:series) %><br>
+      <%= label_tag("URL") %>
+      <%= text_field_tag(:url) %><br>
+      <%= label_tag("URL Label") %>
+      <%= text_field_tag(:url_label) %><br>
+      <%= submit_tag("Create MODS", :id => "mods_button") %>
     <% end %>
-    <%= label_tag("Is this a Perseus edition? ") %>
-    <%= select_tag(:perseus_check, options_for_select([["Yes", :perseus], ["No", :opp]]), :required => true) %>*<br>
-    <%= label_tag("Primary ID") %>
-    <%= text_field_tag(:p_id, s_id, :required => true, :size => "30") %>*
-    <%= label_tag("ID type") %>
-    <%= text_field_tag(:p_id_type, nil, :required => true) %>*<br>
-    <%= label_tag("Alternate ID") %>
-    <%= text_field_tag(:alt_id, nil, :size => "30") %>
-    <%= label_tag("ID type") %>
-    <%= text_field_tag(:alt_id_type) %><br>
-    <%= label_tag("Primary Title") %>
-    <%= text_field_tag(:title, coll_title, :required => true, :size => "30") %>*<br>
-    <%= label_tag("Author Name") %>
-    <%= text_field_tag(:a_name, coll_auth, :required => true) %>*<br>
-    <%= label_tag("Author Term of Address") %>
-    <%= text_field_tag(:t_o_a) %><br>
-    <%= label_tag("Author Dates") %>
-    <%= text_field_tag(:a_dates) %><br>
-    <%= label_tag("Editor Name") %>
-    <%= text_field_tag(:e_name) %><br>
-    <%= label_tag("Translator Name") %>
-    <%= text_field_tag(:t_name) %><br>
-    <%= label_tag("Host Title") %>
-    <%= text_field_tag(:t_name) %><br>
-    <%= label_tag("Publisher") %>
-    <%= text_field_tag(:publisher) %><br>
-    <%= label_tag("Publisher City") %>
-    <%= text_field_tag(:p_city) %><br>
-    <%= label_tag("Publisher Country") %>
-    <%= text_field_tag(:p_country) %>
-    <%= link_to "Country code list", "http://www.loc.gov/marc/countries/countries_name.html" %><br>
-    <%= label_tag("Manuscript?") %>
-    <%= select_tag :manuscript, options_for_select([["Yes", :true], ["No", :false]]) %><br>
-    <%= label_tag("Date") %>
-    <%= text_field_tag(:date, nil, :required => true) %>*<br>
-    <%= label_tag("Edition") %>
-    <%= text_field_tag(:edition) %><br>
-    <%= label_tag("Work Original Language") %>
-    <%= text_field_tag(:w_lang, coll_lang, :required => true) %>*
-    <%= link_to "Language code list", "http://www.loc.gov/marc/languages/language_name.html" %><br>
-    <%= label_tag("Version Text Language") %>
-    <%= text_field_tag(:lang, nil, :required => true) %>*<br>
-    <%= label_tag("Physical Description") %>
-    <%= text_field_tag(:phys_desc) %><br>
-    <%= label_tag("Series") %>
-    <%= text_field_tag(:series) %><br>
-    <%= label_tag("URL") %>
-    <%= text_field_tag(:url) %><br>
-    <%= label_tag("URL Label") %>
-    <%= text_field_tag(:url_label) %><br>
-    <%= submit_tag("Create MODS", :id => "mods_button") %>
   <% end %>
 <% else %>
+<% byebug %>
   <h5>Please double check the generated XML file</h5>
   <% doc = Nokogiri::XML(@mods) %>
   <div class="xml_block">
@@ -76,10 +82,14 @@
   </div>
 
   <h5>If these values look correct, click the 'Create File' button. If not, please consult the <%= link_to "CITE Tables", root_path  %> and begin again. Or contact us for help.</h5><br>
+  <% w_str = @w_arr != [] ? @w_arr[1].to_s : "" %>
+  <% tg_str = @tg_arr != [] ? @tg_arr[1].to_s : "" %>
   <%= form_tag forms_create_path, :id => "mods_create", :remote => "true" do %>
     <%= hidden_field_tag :mods, @mods %>
     <% arr_str = @v_arr[1].to_s %>
     <%= hidden_field_tag :arr, arr_str %>
+    <%= hidden_field_tag :w_arr, w_str %>
+    <%= hidden_field_tag :tg_arr, tg_str %>
     <%= submit_tag("Create File", :id => "create_file") %>
   <% end %>
 <% end %>

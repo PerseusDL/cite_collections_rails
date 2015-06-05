@@ -18,13 +18,21 @@ class FormsController < ApplicationController
   def create
     #need to add in creation of work and tg rows
     #also author row on mads creation
-    re_arr = params[:arr].gsub(/\[|"| "|\]/, '').split(',')
+    re_arr = Form.arrayify(params[:arr])
     if params[:commit] == "Create Row"    
       @new_row = Form.build_row(re_arr)
     end
 
     if params[:commit] == "Create File"
       if params[:mods]
+        if params[:w_arr]
+          n_arr = Form.arrayify(params[:w_arr])
+          w_row = Form.build_work_row(n_arr)
+        end
+        if params[:tg_arr]
+          tg_arr = Form.arrayify(params[:tg_arr])
+          tg_row = Form.build_tg_row(tg_arr)
+        end
         @new_row = Form.build_row(re_arr)
         #save mods record to catalog_pending
         @path = Form.save_xml(params[:mods], re_arr)
@@ -65,10 +73,13 @@ class FormsController < ApplicationController
         @w_row = Work.find_by_urn(obj)
       elsif obj =~ /catver/
         #reproducing an existing version
-        #this should get a copy of the existing mods file, copy, add in the new editors and date and urn
+        @vers_row = Version.find_by_urn(obj)
+        
       end
     elsif params["commit"] == "Create MODS"
-      @mods, @v_arr = Form.mods_creation(params)
+      @mods, @v_arr, @w_arr, @tg_arr = Form.mods_creation(params)
+    elsif params["commit"] == "Copy MODS"
+      @mods, @v_arr, @w_arr, @tg_arr = Form.copy_mods(params)
     end
   end
 
