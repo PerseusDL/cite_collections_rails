@@ -75,11 +75,15 @@
   <% end %>
 <% else %>
 <% byebug %>
-  <h5>Please double check the generated XML file</h5>
+  <h5>Please double check the generated XML file and the new CITE rows</h5>
   <% doc = Nokogiri::XML(@mods) %>
   <div class="xml_block">
     <%= doc.to_xml %>
   </div>
+
+  <%= render "row_display", num: 11, row: @v_arr %>
+  <%= render "row_display", num: 9, row: @w_arr if @w_arr != []%>
+  <%= render "row_display", num: 10, row: @t_arr if @t_arr != []%>
 
   <h5>If these values look correct, click the 'Create File' button. If not, please consult the <%= link_to "CITE Tables", root_path  %> and begin again. Or contact us for help.</h5><br>
   <% w_str = @w_arr != [] ? @w_arr[1].to_s : "" %>

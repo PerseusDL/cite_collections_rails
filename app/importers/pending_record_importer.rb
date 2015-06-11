@@ -21,8 +21,8 @@ class PendingRecordImporter
     corrections = "#{BASE_DIR}/catalog_data"
 
     #update_git_dir("catalog_pending") UNCOMMENT THIS
-    update_from_catalog_data(corrections)
-    #mads_import(pending_mads)
+    #update_from_catalog_data(corrections)
+    mads_import(pending_mads)
     mods_import(pending_mods)
 
     #remove all the now empty directories, leaving only the files that encountered errors

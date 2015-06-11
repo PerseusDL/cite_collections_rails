@@ -13,7 +13,6 @@ class AtomBuild
   include ApplicationHelper
 
   def set_up_feeds(type)
-     
     st = Time.now      
     today_date = st.strftime("%Y%m%d")
 

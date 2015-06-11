@@ -46,7 +46,9 @@ CiteCollections::Application.routes.draw do
         get 'prevnext'
       end
     end
-    
+    resources :forms, only: [:show] do
+      get 'reserve', on: :collection
+    end
   end
 
 

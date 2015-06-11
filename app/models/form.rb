@@ -270,11 +270,15 @@ class Form
               ]
     build = MadsRecordBuilder.new
     mads_xml = build.mads_builder(info_arr)
-    #need to add cite urn
+    #add cite urn
     byebug
     v_arr = Form.build_auth_info(p)
-    #to remove once method is built fully
-    v_arr << ["thing", "other thing"]
+    id_node = mads_xml.search(".//identifier").last
+    Nokogiri::XML::Builder.with(id_node) do |xml|
+      xml['mads'].identifier('xmlns:mads' => "http://www.loc.gov/mads/v2", :type => "citeurn"){
+        xml.text(v_arr[1][0])
+      }
+    end
     return mads_xml, v_arr
   end
 
@@ -282,10 +286,12 @@ class Form
     #"urn", "authority_name", "canonical_id", "mads_file", "alt_ids", "related_works", 
     #"urn_status", "redirect_to", "created_by", "edited_by"
     auth_info = [["urn", "authority_name", "canonical_id", "mads_file", "alt_ids", "related_works", "urn_status", "redirect_to", "created_by", "edited_by"]]
+    cite_urn = Author.generate_urn
+    auth_info << [cite_urn, p[:a_name], p[:p_id], "", p[:alt_id], p[:rel_w], "reserved", "", p[:name], ""]
   end
 
   def self.build_auth_row(auth_arr)
-    #row = Version.add_cite_row(auth_arr)
+    #row = Author.add_cite_row(auth_arr)
     return auth_arr
   end 
 
