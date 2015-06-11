@@ -13,5 +13,5 @@
     <%= hidden_field_tag :arr, arr_str %>
     <%= submit_tag("Create Row", :id => "c_button") %>      
   <% end %>
-  <%= button_to "Go Back", forms_path, :id => "back"%>
+  <%= button_to "Go Back", forms_path, method: "get", :id => "back"%>
 <% end %>

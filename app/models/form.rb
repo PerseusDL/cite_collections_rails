@@ -52,7 +52,15 @@ class Form
     vers_cite = Version.generate_urn
     unless p[:v_cts]
       vers_urn = Form.cts_urn_build(p[:w_cts], p[:perseus_check], p[:lang_code])
-      vers_info << ["#{vers_cite}", "#{vers_urn}", "#{p[:w_title]}", "", "#{p[:v_type]}", 'false', 'reserved','','',"#{p[:name]}", '']
+      if p[:a_name]
+        desc_start = p[:a_name]
+      else
+        row = Textgroup.find_by_id(p[:w_cts][/urn:cts:\w+:\w+/])
+        desc_start = row ? row[2] : ""
+      end
+      desc_start << ";" + p[:e_name] if p[:e_name]
+      desc_start << ";" + p[:t_name] if p[:t_name]
+      vers_info << ["#{vers_cite}", "#{vers_urn}", "#{p[:w_title]}", "#{desc_start}", "#{p[:v_type]}", 'false', 'reserved','','',"#{p[:name]}", '']
     else
       vers_no_num = p[:v_cts][/[\w|:|\.]+-[a-z]+/]
       existing_vers = Version.find_by_cts(vers_no_num)
@@ -273,7 +281,6 @@ class Form
     build = MadsRecordBuilder.new
     mads_xml = build.mads_builder(info_arr)
     #add cite urn
-    byebug
     v_arr = Form.build_auth_info(p)
     mads_xml = Nokogiri::XML::Document.parse(mads_xml, &:noblanks)
     id_node = mads_xml.search(".//identifier").last
