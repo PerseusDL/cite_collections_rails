@@ -80,11 +80,19 @@
   <div class="xml_block">
     <%= doc.to_xml %>
   </div>
-
-  <%= render "row_display", num: 11, row: @v_arr %>
-  <%= render "row_display", num: 9, row: @w_arr if @w_arr != []%>
-  <%= render "row_display", num: 10, row: @t_arr if @t_arr != []%>
-
+  <div> Version Row
+    <%= render "row_display", num: 11, row: @v_arr %>
+  </div>
+  <div> Work Row
+    <% if @w_arr != []%>
+      <%= render "row_display", num: 9, row: @w_arr %>
+    <% end %>  
+  </div>
+  <div> Textgroup Row
+    <% if @tg_arr != []%>
+      <%= render "row_display", num: 10, row: @tg_arr %>
+    <% end %>
+  </div>
   <h5>If these values look correct, click the 'Create File' button. If not, please consult the <%= link_to "CITE Tables", root_path  %> and begin again. Or contact us for help.</h5><br>
   <% w_str = @w_arr != [] ? @w_arr[1].to_s : "" %>
   <% tg_str = @tg_arr != [] ? @tg_arr[1].to_s : "" %>

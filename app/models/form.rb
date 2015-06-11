@@ -173,8 +173,10 @@ class Form
       w_arr = Form.build_work_info(w_hash)
     end
     tg_arr = []
-    unless p[:tg_name]
-      tg_hash = {:cts => w_cts[/urn:cts:\w+:\w+/], :tg_name => p[:tg_name], :name => p[:name]}
+    tg_cts = w_cts[/urn:cts:\w+:\w+/]
+    tg_row = Textgroup.find_by_id(tg_cts)
+    unless tg_row
+      tg_hash = {:cts => tg_cts, :tg_name => p[:a_name], :name => p[:name]}
       tg_arr = Form.build_tg_info(tg_hash)
     end
 
@@ -273,13 +275,14 @@ class Form
     #add cite urn
     byebug
     v_arr = Form.build_auth_info(p)
+    mads_xml = Nokogiri::XML::Document.parse(mads_xml, &:noblanks)
     id_node = mads_xml.search(".//identifier").last
     Nokogiri::XML::Builder.with(id_node) do |xml|
       xml['mads'].identifier('xmlns:mads' => "http://www.loc.gov/mads/v2", :type => "citeurn"){
         xml.text(v_arr[1][0])
       }
     end
-    return mads_xml, v_arr
+    return mads_xml.to_xml, v_arr
   end
 
   def self.build_auth_info(p)

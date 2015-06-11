@@ -22,22 +22,21 @@ class FormsController < ApplicationController
     if params[:commit] == "Create Row"    
       @new_row = Form.build_row(re_arr)
     end
-
     if params[:commit] == "Create File"
       if params[:mods]
         if params[:w_arr]
           n_arr = Form.arrayify(params[:w_arr])
-          w_row = Form.build_work_row(n_arr)
+          @new_w = Form.build_work_row(n_arr)
         end
         if params[:tg_arr]
           tg_arr = Form.arrayify(params[:tg_arr])
-          tg_row = Form.build_tg_row(tg_arr)
+          @new_tg = Form.build_tg_row(tg_arr)
         end
         @new_row = Form.build_row(re_arr)
         #save mods record to catalog_pending
         @path = Form.save_xml(params[:mods], re_arr)
       elsif params[:mads]
-        @new_row = Form.build_auth_row(re_arr)
+        @new_a = Form.build_auth_row(re_arr)
         @path = Form.save_xml(params[:mads], re_arr)
       end 
     end
@@ -85,7 +84,7 @@ class FormsController < ApplicationController
 
   def mads
     if params[:commit] == "Create MADS"
-      @mads, @v_arr = Form.mads_creation(params)
+      @mads, @a_arr = Form.mads_creation(params)
     end
   end
 end

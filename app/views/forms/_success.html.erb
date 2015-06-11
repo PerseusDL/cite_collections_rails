@@ -1,22 +1,52 @@
-
-<% if @new_row %>
-  <h4>Success!</h4>
-  <h5>Your created URNs are:</h5>
+<h4>Success!</h4>
+<h5>Your created URNs are:</h5>
+<% if @new_row %>  
     <ul style="list-style-type:none">
-      <li>CITE URN <%= @new_row[0] %></li>
-      <li>CTS URN <%= @new_row[1] %></li>
+      <li>Version URNs</li>
+      <ul>
+        <li>CITE URN <%= @new_row[0] %></li>
+        <li>CTS URN <%= @new_row[1] %></li>
+      </ul>
+      <% if @new_w %>
+        <li>Work URNs</li>
+        <ul>
+          <li>CITE URN <%= @new_w[0] %></li>
+          <li>CTS URN <%= @new_w[1] %></li>
+        </ul>
+      <% end %>
+      <% if @new_tg %>
+        <li>Textgroup URNs</li>
+        <ul>
+          <li>CITE URN <%= @new_tg[0] %></li>
+          <li>CTS URN <%= @new_tg[1] %></li>
+        </ul>
+      <% end %>
     </ul>
     <p>Please make note of these URNs and include your CTS URN with your new edition and its catalog record.</p>
   
-<% end %>
+  <% if @path %>
+    <h5>Your new MODS file is saved at:</h5>
+    <p><%= @path %></p>
 
-<% if @path %>
-  <h5>Your new MODS file is saved at:</h5>
-  <p><%= @path %></p>
-
-  <% if @new_row[1][/\w+\./] && Author.get_by_id(@new_row[1][/\w+\./].chop) == [] %>
-    <h5>There does not appear to be an author on file for this id.
-      Would you like to <%= link_to "create a MADS file", forms_mads_path, :remote => "true", :method => "post" %>?</h5>
-    
+    <% if @new_row[1][/\w+\./] && Author.get_by_id(@new_row[1][/\w+\./].chop) == [] %>
+      <h5>There does not appear to be an author on file for this id.
+        Would you like to <%= link_to "create a MADS file", forms_mads_path, :remote => "true", :method => "post" %>?</h5>
+      
+    <% end %>
+  <% end %>
+<% elsif @new_a %>
+  <ul style="list-style-type:none">
+    <li>Author URNs</li>
+    <ul>
+      <li>CITE URN <%= @new_a[0] %></li>
+      <li>Standard ID <%= @new_a[2] %></li>
+    </ul>
+  </ul>
+  <% if @path %>
+    <h5>Your new MADS file is saved at:</h5>
+    <p><%= @path %></p>
   <% end %>
 <% end %>
+
+<%= button_to "Go Back", forms_path, :id => "back"%>
+

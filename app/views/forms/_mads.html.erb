@@ -40,16 +40,18 @@
     <%= submit_tag("Create MADS", :id => "mads_button") %>
   <% end %>
 <% else %>
-  <h5>Please double check the generated XML file</h5>
+  <h5>Please double check the generated XML file and the new CITE row</h5>
   <% doc = Nokogiri::XML(@mads) %>
   <div class="xml_block">
     <%= doc.to_xml %>
   </div>
-  <%byebug%>
+  <div>Author Row
+    <%= render "row_display", num: 10, row: @a_arr %>
+
   <h5>If these values look correct, click the 'Create File' button. If not, please consult the <%= link_to "CITE Tables", root_path  %> and begin again. Or contact us for help.</h5><br>
   <%= form_tag forms_create_path, :id => "mads_create", :remote => "true" do %>
     <%= hidden_field_tag :mads, @mads %>
-    <% arr_str = @v_arr[1].to_s %>
+    <% arr_str = @a_arr[1].to_s %>
     <%= hidden_field_tag :arr, arr_str %>
     <%= submit_tag("Create File", :id => "create_file") %>
   <% end %>
