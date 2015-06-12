@@ -124,7 +124,7 @@ class Form
                 p[:p_id_type], 
                 p[:alt_id] == "" ? "" : p[:alt_id] + "|" + p[:alt_id_type] , 
                 p[:title], 
-                "", 
+                p[:h_title] == "" ? "" : "#{p[:h_title]}|host", 
                 p[:a_name],
                 p[:t_o_a],
                 p[:a_dates],
@@ -152,6 +152,7 @@ class Form
                 p[:url] == "" ? "" : p[:url_label] + "|" + p[:url]
               ]
     build = ModsRecordBuilder.new
+
     mods_xml = build.mods_builder(info_arr)
 
     #perseus_check, namespace, o_namespace

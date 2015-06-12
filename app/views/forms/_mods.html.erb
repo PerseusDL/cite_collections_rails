@@ -43,7 +43,7 @@
       <%= label_tag("Translator Name") %>
       <%= text_field_tag(:t_name) %><br>
       <%= label_tag("Host Title") %>
-      <%= text_field_tag(:t_name) %><br>
+      <%= text_field_tag(:h_title) %><br>
       <%= label_tag("Publisher") %>
       <%= text_field_tag(:publisher) %><br>
       <%= label_tag("Publisher City") %>
@@ -82,16 +82,16 @@
   <div> Version Row
     <%= render "row_display", num: 11, row: @v_arr %>
   </div>
-  <div> Work Row
-    <% if @w_arr != []%>
-      <%= render "row_display", num: 9, row: @w_arr %>
-    <% end %>  
-  </div>
-  <div> Textgroup Row
-    <% if @tg_arr != []%>
-      <%= render "row_display", num: 10, row: @tg_arr %>
-    <% end %>
-  </div>
+  <% if @w_arr != []%>
+    <div> Work Row    
+      <%= render "row_display", num: 9, row: @w_arr %>     
+    </div>
+  <% end %>
+  <% if @tg_arr != []%>
+    <div> Textgroup Row
+      <%= render "row_display", num: 10, row: @tg_arr %>    
+    </div>
+  <% end %>
   <h5>If these values look correct, click the 'Create File' button. If not, please consult the <%= link_to "CITE Tables", root_path  %> and begin again. Or contact us for help.</h5><br>
   <% w_str = @w_arr != [] ? @w_arr[1].to_s : "" %>
   <% tg_str = @tg_arr != [] ? @tg_arr[1].to_s : "" %>

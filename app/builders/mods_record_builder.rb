@@ -12,7 +12,8 @@ class ModsRecordBuilder
 23"authority;authorityURI;valueURI",24"manuscript? (t/f)",25"country code",26"city",27"publisher",
 28"dateIssued",29"dateCreated",30"dateModified",31"edition",32"text language code",
 33"other languages (lang code|objectPart;)",34"extent desc.",35"page start",36"page end",37"page range",
-38"Topics, ; separated",39"series title",40"location (label|url;etc)"
+38"Topics (topic|subtopic;etc.),39"series title",40"online location (label|url;etc)",41"physical location",
+42"shelf location",43"notes",44"table of contents",45"multivolume? (t/f)" 
   
 =end  
 
@@ -31,11 +32,16 @@ class ModsRecordBuilder
         }
 
         alts = line_arr[4].split(';')
+        host_title = nil
         alts.each do |alt|
           parts = alt.split("|")
-          new_mods['mods'].titleInfo(:type => "#{parts[1]}"){
-            new_mods['mods'].title(parts[0])
-          }
+          if parts[1] == "host"
+            host_title = parts[0]
+          else
+            new_mods['mods'].titleInfo(:type => "#{parts[1]}"){
+              new_mods['mods'].title(parts[0])
+            }
+          end
         end
         
         #names (could probably abstract this out, but it would complicate matters...)
@@ -132,6 +138,40 @@ class ModsRecordBuilder
           end
         end
 
+        if host_title
+          host_node = new_mods['mods'].relatedItem(:type => "host"){
+            new_mods['mods'].titleInfo{
+              new_mods['mods'].title(host_title)
+            }
+          }
+        end
+
+        #40"location (label|url;etc)"
+        unless line_arr[40] == ""
+          locs = line_arr[40].split(';')
+          locs.each do |part|
+            parts =  part.split('|')
+            new_mods['mods'].location{
+              new_mods['mods'].url(:displayLabel => parts[0]){
+                new_mods.text(parts[1])
+              }
+            }
+          end
+        end
+      }
+    end
+
+    #have to do some funny business to put things in the right place if there is a host relatedItem
+
+    
+    inner_part = Nokogiri::XML::Builder.new(:encoding => 'UTF-8') do |new_mods|
+
+      new_mods.mods('xmlns:mods' => "http://www.loc.gov/mods/v3", 
+            'xmlns:xsi' => "http://www.w3.org/2001/XMLSchema-instance",
+            'xmlns:atom' => "http://www.w3.org/2005/Atom",
+            'xsi:schemaLocation' => "http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-4.xsd"){
+        new_mods.parent.namespace = new_mods.parent.namespace_definitions.find{|ns|ns.prefix=="mods"}
+
         #type of resource
         if line_arr[24] == "t"
           new_mods['mods'].typeOfResource(:manuscript => "yes"){
@@ -190,9 +230,11 @@ class ModsRecordBuilder
         #38"Topics, ; separated",
         unless line_arr[38] == ""
           subj = line_arr[38].split(';')
-          subj.each do |topic|
+          subj.each do |topics|
             new_mods['mods'].subject{
+              topics.split("|").each do |topic|
                 new_mods['mods'].topic(topic)
+              end
             }
           end
         end
@@ -205,22 +247,25 @@ class ModsRecordBuilder
             }
           }
         end
-
-        #40"location (label|url;etc)"
-        unless line_arr[40] == ""
-          locs = line_arr[40].split(';')
-          locs.each do |part|
-            parts =  part.split('|')
-            new_mods['mods'].location{
-              new_mods['mods'].url(:displayLabel => parts[0]){
-                new_mods.text(parts[1])
-              }
-            }
-          end
-        end
       }
     end
-    return builder.to_xml
+  
+    #commencing funny business
+    doc = Nokogiri::XML(builder.to_xml)
+    host_title_node = doc.search("//mods:relatedItem[@type='host']/mods:titleInfo")[0]
+    doc_two = Nokogiri::XML(inner_part.to_xml)
+    inner_head = doc_two.search("//mods:mods")
+    unless host_title_node == []
+      curr_node = host_title_node
+    else
+      curr_node = doc.search("//mods:identifier").last
+    end
+    inner_head.children.each do |child_node|
+      curr_node.add_next_sibling(child_node)
+      curr_node = child_node
+    end
+    
+    return doc.to_xml
   end
 
 
