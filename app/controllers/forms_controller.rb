@@ -24,17 +24,20 @@ class FormsController < ApplicationController
     end
     if params[:commit] == "Create File"
       if params[:mods]
-        if params[:w_arr]
+        unless params[:w_arr] == ""
           n_arr = Form.arrayify(params[:w_arr])
           @new_w = Form.build_work_row(n_arr)
         end
-        if params[:tg_arr]
+
+        unless params[:tg_arr] == ""
           tg_arr = Form.arrayify(params[:tg_arr])
           @new_tg = Form.build_tg_row(tg_arr)
+          @tg_cts = Form.mini_cts_tg(tg_arr)
         end
         @new_row = Form.build_row(re_arr)
         #save mods record to catalog_pending
         @path = Form.save_xml(params[:mods], re_arr)
+        @v_cts = Form.mini_cts_work(re_arr)
       elsif params[:mads]
         @new_a = Form.build_auth_row(re_arr)
         @path = Form.save_xml(params[:mads], re_arr)
@@ -65,6 +68,7 @@ class FormsController < ApplicationController
   end
 
   def mods
+    byebug
     if params[:obj]
       obj = params[:obj]
       if obj =~ /catwk/

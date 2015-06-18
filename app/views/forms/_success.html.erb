@@ -22,7 +22,20 @@
         </ul>
       <% end %>
     </ul>
-    <p>Please make note of these URNs and include your CTS URN with your new edition and its catalog record.</p>
+    <p>Please make note of these URNs and include your CTS URN with your new edition and its catalog record. Also, please note the CTS Text Inventory information provided below for your added edition.</p>
+    <% if @tg_cts %>
+      <% doc = Nokogiri::XML(@tg_cts) %>
+      <div class="xml_block">
+        <%= doc.to_xml %>
+      </div>
+    <% end %>
+
+    <% if @v_cts %>
+      <% doc = Nokogiri::XML(@v_cts) %>
+      <div class="xml_block">
+        <%= doc.to_xml %>
+      </div>
+    <% end %>
   
   <% if @path %>
     <h5>Your new MODS file is saved at:</h5>
@@ -48,5 +61,5 @@
   <% end %>
 <% end %>
 
-<%= button_to "Go Back", forms_path, :method "get", :id => "back"%>
+<%= button_to "Go Back", forms_path, :method => "get", :id => "back"%>
 

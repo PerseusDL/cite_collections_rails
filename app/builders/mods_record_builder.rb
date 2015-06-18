@@ -186,13 +186,13 @@ class ModsRecordBuilder
           new_mods['mods'].place{
             new_mods['mods'].placeTerm(:type => "code", :authority => "marccountry"){
               new_mods.text(line_arr[25])
-            } unless line_arr[25] == ""
-          }
+            } 
+          } unless line_arr[25] == ""
           new_mods['mods'].place{
             new_mods['mods'].placeTerm(:type => "text"){
               new_mods.text(line_arr[26])
-            } unless line_arr[26] == ""
-          }
+            } 
+          } unless line_arr[26] == ""
           new_mods['mods'].publisher(line_arr[27]) unless line_arr[27] == ""
           new_mods['mods'].dateIssued(line_arr[28]) unless line_arr[28] == ""
           new_mods['mods'].dateCreated(line_arr[29]) unless line_arr[29] == ""
@@ -255,7 +255,7 @@ class ModsRecordBuilder
     host_title_node = doc.search("//mods:relatedItem[@type='host']/mods:titleInfo")[0]
     doc_two = Nokogiri::XML(inner_part.to_xml)
     inner_head = doc_two.search("//mods:mods")
-    unless host_title_node == []
+    unless host_title_node == nil
       curr_node = host_title_node
     else
       curr_node = doc.search("//mods:identifier").last

@@ -120,6 +120,7 @@ class Form
 
 
   def self.mods_creation(p)
+    byebug
     info_arr = [p[:p_id], 
                 p[:p_id_type], 
                 p[:alt_id] == "" ? "" : p[:alt_id] + "|" + p[:alt_id_type] , 
@@ -308,6 +309,65 @@ class Form
 
   def self.arrayify(string)
     re_arr = string.gsub(/\[|"| "|\]/, '').split(',')
+  end
+
+
+  def self.mini_cts_tg(row_arr)
+    #taking in a tg row array
+    projid = row_arr[1][/\w+:\w+$/]
+    tg_cts = Nokogiri::XML::Builder.new(:encoding => 'UTF-8') do |new_cts|
+      new_cts.textgroup('xmlns:ti' => "http://chs.harvard.edu/xmlns/cts/ti", :projid => projid, :urn => row_arr[1]) {
+        new_cts.parent.namespace = new_cts.parent.namespace_definitions.find{|ns|ns.prefix=="ti"}
+        new_cts['ti'].textgroup(row_arr[2])
+      }
+    end
+    return tg_cts.to_xml
+  end
+
+
+  def self.mini_cts_work(row_arr)
+    #taking in a version row array
+    urn = row_arr[1]
+    w_projid = urn[/\w+:\w+\.\w+/].gsub(/:\w+\./, ":")
+    g_urn = urn[/urn:cts:\w+:\w+/]
+    work = Work.find_by_id(urn[/urn:cts:\w+:\w+\.\w+/])
+    e_projid = urn[/\w+:\w+\..+$/].gsub(/:\w+\.\w+\./, ":")
+    work_cts = Nokogiri::XML::Builder.new(:encoding => 'UTF-8') do |new_cts|
+      new_cts.work('xmlns:ti' => "http://chs.harvard.edu/xmlns/cts/ti", :groupUrn => g_urn, 
+        :projid => w_projid, :urn => urn, 'xml:lang' => work.orig_lang){
+        new_cts.parent.namespace = new_cts.parent.namespace_definitions.find{|ns|ns.prefix=="ti"}
+        new_cts['ti'].title('xml:lang' => 'eng'){
+          new_cts.text(work.title_eng)
+        }
+        #could try to abstract these, but it too much of a pain with the builder...
+        if row_arr[4] == "edition"
+          new_cts['ti'].edition(:projid => e_projid){
+            new_cts['ti'].label("xml:lang" => "en"){
+              new_cts.text(row_arr[2])
+            }
+            new_cts['ti'].description("xml:lang" => "en"){
+              new_cts.text(row_arr[3])
+            }
+            if e_projid =~ /perseus/
+              new_cts['ti'].memberOf(:collection => "Perseus:collection:Greco-Roman")
+            end
+          }
+        else
+          new_cts['ti'].translation(:projid => e_projid){
+            new_cts['ti'].label("xml:lang" => "en"){
+              new_cts.text(row_arr[2])
+            }
+            new_cts['ti'].description("xml:lang" => "en"){
+              new_cts.text(row_arr[3])
+            }
+            if e_projid =~ /perseus/
+              new_cts['ti'].memberOf(:collection => "Perseus:collection:Greco-Roman")
+            end
+          }
+        end
+      }
+    end
+    return work_cts.to_xml
   end
 
 end
