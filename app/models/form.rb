@@ -97,16 +97,21 @@ class Form
   end
 
   def self.build_work_row(work_arr)
-    #row = Work.add_cite_row(work_arr)
+    row = Work.add_cite_row(work_arr)
   end
 
   def self.build_tg_row(tg_arr)
-    #row = Textgroup.add_cite_row(tg_arr)
+    row = Textgroup.add_cite_row(tg_arr)
   end
 
   def self.build_row(vers_arr)
-    #row = Version.add_cite_row(vers_arr)
+    row = Version.add_cite_row(vers_arr)
     return vers_arr
+  end 
+
+  def self.build_auth_row(auth_arr)
+    row = Author.add_cite_row(auth_arr)
+    return auth_arr
   end 
 
   def self.save_xml(mods, array)
@@ -120,7 +125,6 @@ class Form
 
 
   def self.mods_creation(p)
-    byebug
     info_arr = [p[:p_id], 
                 p[:p_id_type], 
                 p[:alt_id] == "" ? "" : p[:alt_id] + "|" + p[:alt_id_type] , 
@@ -302,11 +306,7 @@ class Form
     auth_info << [cite_urn, p[:a_name], p[:p_id], "", p[:alt_id], p[:rel_w], "reserved", "", p[:name], ""]
   end
 
-  def self.build_auth_row(auth_arr)
-    #row = Author.add_cite_row(auth_arr)
-    return auth_arr
-  end 
-
+  
   def self.arrayify(string)
     re_arr = string.gsub(/\[|"| "|\]/, '').split(',')
   end
