@@ -68,7 +68,6 @@ class FormsController < ApplicationController
   end
 
   def mods
-    byebug
     if params[:obj]
       obj = params[:obj]
       if obj =~ /catwk/
