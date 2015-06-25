@@ -1,0 +1,7 @@
+$('#vers_table').append('<%= j render @versions %>');
+<% if @versions.next_page %>
+  $('.pagination').replaceWith('<%= j will_paginate @versions %>');
+<% else %>
+  $(window).off('scroll');
+  $('.pagination').remove();
+<% end %>

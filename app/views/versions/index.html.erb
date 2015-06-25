@@ -3,6 +3,7 @@
 <br>
 <%= link_to "Return to main page", root_path %>
 <br>
+
 <div class="index_table">
   <table>
     <thead>
@@ -21,27 +22,14 @@
         <th></th>
         <th></th>
       </tr>
-    </thead>
-
-    <tbody>
-      <% Version.find_each(batch_size: 5000) do |version| %>
-        <tr>
-          <td><%= version.urn %></td>
-          <td><%= version.version %></td>
-          <td><%= version.label_eng %></td>
-          <td><%= version.desc_eng %></td>
-          <td><%= version.ver_type %></td>
-          <td><%= version.has_mods %></td>
-          <td><%= version.urn_status %></td>
-          <td><%= version.redirect_to %></td>
-          <td><%= version.member_of %></td>
-          <td><%= version.created_by %></td>
-          <td><%= version.edited_by %></td>
-          <td><%= link_to 'Show', version_path(version.urn) %></td>
-          <td><%= link_to 'Edit', edit_version_path(version.urn) %></td>
-        </tr>
-      <% end %>
+    </thead>      
+    <tbody id="vers_table">
+      <%= render @versions %>
     </tbody>
   </table>
 </div>
+
+  <div id="infinite-scrolling">
+    <%= will_paginate %>
+  </div>
 

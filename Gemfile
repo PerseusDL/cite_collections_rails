@@ -40,6 +40,7 @@ gem 'bootswatch-rails'
 gem 'mysql2'
 gem 'google-api-client'
 gem 'mechanize'
+gem 'will_paginate'
 
 # Use ActiveModel has_secure_password
 # gem 'bcrypt-ruby', '~> 3.0.0'

@@ -1,0 +1,16 @@
+
+  <tr>
+    <td><%= version.urn %></td>
+    <td><%= version.version %></td>
+    <td><%= version.label_eng %></td>
+    <td><%= version.desc_eng %></td>
+    <td><%= version.ver_type %></td>
+    <td><%= version.has_mods %></td>
+    <td><%= version.urn_status %></td>
+    <td><%= version.redirect_to %></td>
+    <td><%= version.member_of %></td>
+    <td><%= version.created_by %></td>
+    <td><%= version.edited_by %></td>
+    <td><%= link_to 'Show', version_path(version.urn) %></td>
+    <td><%= link_to 'Edit', edit_version_path(version.urn) %></td>
+  </tr>

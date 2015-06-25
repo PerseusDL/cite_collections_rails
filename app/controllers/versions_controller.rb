@@ -7,7 +7,13 @@ class VersionsController < ApplicationController
   def index
     session[:search_results] = request.url
     if request.url =~ /json/
-      @versions = Version.where(urn_status: "published")
+      @versions = Version.where(urn_status: ["published", "reserved"])
+    else
+      @versions = Version.paginate(page: params[:page], per_page: 200)
+      respond_to do |format|
+        format.html
+        format.js
+      end
     end
   end
 
