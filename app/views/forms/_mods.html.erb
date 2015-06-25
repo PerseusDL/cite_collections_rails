@@ -44,10 +44,12 @@
         <%= label_tag("Primary Title") %>
         <%= text_field_tag(:title, coll_title, :required => true, :size => "30") %>* 
       </div>
-      <div class = "field" id = "add_fields0">
+      <%= button_tag("Add Alternate Titles", id: "add_button0", type: "button", onclick: "showMe('#add_fields0');")%>
+      <div class = "hidden_field" id = "add_fields0" style = "display:none;">
         <%= label_tag("Alternate Titles (give in format 'title|type;...')") %>
         <%= text_field_tag(:alt_titles) %> 
       </div>
+
       <div class = "field">
         <%= label_tag("Author Name") %>
         <%= text_field_tag(:a_name, coll_auth, :required => true) %>* 
@@ -73,92 +75,60 @@
         <%= text_field_tag(:a_valueURI) %> 
       </div>
       <!-- Person 1 -->
-      <div class = "field">
+      <%= button_tag("Add an Editor or Translator", id: "add_button2", type: "button", onclick: "showMe('#person1');")%><br>
+      <div class = "hidden_field" id="person1" style = "display:none;">
         <%= label_tag("Person role?") %>
-        <%= select_tag(:ed_or_t1, options_for_select([["Editor", 'editor'], ["Translator", 'translator']]), :required => true) %>* 
-      </div>
-      <div class = "field">
+        <%= select_tag(:ed_or_t1, options_for_select([["Editor", 'editor'], ["Translator", 'translator']])) %><br> 
         <%= label_tag("Name") %>
-        <%= text_field_tag(:ed_or_t1_name) %> 
-      </div>
-      <div class = "field">
+        <%= text_field_tag(:ed_or_t1_name) %><br> 
         <%= label_tag("Term of Address") %>
-        <%= text_field_tag(:ed_or_t1_t_o_a) %> 
-      </div>
-      <div class = "field">
+        <%= text_field_tag(:ed_or_t1_t_o_a) %><br> 
         <%= label_tag("Dates") %>
-        <%= text_field_tag(:ed_or_t1_dates) %> 
-      </div>
-      <div class = "field">
+        <%= text_field_tag(:ed_or_t1_dates) %><br> 
         <%= label_tag("Person Authority") %>
-        <%= text_field_tag(:ed_or_t1_auth) %> 
-      </div>
-      <div class = "field">
+        <%= text_field_tag(:ed_or_t1_auth) %><br> 
         <%= label_tag("Authority URL") %>
-        <%= text_field_tag(:ed_or_t1_authURI) %> 
-      </div>
-      <div class = "field">
+        <%= text_field_tag(:ed_or_t1_authURI) %><br> 
         <%= label_tag("Author Record at Authority") %>
-        <%= text_field_tag(:ed_or_t1_valueURI) %> 
+        <%= text_field_tag(:ed_or_t1_valueURI) %><br> 
       </div>
       <!-- Person 2 -->
-      <div class = "field">
+      <%= button_tag("Add an Editor or Translator", id: "add_button3", type: "button", onclick: "showMe('#person2');")%><br>
+      <div class = "hidden_field" id="person2" style = "display:none;">
         <%= label_tag("Person role?") %>
-        <%= select_tag(:ed_or_t2, options_for_select([["Editor", 'editor'], ["Translator", 'translator']]), :required => true) %>* 
-      </div>
-      <div class = "field">
+        <%= select_tag(:ed_or_t2, options_for_select([["Editor", 'editor'], ["Translator", 'translator']])) %><br>
         <%= label_tag("Name") %>
-        <%= text_field_tag(:ed_or_t2_name) %> 
-      </div>
-      <div class = "field">
+        <%= text_field_tag(:ed_or_t2_name) %><br> 
         <%= label_tag("Term of Address") %>
-        <%= text_field_tag(:ed_or_t2_t_o_a) %> 
-      </div>
-      <div class = "field">
+        <%= text_field_tag(:ed_or_t2_t_o_a) %><br> 
         <%= label_tag("Dates") %>
-        <%= text_field_tag(:ed_or_t2_dates) %> 
-      </div>
-      <div class = "field">
+        <%= text_field_tag(:ed_or_t2_dates) %><br> 
         <%= label_tag("Person Authority") %>
-        <%= text_field_tag(:ed_or_t2_auth) %> 
-      </div>
-      <div class = "field">
+        <%= text_field_tag(:ed_or_t2_auth) %><br> 
         <%= label_tag("Authority URL") %>
-        <%= text_field_tag(:ed_or_t2_authURI) %> 
-      </div>
-      <div class = "field">
+        <%= text_field_tag(:ed_or_t2_authURI) %><br> 
         <%= label_tag("Author Record at Authority") %>
-        <%= text_field_tag(:ed_or_t2_valueURI) %> 
+        <%= text_field_tag(:ed_or_t2_valueURI) %><br> 
       </div>
       <!-- Person 3 -->
-      <div class = "field">
+      <%= button_tag("Add an Editor or Translator", id: "add_button4", type: "button", onclick: "showMe('#person3');")%><br>
+      <div class = "hidden_field" id="person3" style = "display:none;">
         <%= label_tag("Person role?") %>
-        <%= select_tag(:ed_or_t3, options_for_select([["Editor", 'editor'], ["Translator", 'translator']]), :required => true) %>* 
-      </div>
-      <div class = "field">
+        <%= select_tag(:ed_or_t3, options_for_select([["Editor", 'editor'], ["Translator", 'translator']]), :required => true) %><br>
         <%= label_tag("Name") %>
-        <%= text_field_tag(:ed_or_t3_name) %> 
-      </div>
-      <div class = "field">
+        <%= text_field_tag(:ed_or_t3_name) %><br>
         <%= label_tag("Term of Address") %>
-        <%= text_field_tag(:ed_or_t3_t_o_a) %> 
-      </div>
-      <div class = "field">
+        <%= text_field_tag(:ed_or_t3_t_o_a) %><br>
         <%= label_tag("Dates") %>
-        <%= text_field_tag(:ed_or_t3_dates) %> 
-      </div>
-      <div class = "field">
+        <%= text_field_tag(:ed_or_t3_dates) %><br>
         <%= label_tag("Person Authority") %>
-        <%= text_field_tag(:ed_or_t3_auth) %> 
-      </div>
-      <div class = "field">
+        <%= text_field_tag(:ed_or_t3_auth) %><br>
         <%= label_tag("Authority URL") %>
-        <%= text_field_tag(:ed_or_t3_authURI) %> 
-      </div>
-      <div class = "field">
+        <%= text_field_tag(:ed_or_t3_authURI) %><br>
         <%= label_tag("Author Record at Authority") %>
-        <%= text_field_tag(:ed_or_t3_valueURI) %> 
+        <%= text_field_tag(:ed_or_t3_valueURI) %><br> 
       </div>
+      <div>**If you have additional authors/editors/translators to add to the record, include their names in a note below.**</div>
       <div class= "field">
         <%= label_tag("Manuscript?") %>
         <%= select_tag :ms?, options_for_select([["Yes", :true], ["No", :false]]) %> 

@@ -1,0 +1,5 @@
+@showMe = (field) ->
+    $(field).toggle();
+  
+
+
