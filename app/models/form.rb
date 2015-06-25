@@ -308,7 +308,8 @@ class Form
 
   
   def self.arrayify(string)
-    re_arr = string.gsub(/\[|"| "|\]/, '').split(',')
+    step = string.split('",')
+    re_arr = step.each{|x| x.gsub!(/\[|"| "|\]/, '')}
   end
 
 
