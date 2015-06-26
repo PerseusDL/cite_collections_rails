@@ -16,8 +16,6 @@ class FormsController < ApplicationController
   end
 
   def create
-    #need to add in creation of work and tg rows
-    #also author row on mads creation
     re_arr = Form.arrayify(params[:arr])
     if params[:commit] == "Create Row"    
       @new_row = Form.build_row(re_arr)

@@ -11,9 +11,10 @@ class ModsRecordBuilder
 18"authority;authorityURI;valueURI",19"editor or translator",20"name",21"term of address",22"date(s)",
 23"authority;authorityURI;valueURI",24"manuscript? (t/f)",25"country code",26"city",27"publisher",
 28"dateIssued",29"dateCreated",30"dateModified",31"edition",32"text language code",
-33"other languages (lang code|objectPart;)",34"extent desc.",35"page start",36"page end",37"page range",
-38"Topics (topic|subtopic;etc.),39"series title",40"online location (label|url;etc)",41"physical location",
-42"shelf location",43"notes",44"table of contents",45"multivolume? (t/f)" 
+33"other languages (lang code|objectPart;)",34"extent desc.",35"page start(value;unit(optional))",
+36"page end",37"page range(value;unit(optional))",38"Topics (topic|subtopic;etc.),39"series title",
+40"online location (label|url;etc)",41"physical location",42"shelf location",43"notes",
+44"table of contents",45"multivolume? (true/false)" 
   
 =end  
 
@@ -25,7 +26,10 @@ class ModsRecordBuilder
             'xmlns:atom' => "http://www.w3.org/2005/Atom",
             'xsi:schemaLocation' => "http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-4.xsd"){
         new_mods.parent.namespace = new_mods.parent.namespace_definitions.find{|ns|ns.prefix=="mods"}
-
+        
+        #if a multivolume, add an id to the top mods element so we can catch it and add it to a mods collection later
+        new_mods.parent[:id] = "placeholder" if line_arr[45] == "true"
+        
         #titles
         new_mods['mods'].titleInfo{
           new_mods['mods'].title(line_arr[3])
@@ -146,7 +150,7 @@ class ModsRecordBuilder
           }
         end
 
-        #40"location (label|url;etc)"
+        #40"Online location (label|url;etc)"
         unless line_arr[40] == ""
           locs = line_arr[40].split(';')
           locs.each do |part|
@@ -158,12 +162,28 @@ class ModsRecordBuilder
             }
           end
         end
+
+        #41"Physical location"
+        unless line_arr[41] == ""        
+          new_mods['mods'].location{
+            new_mods['mods'].physicalLocation(line_arr[41])
+          }
+        end
+
+        #42"Shelf location"
+        unless line_arr[42] == ""        
+          new_mods['mods'].location{
+            new_mods['mods'].shelfLocation(line_arr[42])
+          }
+        end
+
+        #43"Notes"                
+        new_mods['mods'].note(line_arr[43]) unless line_arr[43] == ""        
       }
     end
 
     #have to do some funny business to put things in the right place if there is a host relatedItem
-
-    
+   
     inner_part = Nokogiri::XML::Builder.new(:encoding => 'UTF-8') do |new_mods|
 
       new_mods.mods('xmlns:mods' => "http://www.loc.gov/mods/v3", 
@@ -226,7 +246,28 @@ class ModsRecordBuilder
           new_mods['mods'].extent(line_arr[34])
         } unless line_arr[34] == ""
 
+        unless line_arr[35] == ""
+          new_mods['mods'].part{
+            unit = line_arr[35] =~ /;/ ? line_arr[35].split(";")[1] : "page"
+            new_mods['mods'].extent(:unit => unit){
+              new_mods['mods'].start(line_arr[35])
+              new_mods['mods'].end(line_arr[36]) unless line_arr[36] == ""
+            }
+          }
+        end
 
+        unless line_arr[37] == ""
+          new_mods['mods'].part{
+            unit = line_arr[37] =~ /;/ ? line_arr[37].split(";")[1] : "page"
+            new_mods['mods'].extent(:unit => unit){
+              new_mods['mods'].list(line_arr[37])
+            }
+          }
+        end
+
+        #44"Table of Contents"               
+        new_mods['mods'].tableOfContents(line_arr[44]) unless line_arr[44] == "" 
+        
         #38"Topics, ; separated",
         unless line_arr[38] == ""
           subj = line_arr[38].split(';')
@@ -250,7 +291,7 @@ class ModsRecordBuilder
       }
     end
   
-    #commencing funny business
+    #commencing previously mentioned funny business
     doc = Nokogiri::XML(builder.to_xml)
     host_title_node = doc.search("//mods:relatedItem[@type='host']/mods:titleInfo")[0]
     doc_two = Nokogiri::XML(inner_part.to_xml)

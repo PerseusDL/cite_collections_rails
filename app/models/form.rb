@@ -1,6 +1,7 @@
 class Form
   include ActiveModel::Model
   require 'mods_record_builder.rb'
+  
 
   attr_accessor :field_type
 
@@ -184,8 +185,8 @@ class Form
       w_cts = p[:namespace] != "" ? "urn:cts:#{p[:namespace]}:#{p[:p_id]}" : "urn:cts:#{p[:o_namespace]}:#{p[:p_id]}"
     end
     #need hash of v_type, lang_code, perseus_check, name, w_cts, w_title, w_lang
-    v_type = p[:w_lang] == p[:lang] ? "edition" : "translation"
-    vb_arr = {:v_type => v_type, :lang_code => p[:lang], :perseus_check => p[:perseus_check], 
+    v_type = p[:w_lang] == p[:lang_code] ? "edition" : "translation"
+    vb_arr = {:v_type => v_type, :lang_code => p[:lang_code], :perseus_check => p[:perseus_check], 
       :name => p[:name], :w_cts => w_cts, :w_title => p[:title], :w_lang => p[:w_lang]}
     arr = Form.build_vers_info(vb_arr)
     #mods_xml is string, needs to be xml again

@@ -172,13 +172,14 @@
         <%= text_field_tag(:lang_code, nil, :required => true) %>* 
       </div>
       <div class= "field">
-        <%= label_tag("Other Languages (give in format 'language code|object part;'") %>
+        <%= label_tag("Other Languages (give in format 'language code|object part;...')") %>
         <%= text_field_tag(:other_langs) %> 
       </div>
       <div class= "field">
         <%= label_tag("Extent Description") %>
         <%= text_field_tag(:extent_desc) %> 
       </div>
+      <div>If your work takes up only part of a volume, give the extent either as a start and end pair or a range (2-5). Range can also take a list of values (2-5, 7-9). If expressing extent in something other than pages, provide the unit after a ; in the start or range fields, e.g. 4v;folio.</div>
       <div class= "field">
         <%= label_tag("Page Start") %>
         <%= text_field_tag(:pg_s) %>
@@ -191,7 +192,7 @@
       </div>  
       <div class= "field">
         <%= label_tag("Topics (give as ; separated list)") %>
-        <%= text_field_tag(:extent_desc) %> 
+        <%= text_field_tag(:topics) %> 
       </div>  
       <div class= "field">
         <%= label_tag("Series") %>
@@ -228,7 +229,7 @@
   <h5>Please double check the generated XML file and the new CITE rows</h5>
   <% doc = Nokogiri::XML(@mods) %>
   <div class="xml_block">
-    <%= doc.to_xml %>
+    <pre><%= doc.to_xml %></pre>
   </div>
   <div> Version Row
     <%= render "row_display", num: 11, row: @v_arr %>

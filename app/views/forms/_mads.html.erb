@@ -43,7 +43,7 @@
   <h5>Please double check the generated XML file and the new CITE row</h5>
   <% doc = Nokogiri::XML(@mads) %>
   <div class="xml_block">
-    <%= doc.to_xml %>
+    <pre><%= doc.to_xml %></pre>
   </div>
   <div>Author Row
     <%= render "row_display", num: 10, row: @a_arr %>
