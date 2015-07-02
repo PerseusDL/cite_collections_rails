@@ -22,7 +22,7 @@ class PendingRecordImporter
 
     #update_git_dir("catalog_pending") UNCOMMENT THIS
     #update_from_catalog_data(corrections)
-    mads_import(pending_mads)
+    #mads_import(pending_mads)
     mods_import(pending_mods)
 
     #remove all the now empty directories, leaving only the files that encountered errors
@@ -84,10 +84,12 @@ class PendingRecordImporter
     mods_files = clean_dirs(pending_mods)
     mods_files.each do |mods|
       begin
-        success = add_mods(mods)
-        if success
-          #remove the successfully imported file from catalog_pending
-          FileUtils.rm(mods)
+        if mods =~ /eusebius\.Loeb\.HistoriaEcclesiastica/
+          success = add_mods(mods)
+          if success
+            #remove the successfully imported file from catalog_pending
+            FileUtils.rm(mods)
+          end
         end 
       rescue
         message = "#{mods} import failed"
@@ -96,11 +98,10 @@ class PendingRecordImporter
     end
   end
 
-  def add_mods(mods)
+  def add_mods(file_path)
     ctsurn = ""
     mods_xml = ""
     begin
-      file_path = mods
       mods_xml = get_xml(file_path)
       #need to check that the mods prefix exists and if not, add it
       namespaces = mods_xml.namespaces
@@ -108,13 +109,46 @@ class PendingRecordImporter
         add_mods_prefix(mods_xml)
         File.open(file_path, "w"){|file| file << mods_xml}
         new_xml = get_xml(file_path)
-        it_worked = new_xml.search("/mods:mods/mods:titleInfo")
+        it_worked = new_xml.search("//mods:mods/mods:titleInfo")
         if it_worked == nil || it_worked.empty?
           message = "For file #{file_path}: tried adding prefix to mods but something went wrong, please check"
           error_handler(message, true)
         else
           mods_xml = new_xml
         end
+      end
+   
+      #dealing with modsCollections/multivolume editions
+      collection = mods_xml.search("//mods:mods")
+      #saving for later use
+      full_record = mods_xml
+      range_string = ""
+      if collection.length > 1
+        ids = []
+        collection.each{|x| ids << x.attribute("ID").value}
+        ids.sort!
+        range = []
+        #collect the id ranges
+        ids.each_with_index do |x, i|
+          unless i == 0
+            if i == ids.length - 1
+              range << i
+            else
+              num = x[/\d+/].to_i
+              prev = ids[i - 1][/\d+/].to_i
+              unless num == prev.next
+                range << i - 1 << i
+              end
+            end
+          end
+        end
+        range_string = ids[0]
+        unless range[0] == 0
+          range_string << "-#{ids[range[0]]}"
+        end
+        range.delete_at(0)
+        range.each_slice(2){|l, r| range_string << ", #{ids[l]}-#{ids[r]}"}
+        mods_xml = collection[0]
       end
 
       has_cts = mods_xml.search("/mods:mods/mods:identifier[@type='ctsurn']")
@@ -124,21 +158,32 @@ class PendingRecordImporter
         ctsurn = has_cts.inner_text
         vers = Version.find_by_cts(ctsurn)  
         same = nil
-        vers.each {|v| same = ((v.version == ctsurn && v.urn_status == "published") ? v : nil) if v}
+        vers.each {|v| same = ((v.version == ctsurn && (v.urn_status == "published" || v.urn_status == "reserved")) ? v : nil) if v}
         if same
           work_row = Work.find_by_work(ctsurn[/urn:cts:\w+:\w+\.\w+/])
           label, description = create_label_desc(mods_xml)
           full_label = work_row.title_eng + ", " + label
+          full_label = full_label + ";" + range_string if range_string != ""
           if same.has_mods == "false"
             #has cite row, lacking a mods, update accordingly 
-            Version.update(same.id, {:has_mods => "true", :edited_by => "auto_importer"})
-            modspath = create_mods_path(ctsurn)                           
-            move_file(modspath, mods_xml)
+            Version.update_row(same.id, full_label, description, "auto_importer", true, "published")
+            modspath = create_mods_path(ctsurn)
+            #if range_string exists?  
+            unless range_string == ""
+              move_file(modspath, full_record)
+            else
+              move_file(modspath, mods_xml)
+            end                         
+            
           else
             #if has row and confirmed mods, not a correction, assumed multivolume, just move to correct place
-            Version.update_row(ctsurn, full_label, description, "auto_importer")
+            Version.update_row(ctsurn, full_label, description, "auto_importer", false, "published")
             modspath = create_mods_path(ctsurn)                           
-            move_file(modspath, mods_xml)
+            unless range_string == ""
+              move_file(modspath, full_record)
+            else
+              move_file(modspath, mods_xml)
+            end   
           end
         else
           #has a ctsurn but no cite row, for whatever reason, needs to be added
@@ -146,14 +191,14 @@ class PendingRecordImporter
           if ctsurn =~ /urn:cts:\w+:\w+\.\w+\.\w+/
             unless mods_xml.search("//mods:relatedItem[@type='constituent']").empty?
               #has constituent items, needs to be passed to a method to create new mods
-              split_constituents(mods_xml, mods)
+              split_constituents(mods_xml, file_path)
             else
               info_hash = find_basic_info(mods_xml, mods, ctsurn[/urn:cts:\w+:\w+\.\w+/])           
               if info_hash
                 add_to_cite_tables(info_hash, mods_xml)
                 #add to versions table
                 puts "going into add version"
-                add_to_vers_table(info_hash, mods_xml, ctsurn)
+                add_to_vers_table(info_hash, mods_xml, ctsurn, range_string, full_record)
               else
                 message = "For file #{file_path} : No info hash returned, something has gone wrong, please check. #{$!}"
                 error_handler(message, true)
@@ -169,14 +214,14 @@ class PendingRecordImporter
           #has constituent items, needs to be passed to a method to create new mods
           split_constituents(mods_xml, mods)
         else
-          info_hash = find_basic_info(mods_xml, mods)
+          info_hash = find_basic_info(mods_xml, file_path)
           #have the info from the record and cite tables, now process it
           #:file_name,:canon_id,:a_name,:tg_id,:alt_ids,:cite_auth,:cite_tg :w_title,:w_id,:cite_work,:w_lang
           if info_hash
               add_to_cite_tables(info_hash, mods_xml)
               #add to versions table
               puts "going into add version"
-              add_to_vers_table(info_hash, mods_xml)
+              add_to_vers_table(info_hash, mods_xml, nil, range_string, full_record)
 
           else
             message = "For file #{file_path} : No info hash returned, something has gone wrong, please check. #{$!}"
@@ -184,8 +229,9 @@ class PendingRecordImporter
           end
         end
       end
+
     rescue
-      message = "The import for this file, #{mods} failed\n#{$!}"
+      message = "The import for this file, #{file_path} failed\n#{$!}"
       error_handler(message, false)
       return false
     end

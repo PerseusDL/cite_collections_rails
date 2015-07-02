@@ -103,7 +103,9 @@ module ApplicationHelper
 
         if f_n =~ /mods/
           work_title = nil
-          xml_record.search("/mods:mods/mods:titleInfo").each do |title_node|
+          title_ns = xml_record.search("/mods:mods/mods:titleInfo")
+          title_ns = xml_record.search("./mods:titleInfo") if title_ns.empty?
+          title_ns.each do |title_node|
             #take uniform if it exists
             type = title_node.attribute("type")
             if type && type.value == "uniform"
@@ -116,12 +118,13 @@ module ApplicationHelper
               work_title = title_node.search("./mods:title").inner_text
             end
           end
-
+  
           work_row = Work.find_by_id(w_id)   
           orig_lang = lit_abbr
           vers_langs = []
           #take language nodes from the edition not the host (need to be careful of constituent records?)
           ed_lang_nodes = xml_record.search("/mods:mods/mods:language")
+          ed_lang_nodes = xml_record.search("./mods:language") if ed_lang_nodes.empty?
           #if no languages throw error
           if ed_lang_nodes.empty?
             message = "No language found for the edition, please review!"
@@ -189,7 +192,7 @@ module ApplicationHelper
 
   def find_rec_author(xml_record, file_path, f_n)
     begin
-      ns = xml_record.collect_namespaces
+      ns = xml_record.document.collect_namespaces
       #grab mads authority name
       if f_n =~ /mads/ 
         #handles both regular mads files and those for a work, e.g. Scriptores Historiae Augusta
@@ -210,16 +213,14 @@ module ApplicationHelper
           error_handler(message, false)
           return
         end
-      else   
-
-      #grab the name with the "creator" role      
-        names = {}
-     
+      else        
+        names = {}     
         name_ns = xml_record.search("/mods:mods/mods:name", ns)
+        name_ns = xml_record.search("./mods:name", ns) if name_ns.empty?
         unless name_ns.empty?
           name_ns.each do |node|
             a_type = node.search("./mods:role/mods:roleTerm", ns).inner_text
-            if a_type =~ /creator$|author/
+            if a_type =~ /creator$|author|attributed/
               n = []
               node.search("./mods:namePart", ns).each {|x| n << x.inner_text}
               names[a_type] = n.join(" ")             
@@ -253,8 +254,9 @@ module ApplicationHelper
   def find_rec_id(xml_record, file_path, f_n)
 
     begin
-
+     
       ids = f_n =~ /mads/ ? xml_record.search("/mads:mads/mads:identifier") : xml_record.search("/mods:mods/mods:identifier")
+      ids = xml_record.search("./mods:identifier") if ids.empty?
       found_id = nil
       alt_ids = []
       main_type = ""
@@ -340,7 +342,7 @@ module ApplicationHelper
   end
 
   def create_label_desc(mods_xml)
-    ns = mods_xml.collect_namespaces
+    ns = mods_xml.document.collect_namespaces
     if !mods_xml.search('//mods:relatedItem[@type="host"]/mods:titleInfo', ns).empty?
       raw_title = mods_xml.search('//mods:relatedItem[@type="host"]/mods:titleInfo', ns).first
     elsif !mods_xml.search('//mods:titleInfo[not(@type)]', ns).empty?
@@ -477,7 +479,7 @@ module ApplicationHelper
       cleaner = ""
       even_cleaner = ""
       nodes.children.each do |x|
-        cleaner << x.inner_text + sep
+        cleaner << (x.name == "nonSort" ? "#{x.inner_text} " : x.inner_text + sep)
         #this step removes any XML escaped characters, don't know why parse doesn't do it
         even_cleaner = Nokogiri::XML.fragment(cleaner).inner_text
       end
