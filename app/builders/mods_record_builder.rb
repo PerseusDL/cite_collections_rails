@@ -305,7 +305,7 @@ class ModsRecordBuilder
       curr_node.add_next_sibling(child_node)
       curr_node = child_node
     end
-    
+
     return doc.to_xml
   end
 

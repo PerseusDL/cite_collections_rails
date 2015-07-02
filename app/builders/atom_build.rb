@@ -134,6 +134,7 @@ class AtomBuild
 
         #grab all mods files for the current work and iterate through
         work_mods_dir = "#{catalog_dir}/mods/#{@lit_type}/#{@tg_id}/#{@w_id}"
+        ids_done = []
         if File.directory?(work_mods_dir)
           entries_arr = Dir.entries(work_mods_dir)
           entries_arr.each do |sub_dir|
@@ -148,7 +149,7 @@ class AtomBuild
                   ver_row = Version.find_by_version(@ver_urn)
                   ver_type = ver_row.ver_type
                   @mods_num = m_f[/mods\d+/] #need to add in a dash between the mods and the number
-                  
+                  ids_done << ver_row.version
                   #create ver_feed head
                   make_dir_and_feed(work_dir, work_dir, ver_type)
                   ver_xml = get_xml("#{work_dir}/#{@tg_id}.#{@w_id}.#{@ver_id}.atom.xml")
@@ -160,13 +161,11 @@ class AtomBuild
                   mods_xml = get_xml("#{work_mods_dir}/#{sub_dir}/#{m_f}") if m_f =~ /\.xml/
                   
                   #TO DO: need to add a re assignment of @ver_urn if more than one mods for an ed?
-                  label, description = create_label_desc (mods_xml)
-                  full_label = @w_title + ", " + label
                  
                   params = {
                     "docs" => [tg_builder, work_builder, ver_builder],
-                    "label" => full_label,
-                    "description" => description,
+                    "label" => ver_row.label_eng,
+                    "description" => ver_row.desc_eng,
                     "lang" => @w_lang,
                     "type" =>ver_type
                   }
@@ -190,7 +189,19 @@ class AtomBuild
             end
           end 
           #could also have versions without mods, need to catch those too
-
+          all_rows = Version.where("version rlike ? and urn_status = 'published'", @w_urn)
+          all_rows.each do |row|
+            unless ids_done.include?(row)
+              params = {
+                "docs" => [tg_builder, work_builder],
+                "label" => row.label_eng,
+                "description" => row.desc_eng,
+                "lang" => @w_lang,
+                "type" => row.ver_type
+              }
+              add_ver_node(params)
+            end
+          end
         end
         #putting this here so we can save works without versions and not have weird stub atom files
         #since the tg feed is opened and added to each don't want to do that multiple times
