@@ -6,7 +6,7 @@ class AuthorsController < ApplicationController
   # GET /authors.json
   def index
     session[:search_results] = request.url
-    @authors = Author.where(urn_status: "published").load
+    @authors = Author.where(urn_status: ["published", "reserved"]).load
   end
 
   # GET /authors/1
@@ -73,7 +73,7 @@ class AuthorsController < ApplicationController
     def set_author
       @author = Author.find_by_urn(params[:id])
       unless @author
-        auth_list = Author.find(:all, :conditions => ["urn rlike ? and urn_status = 'published'", params[:id]])
+        auth_list = Author.find(:all, :conditions => ["urn rlike ? and urn_status in ('published', 'reserved')", params[:id]])
         auth_list.each do |auth|
           @author = auth if auth.urn =~ /#{params[:id]}\.\d+/
         end
