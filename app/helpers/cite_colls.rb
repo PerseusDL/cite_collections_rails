@@ -194,12 +194,6 @@ module CiteColls
               curr_urn = line[:version][/#{vers_urn_wo_num}\d+/]
               urn_num = curr_urn[/\d+$/].to_i
               num = urn_num + 1
-              if line[:label_eng] =~ /#{full_label}/ && line[:desc_eng] =~ /#{vers_desc}/
-                #this means that the pulled label and description match the current row, not good?
-                message = "#{curr_urn} and #{vers_urn_wo_num} have the same label and description, please check!"
-                error_handler(message, true)
-                return
-              end
             end
             vers_urn = "#{vers_urn_wo_num}#{num}"
           end
