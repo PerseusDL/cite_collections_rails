@@ -22,7 +22,7 @@ class PendingRecordImporter
 
     #update_git_dir("catalog_pending") UNCOMMENT THIS
     #update_from_catalog_data(corrections)
-    #mads_import(pending_mads)
+    mads_import(pending_mads)
     mods_import(pending_mods)
 
     #remove all the now empty directories, leaving only the files that encountered errors
@@ -84,13 +84,11 @@ class PendingRecordImporter
     mods_files = clean_dirs(pending_mods)
     mods_files.each do |mods|
       begin
-        if mods =~ /eusebius\.Loeb\.HistoriaEcclesiastica/
-          success = add_mods(mods)
-          if success
-            #remove the successfully imported file from catalog_pending
-            FileUtils.rm(mods)
-          end
-        end 
+        success = add_mods(mods)
+        if success
+          #remove the successfully imported file from catalog_pending
+          FileUtils.rm(mods)
+        end       
       rescue
         message = "#{mods} import failed"
         error_handler(message, false)
@@ -166,7 +164,7 @@ class PendingRecordImporter
           full_label = full_label + ";" + range_string if range_string != ""
           if same.has_mods == "false"
             #has cite row, lacking a mods, update accordingly 
-            Version.update_row(same.id, full_label, description, "auto_importer", true, "published")
+            Version.update_row(ctsurn, full_label, description, "auto_importer", true, "published")
             modspath = create_mods_path(ctsurn)
             #if range_string exists?  
             unless range_string == ""
@@ -193,7 +191,7 @@ class PendingRecordImporter
               #has constituent items, needs to be passed to a method to create new mods
               split_constituents(mods_xml, file_path)
             else
-              info_hash = find_basic_info(mods_xml, mods, ctsurn[/urn:cts:\w+:\w+\.\w+/])           
+              info_hash = find_basic_info(mods_xml, file_path, ctsurn[/urn:cts:\w+:\w+\.\w+/])           
               if info_hash
                 add_to_cite_tables(info_hash, mods_xml)
                 #add to versions table
@@ -212,7 +210,7 @@ class PendingRecordImporter
       else
         unless mods_xml.search("//mods:relatedItem[@type='constituent']").empty?
           #has constituent items, needs to be passed to a method to create new mods
-          split_constituents(mods_xml, mods)
+          split_constituents(mods_xml, file_path)
         else
           info_hash = find_basic_info(mods_xml, file_path)
           #have the info from the record and cite tables, now process it
