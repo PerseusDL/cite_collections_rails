@@ -264,4 +264,32 @@ class OneOffs
     output.close      
   end
 
+
+  def fix_mrurns(path)
+    xml = get_xml(path)
+    if path =~ /\.mods\.xml/
+      ns = xml.collect_namespaces
+      mrurns = xml.search("//mods:identifier[@type='mrurn']", ns)
+      unless mrurns.empty?
+        fixed = mrurns[0].inner_text.gsub(/#|_\d+/, "")
+        fix_arr = fixed.split('.')
+        fixed_again = fix_arr[0] + fix_arr[1] + "." + fix_arr[2]
+        mrurns[0].content = fixed_again
+        file = File.open(path, "w")
+        file << xml
+        file.close
+      end
+    else
+      mrurns = xml.search("//mads:identifier[@type='mrurn']")
+      unless mrurns.empty?
+        fixed = mrurns[0].inner_text.gsub(/#|\./, "")
+        mrurns[0].content = fixed
+        file = File.open(path, "w")
+        file << xml
+        file.close
+      end
+    end
+
+  end
+
 end

@@ -85,3 +85,23 @@ task :catalog_data_double_check => :environment do
     of.catalog_data_double_check(file_name)
   end
 end
+
+
+desc "fix urns"
+task :fix_mrurns => :environment do
+  mods = Dir.glob("/#{BASE_DIR}/catalog_pending/mods/Arabic records/*.xml")
+  mads = Dir.glob("/#{BASE_DIR}/catalog_pending/mads/**/*.xml")
+  of = OneOffs.new
+  mods.each do |file_name|
+    f_n = file_name[/(\/[\w\s\.\(\)-]+)?\.xml/]
+    if f_n =~ /mods\.xml|modsxml/
+      of.fix_mrurns(file_name)
+    end
+  end
+  mads.each do |file_name|
+    f_n = file_name[/(\/[\w\s\.\(\)-]+)?\.xml/]
+    if f_n =~ /mads\.xml|madsxml/
+      of.fix_mrurns(file_name)
+    end
+  end
+end
