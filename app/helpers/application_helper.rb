@@ -254,7 +254,6 @@ module ApplicationHelper
   def find_rec_id(xml_record, file_path, f_n)
 
     begin
-     
       ids = f_n =~ /mads/ ? xml_record.search("/mads:mads/mads:identifier") : xml_record.search("/mods:mods/mods:identifier")
       ids = xml_record.search("./mods:identifier") if ids.empty?
       found_id = nil
@@ -467,7 +466,7 @@ module ApplicationHelper
         end
         return id
       end
-    elsif node.inner_text =~ /Perseus:text/
+    elsif node.inner_text =~ /Perseus:text/i
       id = node.inner_text.strip
       return id
     end
