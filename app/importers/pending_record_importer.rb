@@ -21,7 +21,7 @@ class PendingRecordImporter
     corrections = "#{BASE_DIR}/catalog_data"
 
     #update_git_dir("catalog_pending") UNCOMMENT THIS
-    #update_from_catalog_data(corrections)
+    update_from_catalog_data(corrections)
     mads_import(pending_mads)
     mods_import(pending_mods)
 
