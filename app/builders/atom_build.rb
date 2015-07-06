@@ -191,7 +191,7 @@ class AtomBuild
           #could also have versions without mods, need to catch those too
           all_rows = Version.where("version rlike ? and urn_status = 'published'", @w_urn)
           all_rows.each do |row|
-            unless ids_done.include?(row)
+            unless ids_done.include?(row.version)
               params = {
                 "docs" => [tg_builder, work_builder],
                 "label" => row.label_eng,
