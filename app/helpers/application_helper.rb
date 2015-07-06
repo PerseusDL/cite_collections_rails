@@ -227,9 +227,16 @@ module ApplicationHelper
             end
           end
           if names.empty?
-            message = "For file #{f_n} : Could not find an author name, please check the record."
-            error_handler(message, false)
-            return
+            #if there is no name, need to take the title instead, for anonymous works
+            raw_title = xml_record.search('//mods:titleInfo[@type="uniform"]', ns).first
+            raw_title = xml_record.search('//mods:titleInfo[not(@type)]', ns).first if raw_title == nil
+            unless raw_title == nil
+              a_name = xml_clean(raw_title, " ")
+            else
+              message = "For file #{f_n} : Could not find an author name, please check the record."
+              error_handler(message, false)
+              return
+            end
           else
             if names.size == 1
               a_name = names.values[0] 
@@ -238,9 +245,16 @@ module ApplicationHelper
             end 
           end
         else
-          message = "For file #{f_n} : Could not find an author name, please check the record."
-          error_handler(message, false)
-          return
+          #if there is no name, need to take the title instead, for anonymous works
+          raw_title = xml_record.search('//mods:titleInfo[@type="uniform"]', ns).first
+          raw_title = xml_record.search('//mods:titleInfo[not(@type)]', ns).first if raw_title. == nil
+          unless raw_title.empty?
+            a_name = xml_clean(raw_title, " ")
+          else
+            message = "For file #{f_n} : Could not find an author name, please check the record."
+            error_handler(message, false)
+            return
+          end
         end
       end
       return a_name

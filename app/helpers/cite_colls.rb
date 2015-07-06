@@ -102,7 +102,7 @@ module CiteColls
           if info_hash[:tg_id]
             #no row for this textgroup, add a row
             t_urn = Textgroup.generate_urn
-            t_values = ["#{t_urn}", "#{info_hash[:tg_id]}", "#{info_hash[:a_name]}", "#{info_hash[:cite_auth] != nil}", 'true','', 'published', '', 'auto_importer','']
+            t_values = ["#{t_urn}", "#{info_hash[:tg_id]}", "#{info_hash[:a_name]}", "#{info_hash[:cite_auth] != []}", 'true','', 'published', '', 'auto_importer','']
             Textgroup.add_cite_row(t_values)
           else
             #!!This will need to change once we establish how to coin urns for these sorts of authors
