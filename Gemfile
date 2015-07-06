@@ -41,6 +41,8 @@ gem 'mysql2'
 gem 'google-api-client'
 gem 'mechanize'
 gem 'will_paginate'
+gem 'therubyracer'
+
 
 # Use ActiveModel has_secure_password
 # gem 'bcrypt-ruby', '~> 3.0.0'
