@@ -1,7 +1,7 @@
 class Form
   include ActiveModel::Model
   require 'mods_record_builder.rb'
-  
+
 
   attr_accessor :field_type
 
@@ -117,10 +117,10 @@ class Form
 
   def self.save_xml(mods, array)
     path = "#{BASE_DIR}/catalog_pending/for_approval/#{array[1]}.xml"
-    #xml = File.new(path, "w")
-    #xml << mods
-    #xml.save
-    #xml.close
+    xml = File.new(path, "w")
+    xml << mods
+    xml.save
+    xml.close
     return path[/catalog_pending.+/]
   end
 
@@ -184,11 +184,22 @@ class Form
     else
       w_cts = p[:namespace] != "" ? "urn:cts:#{p[:namespace]}:#{p[:p_id]}" : "urn:cts:#{p[:o_namespace]}:#{p[:p_id]}"
     end
+
     #need hash of v_type, lang_code, perseus_check, name, w_cts, w_title, w_lang
     v_type = p[:w_lang] == p[:lang_code] ? "edition" : "translation"
     vb_arr = {:v_type => v_type, :lang_code => p[:lang_code], :perseus_check => p[:perseus_check], 
       :name => p[:name], :w_cts => w_cts, :w_title => p[:title], :w_lang => p[:w_lang]}
     arr = Form.build_vers_info(vb_arr)
+
+
+    #if multivolume:
+    #look for existing reserved version, but how do we know which version to look for?
+    #if there, pull existing pending mods 
+      #(if it exists else create it), add appropriate id, tack mods to end, add ctsurn?
+      #mods_xml gets the entire collection file
+      #don't update the version, just return that row?
+    #else, put in modsCollection and give id, then proceed as usual
+
     #mods_xml is string, needs to be xml again
     mods_xml = Nokogiri::XML::Document.parse(mods_xml, &:noblanks)
     id_node = mods_xml.search("/mods:mods/mods:identifier").last

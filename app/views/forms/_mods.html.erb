@@ -220,7 +220,7 @@
       </div>  
       <div class= "field">
         <%= label_tag("Is this a Multivolume Work?") %>
-        <%= select_tag :multi?, options_for_select([["Yes", :true], ["No", :false]]) %> 
+        <%= select_tag :multi?, options_for_select([["No", :false], ["Yes", :true]]) %> 
       </div>  
       <%= submit_tag("Create MODS", :id => "mods_button") %>
     <% end %>
