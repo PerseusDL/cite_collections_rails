@@ -50,11 +50,19 @@ module Api
     end
 
     def search
-      received = params.permit(:urn, :work, :title_eng, :orig_lang, :notes, :urn_status, :redirect_to, :created_by, :edited_by)
-      #this allows for a bit of fuzzy searching, could input "tlg0012" and get back all works for it     
-      query = []
-      received.each  {|k, v| query << "#{k} rlike #{ActiveRecord::Base.sanitize("#{v}")}"}
-      @response = Work.where(query.join(" AND "))
+      if params['work'].class == Array
+        #this multiple param one can't be fuzzy searching, has to have exact work ids (urn:cts...)
+        sanitized = []
+        params['work'].each{|v| sanitized << ActiveRecord::Base.sanitize(v)}
+        query = "work in (#{sanitized.join(',')})"
+        @response = Work.select('title_eng').where(query)
+      else
+        received = params.permit(:urn, :work, :title_eng, :orig_lang, :notes, :urn_status, :redirect_to, :created_by, :edited_by)
+        #this allows for a bit of fuzzy searching, could input "tlg0012" and get back all works for it     
+        query = []
+        received.each  {|k, v| query << "#{k} rlike #{ActiveRecord::Base.sanitize("#{v}")}"}
+        @response = Work.where(query.join(" AND "))
+      end
       respond_with(@response, except: :id)
     end
 
