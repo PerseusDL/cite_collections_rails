@@ -69,7 +69,6 @@ class Form
       vers_urn = "#{vers_no_num}#{num}"
       vers_info << ["#{vers_cite}", "#{vers_urn}", "#{p[:v_label]}", "#{p[:v_desc]}", "#{p[:v_type]}", 'false', 'reserved','','',"#{p[:name]}", '', "#{p[:v_cts]}"]
     end
-    Rails.logger.info(vers_info.inspect)
     return vers_info
   end
 
