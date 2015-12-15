@@ -58,6 +58,7 @@ class Version < ActiveRecord::Base
       vr.member_of = v[8]
       vr.created_by = v[9]
       vr.edited_by = v[10]
+      vr.source_urn = v[11]
     end
     vers.save
   end
