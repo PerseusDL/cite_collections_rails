@@ -55,6 +55,11 @@
   <%= @version.edited_by %>
 </p>
 
+<p>
+  <strong>Source URN:</strong>
+  <%= @version.source_urn %>
+</p>
+
 <%= link_to 'Edit', edit_version_path(@version.urn) %> |
 <% if request.referer =~ /edit/%>
   <%= link_to 'Back', session[:search_results] %>
