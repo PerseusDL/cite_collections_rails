@@ -49,7 +49,7 @@ class Form
 
   def self.build_vers_info(p)
     #v_type, lang_code, perseus_check, name, w_cts, w_title, w_lang
-    vers_info = [["urn", "version", "label_eng", "desc_eng", "type", "has_mods", "urn_status", "redirect_to", "member_of", "created_by", "edited_by"]]
+    vers_info = [["urn", "version", "label_eng", "desc_eng", "type", "has_mods", "urn_status", "redirect_to", "member_of", "created_by", "edited_by", "source_urn"]]
     vers_cite = Version.generate_urn
     unless p[:v_cts]
       vers_urn = Form.cts_urn_build(p[:w_cts], p[:perseus_check], p[:lang_code])
@@ -61,13 +61,13 @@ class Form
       end
       desc_start << ";" + p[:e_name] if p[:e_name]
       desc_start << ";" + p[:t_name] if p[:t_name]
-      vers_info << ["#{vers_cite}", "#{vers_urn}", "#{p[:w_title]}", "#{desc_start}", "#{p[:v_type]}", 'false', 'reserved','','',"#{p[:name]}", '']
+      vers_info << ["#{vers_cite}", "#{vers_urn}", "#{p[:w_title]}", "#{desc_start}", "#{p[:v_type]}", 'false', 'reserved','','',"#{p[:name]}", '', ""]
     else
       vers_no_num = p[:v_cts][/[\w|:|\.]+-[a-z]+/]
       existing_vers = Version.find_by_cts(vers_no_num)
       num = Version.cts_num_incr(existing_vers, vers_no_num)
       vers_urn = "#{vers_no_num}#{num}"
-      vers_info << ["#{vers_cite}", "#{vers_urn}", "#{p[:v_label]}", "#{p[:v_desc]}", "#{p[:v_type]}", 'false', 'reserved','','',"#{p[:name]}", '']
+      vers_info << ["#{vers_cite}", "#{vers_urn}", "#{p[:v_label]}", "#{p[:v_desc]}", "#{p[:v_type]}", 'false', 'reserved','','',"#{p[:name]}", '', "#{p[:v_cts]}"]
     end
     return vers_info
   end
