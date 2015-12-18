@@ -50,7 +50,7 @@ module Api
     end
 
     def search
-      received = params.permit(:urn, :version, :label_eng, :desc_eng, :type, :has_mods, :urn_status, :redirect_to, :member_of, :created_by, :edited_by)
+      received = params.permit(:urn, :version, :label_eng, :desc_eng, :type, :has_mods, :urn_status, :redirect_to, :member_of, :created_by, :edited_by, :source_urn)
       #this allows for a bit of fuzzy searching, could input "tlg0012" and get back all works for it     
       query = []
       received.each  {|k, v| query << "#{k} rlike #{ActiveRecord::Base.sanitize("#{v}")}"}
