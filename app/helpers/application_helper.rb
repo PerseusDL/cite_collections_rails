@@ -51,12 +51,20 @@ module ApplicationHelper
   end
 
 #find files changed within the last week
-  def get_recent_changes(path)  
+  def get_recent_changes(path)
     today = Time.now
     week_earlier = today - (60 * 60 * 24 * 7)
     changes = []
     Dir.glob("#{path}/**/*.xml") {|f| changes << f if (File.mtime(f) <=> week_earlier) == 1}
     return changes
+  end
+
+#get all xml files
+  def get_all_modsandmadsfiles(path)
+    files = []
+    Dir.glob("#{path}/**/*.mads.xml") {|f| files << f}
+    Dir.glob("#{path}/**/*.mods.xml") {|f| files << f}
+    return files
   end
 
 #find things in the XML
@@ -407,16 +415,17 @@ module ApplicationHelper
   end
 
   def add_mods_prefix(mods_xml)    
-    mods_xml.root.add_namespace_definition("mods", "http://www.loc.gov/mods/v3")
-    mods_xml.root.name = "mods:#{mods_xml.root.name}"
-    mods_xml.root.children.each {|chil| xml_rename(chil)}    
+    xml_add_namespace(mods_xml.root,"mods", "http://www.loc.gov/mods/v3")
   end
 
-  def xml_rename(node)
-    m_name = node.name
-    node.name = "mods:#{m_name}"
+  def add_mads_prefix(mads_xml)    
+    xml_add_namespace(mads_xml.root,"mads", "http://www.loc.gov/mads/v2")
+  end
+
+  def xml_add_namespace(node,prefix,namespace)
+    node.add_namespace_definition(prefix,namespace)
     m_chil = node.children    
-    m_chil.each {|c_node| xml_rename(c_node)} if m_chil
+    m_chil.each {|c_node| xml_add_namespace(c_node,prefix,namespace)} if m_chil
   end
 
   def get_xml(file)

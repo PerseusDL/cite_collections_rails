@@ -97,6 +97,7 @@ class PendingRecordImporter
   end
 
   def add_mods(file_path)
+    puts "starting import of #{file_path}"
     ctsurn = ""
     mods_xml = ""
     begin
@@ -147,7 +148,7 @@ class PendingRecordImporter
         range.delete_at(0)
         range.each_slice(2){|l, r| range_string << ", #{ids[l]}-#{ids[r]}"}
         mods_xml = collection[0]
-      end
+      end #end test on collections length
 
       has_cts = mods_xml.search("/mods:mods/mods:identifier[@type='ctsurn']")
       unless has_cts.empty? || has_cts.inner_text == ""
@@ -183,7 +184,7 @@ class PendingRecordImporter
               move_file(modspath, mods_xml)
             end   
           end
-        else
+        else # not same
           #has a ctsurn but no cite row, for whatever reason, needs to be added
           #check that the ctsurn has a valid structure
           if ctsurn =~ /urn:cts:\w+:\w+\.\w+\.\w+/
@@ -202,12 +203,12 @@ class PendingRecordImporter
                 error_handler(message, true)
               end
             end
-          else
+          else # end test on cts urn
             message = "cts urn for #{file_path}, #{ctsurn}, is not valid"
             error_handler(message, true)
           end
         end
-      else
+      else # cts is empty or missing - new record
         unless mods_xml.search("//mods:relatedItem[@type='constituent']").empty?
           #has constituent items, needs to be passed to a method to create new mods
           split_constituents(mods_xml, file_path)
@@ -233,7 +234,7 @@ class PendingRecordImporter
       error_handler(message, false)
       return false
     end
-    puts "successful import"
+    puts "successful import of #{file_path}"
     return true
   end
 
@@ -287,11 +288,21 @@ class PendingRecordImporter
   end
 
   def update_from_catalog_data(path)   
-    changes = get_recent_changes(path) 
+    #changes = get_recent_changes(path, since) 
+    changes = get_all_modsandmadsfiles(path)
     editor = "auto_importer"     
     changes.each do |file_path|
       begin
         mods_xml = get_xml(file_path)
+        namespaces = mods_xml.namespaces
+        unless namespaces.include?("xmlns:mads")
+          add_mads_prefix(mods_xml)
+          # TODO should rewrite here?
+        end
+        unless namespaces.include?("xmlns:mods")
+          add_mods_prefix(mods_xml)
+          # TODO should rewrite here?
+        end
         has_cts = mods_xml.search("/mods:mods/mods:identifier[@type='ctsurn']")
         unless has_cts.empty? || has_cts.inner_text == ""
           ctsurn = has_cts.inner_text
