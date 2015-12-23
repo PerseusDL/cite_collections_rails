@@ -21,7 +21,7 @@ class PendingRecordImporter
     corrections = "#{BASE_DIR}/catalog_data"
 
     #update_git_dir("catalog_pending") UNCOMMENT THIS
-    update_from_catalog_data(corrections)
+    #update_from_catalog_data(corrections)
     mads_import(pending_mads)
     mods_import(pending_mods)
 
@@ -37,7 +37,7 @@ class PendingRecordImporter
     mads_files.each do |mads|
       begin
         mads_xml = get_xml(mads)
-        has_cts = mads_xml.search("/mads:mads/mads:identifier[@type='ctsurn']")
+        has_cts = mads_xml.xpath("/mads:mads/mads:identifier[@type='ctsurn']", {"mads" => "http://www.loc.gov/mads/v2"})
         unless has_cts.empty? || has_cts.inner_text == ""
           ctsurn = has_cts.inner_text
           info_hash = find_basic_info(mads_xml, mads, ctsurn)
@@ -54,7 +54,7 @@ class PendingRecordImporter
 
             new_auth = Author.get_by_id(info_hash[:canon_id])[0]
             #add cite urn to record
-            id_line = mads_xml.search("/mads:mads/mads:identifier").last
+            id_line = mads_xml.xpath("/mads:mads/mads:identifier",{"mads" => "http://www.loc.gov/mads/v2"}).last
             n_id = Nokogiri::XML::Node.new "mads:identifier", mads_xml
             n_id.add_namespace_definition("mads", "http://www.loc.gov/mads/v2")
             n_id.content = new_auth.urn
@@ -71,8 +71,8 @@ class PendingRecordImporter
           message = "For file #{mads} : No info hash returned, something has gone wrong, please check."
           error_handler(message, true)
         end
-      rescue
-        message = "caught the lower exceptions"
+      rescue Exception => e
+        message = "caught the lower exceptions #{e.backtrace}"
         error_handler(message, false)
       end
     end
@@ -102,23 +102,20 @@ class PendingRecordImporter
     mods_xml = ""
     begin
       mods_xml = get_xml(file_path)
-      #need to check that the mods prefix exists and if not, add it
-      namespaces = mods_xml.namespaces
-      unless namespaces.include?("xmlns:mods")
-        add_mods_prefix(mods_xml)
-        File.open(file_path, "w"){|file| file << mods_xml}
-        new_xml = get_xml(file_path)
-        it_worked = new_xml.search("//mods:mods/mods:titleInfo")
-        if it_worked == nil || it_worked.empty?
-          message = "For file #{file_path}: tried adding prefix to mods but something went wrong, please check"
-          error_handler(message, true)
-        else
-          mods_xml = new_xml
-        end
+      # make sure the file is fully in the mods namespace
+      add_mods_prefix(mods_xml)
+      File.open(file_path, "w"){|file| file << mods_xml}
+      new_xml = get_xml(file_path)
+      it_worked = new_xml.xpath("//mods:mods/mods:titleInfo",{"mods" => "http://www.loc.gov/mods/v3"})
+      if it_worked == nil || it_worked.empty?
+        message = "For file #{file_path}: tried adding prefix to mods but something went wrong, please check"
+        error_handler(message, true)
+      else
+        mods_xml = new_xml
       end
    
       #dealing with modsCollections/multivolume editions
-      collection = mods_xml.search("//mods:mods")
+      collection = mods_xml.xpath("//mods:mods",{"mods" => "http://www.loc.gov/mods/v3"})
       #saving for later use
       full_record = mods_xml
       range_string = ""
@@ -147,10 +144,16 @@ class PendingRecordImporter
         end
         range.delete_at(0)
         range.each_slice(2){|l, r| range_string << ", #{ids[l]}-#{ids[r]}"}
-        mods_xml = collection[0]
+        # we need to make a new document with the first node of the collection
+        # because otherwise nokogiri holds on to the original object and xpaths
+        # and searches operate on the original full document and not the individual node
+        new_doc = Nokogiri::XML::Document.new()
+        new_doc.add_child(collection.first.dup(1))
+        mods_xml = new_doc
       end #end test on collections length
 
-      has_cts = mods_xml.search("/mods:mods/mods:identifier[@type='ctsurn']")
+      has_cts = mods_xml.xpath("/mods:mods/mods:identifier[@type='ctsurn']", {"mods" => "http://www.loc.gov/mods/v3"})
+     
       unless has_cts.empty? || has_cts.inner_text == ""
         #record already has a cts urn, could be added mods or multivolume record
         #also need to check to make sure the ctsurn is in the correct format, doesn't just give a work urn
@@ -188,7 +191,7 @@ class PendingRecordImporter
           #has a ctsurn but no cite row, for whatever reason, needs to be added
           #check that the ctsurn has a valid structure
           if ctsurn =~ /urn:cts:\w+:\w+\.\w+\.\w+/
-            unless mods_xml.search("//mods:relatedItem[@type='constituent']").empty?
+            unless mods_xml.xpath("//mods:relatedItem[@type='constituent']", {"mods" => "http://www.loc.gov/mods/v3"}).empty?
               #has constituent items, needs to be passed to a method to create new mods
               split_constituents(mods_xml, file_path)
             else
@@ -209,7 +212,7 @@ class PendingRecordImporter
           end
         end
       else # cts is empty or missing - new record
-        unless mods_xml.search("//mods:relatedItem[@type='constituent']").empty?
+        unless mods_xml.xpath("//mods:relatedItem[@type='constituent']",{"mods" => "http://www.loc.gov/mods/v3"}).empty?
           #has constituent items, needs to be passed to a method to create new mods
           split_constituents(mods_xml, file_path)
         else
@@ -246,7 +249,7 @@ class PendingRecordImporter
   def split_constituents(mods_xml, file_path)
     #create a new mods file for each constituent item
     
-    const_nodes = mods_xml.search("//mods:relatedItem[@type='constituent']")
+    const_nodes = mods_xml.search("//mods:relatedItem[@type='constituent']",{"mods" => "http://www.loc.gov/mods/v3"})
     const_nodes.each_with_index do |const, i|
 
       builder = Nokogiri::XML::Builder.new(:encoding => 'UTF-8') do |xml|
@@ -256,14 +259,16 @@ class PendingRecordImporter
       end
 
       const.children.each do |sib|
-        builder.doc.xpath("//mods:relatedItem")[0].add_previous_sibling(sib.clone)
+        builder.doc.search("//mods:relatedItem", {"mods" => "http://www.loc.gov/mods/v3"})[0].add_previous_sibling(sib.clone)
       end
       mods_xml.root.children.each do |child|
         
-        unless child.name == "relatedItem"
-          builder.doc.xpath("//mods:relatedItem")[0].add_child(child.clone)
+        unless child.name == "relatedItem" || child.name == "mods:relatedItem"
+          builder.doc.search("//mods:relatedItem", {"mods" => "http://www.loc.gov/mods/v3"})[0].add_child(child.clone)
         end
       end
+      # make sure it's all in the mods namespace
+      add_mods_prefix(builder.doc)
 
       info_hash = find_basic_info(builder.doc, file_path)
       if info_hash
@@ -295,15 +300,14 @@ class PendingRecordImporter
       begin
         mods_xml = get_xml(file_path)
         namespaces = mods_xml.namespaces
-        unless namespaces.include?("xmlns:mads")
+        if (file_path =~ /mads/)
           add_mads_prefix(mods_xml)
           # TODO should rewrite here?
-        end
-        unless namespaces.include?("xmlns:mods")
+        else
           add_mods_prefix(mods_xml)
           # TODO should rewrite here?
         end
-        has_cts = mods_xml.search("/mods:mods/mods:identifier[@type='ctsurn']")
+        has_cts = mods_xml.xpath("/mods:mods/mods:identifier[@type='ctsurn']", {"mods" => "http://www.loc.gov/mods/v3"})
         unless has_cts.empty? || has_cts.inner_text == ""
           ctsurn = has_cts.inner_text
           info_hash = find_basic_info(mods_xml, file_path, ctsurn)

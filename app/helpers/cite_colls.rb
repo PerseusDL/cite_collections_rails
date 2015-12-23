@@ -168,7 +168,7 @@ module CiteColls
       #vers_col = "urn, version, label_eng, desc_eng, type, has_mods, urn_status, redirect_to, member_of, created_by, edited_by"           
       #two (or more) languages listed, create more records
       info_hash[:v_langs].each do |lang|
-        puts "in add version"
+        puts "in add version for #{info_hash.inspect}"
         vers_label, vers_desc = create_label_desc(mods_xml)
         full_label = info_hash[:w_title] + ", " + vers_label
         full_label = full_label + ";" + range_string if range_string != ""
@@ -177,7 +177,7 @@ module CiteColls
         unless cts_urn
           #is it a Perseus edition?
           pers_ed = false
-          mods_xml.search("//mods:identifier").each {|node| pers_ed = true if (node.inner_text =~ /Perseus:text/ || node.inner_text =~ /cts:.+perseus-/)}
+          mods_xml.search("//mods:identifier",ApplicationHelper::MODS_NS).each {|node| pers_ed = true if (node.inner_text =~ /Perseus:text/ || node.inner_text =~ /cts:.+perseus-/)}
           coll = pers_ed ? "perseus" : "opp"
           
           vers_urn_wo_num = "#{info_hash[:w_id]}.#{coll}-#{lang}"
@@ -202,12 +202,12 @@ module CiteColls
         end
         #insert row in table
         vers_cite = Version.generate_urn
-        puts "got cite urn #{vers_cite}"
+        puts "got cite urn #{vers_cite} for #{vers_urn}"
         v_values = ["#{vers_cite}", "#{vers_urn}", "#{full_label}", "#{vers_desc}", "#{vers_type}", 'true', 'published','','','auto_importer', '']
         Version.add_cite_row(v_values)
         unless cts_urn
           unless range_string == ""
-              full_record.search("//mods:mods").each do |part|
+              full_record.search("//mods:mods",ApplicationHelper::MODS_NS).each do |part|
               add_cts_urn(part, vers_urn)
             end
           else
@@ -229,8 +229,8 @@ module CiteColls
 
   def add_cts_urn(mods_xml, vers_urn)
     #add cts urn to record
-    id_line = mods_xml.search("/mods:mods/mods:identifier").last
-    id_line = mods_xml.search("./mods:identifier").last if id_line == nil
+    id_line = mods_xml.search("/mods:mods/mods:identifier",ApplicationHelper::MODS_NS).last
+    id_line = mods_xml.search("./mods:identifier",ApplicationHelper::MODS_NS).last if id_line == nil
     #there can only be one ctsurn in a record (this is really for creating records with facing translations)
     if id_line.attribute("type").value == "ctsurn"
       id_line.content = vers_urn

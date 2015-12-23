@@ -12,6 +12,11 @@ class AtomBuild
   require 'mechanize'
   include ApplicationHelper
 
+  TI_NS = 'http://chs.harvard.edu/xmlns/cts/ti'
+  ATOM_NS = 'http://www.w3.org/2005/Atom'
+  MODS_NS = 'http://www.loc.gov/mods/v3'
+  MADS_NS = 'http://www.loc.gov/mads/v2'
+
   def set_up_feeds(type)
     st = Time.now      
     today_date = st.strftime("%Y%m%d")
@@ -105,7 +110,7 @@ class AtomBuild
 
         #open tg_feed for current state and make sure that the formatting will be nice
         tg_xml = get_xml("#{tg_dir}.atom.xml")
-        tg_marker = find_node("//cts:textgroup", tg_xml)
+        tg_marker = find_node("//ti:textgroup", tg_xml, {"ti" => TI_NS})
         #add the work info to the tg_feed header
         tg_builder = add_work_node(tg_marker)
 
@@ -113,7 +118,7 @@ class AtomBuild
         work_dir = "#{tg_dir}/#{@w_id}"
         make_dir_and_feed(work_dir, @feed_directories, "work")
         work_xml = get_xml("#{@feed_directories}/#{@tg_id}.#{@w_id}.atom.xml")
-        work_marker = find_node("//cts:textgroup", work_xml)
+        work_marker = find_node("//ti:textgroup", work_xml, {"ti" => TI_NS})
         work_builder = add_work_node(work_marker)
 
         mads_cts = Author.get_by_id(@tg_id)
@@ -147,13 +152,17 @@ class AtomBuild
                   @ver_id = sub_dir
                   @ver_urn = "#{@w_urn}.#{@ver_id}"
                   ver_row = Version.find_by_version(@ver_urn)
+                  unless (ver_row) 
+                    puts "Can't find Version #{@ver_urn}"
+                    raise "No version #{@ver_urn}"
+                  end
                   ver_type = ver_row.ver_type
                   @mods_num = m_f[/mods\d+/] #need to add in a dash between the mods and the number
                   ids_done << ver_row.version
                   #create ver_feed head
                   make_dir_and_feed(work_dir, work_dir, ver_type)
                   ver_xml = get_xml("#{work_dir}/#{@tg_id}.#{@w_id}.#{@ver_id}.atom.xml")
-                  ver_marker = find_node("//cts:textgroup", ver_xml)
+                  ver_marker = find_node("//ti:textgroup", ver_xml, {"ti" => TI_NS})
                   #add the work info to the ver_feed header
                   ver_builder = add_work_node(ver_marker)
 
@@ -173,7 +182,7 @@ class AtomBuild
                   add_ver_node(params)
                   
                   mods_head = build_mods_head(ver_type)
-                  content = find_node("//atom:content", mods_head.doc)
+                  content = find_node("//atom:content", mods_head.doc, {"atom" => ATOM_NS})
                   content.add_child(mods_xml.root)
                   add_mods_node(params['docs'], mods_head)
 
@@ -290,17 +299,17 @@ class AtomBuild
           }
           #Text inventory start
           a_feed['atom'].content(:type => 'text/xml') {
-            a_feed.TextInventory('xmlns:cts' => "http://chs.harvard.edu/xmlns/cts/ti", :tiversion => "4.0") {
-              a_feed.parent.namespace = a_feed.parent.namespace_definitions.find{|ns|ns.prefix=="cts"}
-              a_feed.ctsnamespace('xmlns' => "http://chs.harvard.edu/xmlns/cts/ti", :abbr => "greekLit", :ns => "http://perseus.org/namespaces/cts/greekLit"){
-                a_feed.descripton('xml:lang' => 'eng'){a_feed.text("Greek texts hosted by the Perseus Digital Library")}
+            a_feed.TextInventory('xmlns:ti' => TI_NS) {
+              a_feed.parent.namespace = a_feed.parent.namespace_definitions.find{|ns|ns.prefix=="ti"}        
+              a_feed.ctsnamespace('xmlns:ti' => TI_NS, :abbr => "greekLit", :ns => "http://perseus.org/namespaces/cts/greekLit"){
+                a_feed.descripton('xmlns:ti' => TI_NS, 'xml:lang' => 'eng'){a_feed.text("Greek texts hosted by the Perseus Digital Library")}
               }
 
-              a_feed.ctsnamespace('xmlns' => "http://chs.harvard.edu/xmlns/cts/ti", :abbr => "latinLit", :ns => "http://perseus.org/namespaces/cts/latinLit"){
-                a_feed.descripton('xml:lang' => 'eng'){a_feed.text("Latin texts hosted by the Perseus Digital Library")}
+              a_feed.ctsnamespace('xmlns:ti' => TI_NS, :abbr => "latinLit", :ns => "http://perseus.org/namespaces/cts/latinLit"){
+                a_feed.descripton('xmlns:ti' => TI_NS, 'xml:lang' => 'eng'){a_feed.text("Latin texts hosted by the Perseus Digital Library")}
               }
 
-              a_feed.collection('xmlns' => 'http://chs.harvard.edu/xmlns/cts/ti', :id => 'Perseus:collection:Greco-Roman', :isdefault => 'yes'){
+              a_feed.collection('xmlns:ti' => TI_NS, :id => 'Perseus:collection:Greco-Roman', :isdefault => 'yes'){
                 a_feed.title('xmlns' => 'http://purl.org/dc/elements/1.1/', 'xml:lang' => 'eng'){a_feed.text('Greek and Roman Materials')}
                 a_feed.creator('xmlns' => 'http://purl.org/dc/elements/1.1/'){a_feed.text('The Perseus Digital Library')}
                 a_feed.coverage('xmlns' => 'http://purl.org/dc/elements/1.1/', 'xml:lang' => 'eng'){a_feed.text('Primary and secondary sources for the study of ancient Greece
@@ -310,7 +319,7 @@ class AtomBuild
                 a_feed.rights('xmlns' => 'http://purl.org/dc/elements/1.1/', 'xml:lang' => 'eng'){a_feed.text('Licensed under a Creative Commons Attribution-ShareAlike 3.0 United States License')}
               }
 
-              a_feed.collection('xmlns' => 'http://chs.harvard.edu/xmlns/cts/ti', :id => 'Perseus:collection:Greco-Roman-protected'){
+              a_feed.collection('xmlns:ti' => TI_NS, :id => 'Perseus:collection:Greco-Roman-protected'){
                 a_feed.title('xmlns' => 'http://purl.org/dc/elements/1.1/', 'xml:lang' => 'eng'){a_feed.text('Greek and Roman Materials')}
                 a_feed.creator('xmlns' => 'http://purl.org/dc/elements/1.1/'){a_feed.text('The Perseus Digital Library')}
                 a_feed.coverage('xmlns' => 'http://purl.org/dc/elements/1.1/', 'xml:lang' => 'eng'){a_feed.text('Primary and secondary sources for the study of ancient Greece
@@ -321,7 +330,7 @@ class AtomBuild
               }
               #Textgroup name
               a_feed.textgroup(:urn => @tg_urn){
-                a_feed.groupname('xmlns:cts' => "http://chs.harvard.edu/xmlns/cts/ti", 'xml:lang' => "eng"){
+                a_feed.groupname('xmlns:ti' => TI_NS, 'xml:lang' => "eng"){
                   a_feed.text(@tg_name)
                 }
               }
@@ -334,8 +343,8 @@ class AtomBuild
     return builder    
   end
 
-  def find_node(n_xpath, xml_doc, urn = false)
-    ns = xml_doc.collect_namespaces
+  def find_node(n_xpath, xml_doc, ns, urn = false)
+    ns = xml_doc.collect_namespaces unless ns
     n_xpath = "#{n_xpath}[@urn='#{@w_urn}']" if urn
     target_node = xml_doc.xpath(n_xpath, ns).last
   end
@@ -343,8 +352,8 @@ class AtomBuild
 
   def add_work_node(marker_node)       
     builder = Nokogiri::XML::Builder.with(marker_node) do |feed|
-      feed.work('xmlns:cts' => "http://chs.harvard.edu/xmlns/cts/ti", :urn => @w_urn, 'xml:lang' => "#{@w_lang}"){
-        feed.title('xmlns:cts' => "http://chs.harvard.edu/xmlns/cts/ti", 'xml:lang' => "#{@w_lang}"){
+      feed.work('xmlns:ti' => TI_NS, :urn => @w_urn, 'xml:lang' => "#{@w_lang}", :groupUrn => @tg_urn){
+        feed.title('xmlns:ti' => TI_NS, 'xml:lang' => "#{@w_lang}"){
           feed.text(@w_title)
         }
       }
@@ -357,9 +366,9 @@ class AtomBuild
     #params hash: "docs" => [tg_builder, work_builder, ver_builder], "label" => label, "description" => description,
     #             "lang" => orig_lang, "type" =>ver_type
     params["docs"].each do |doc|
-      node = find_node("//cts:work", doc.doc, true)
+      node = find_node("//ti:work", doc.doc, { 'ti' => TI_NS }, true)
       builder = Nokogiri::XML::Builder.with(node) do |feed|
-        feed.send("#{params['type']}", "xmlns:cts" => "http://chs.harvard.edu/xmlns/cts/ti", 'urn' => @ver_urn){
+        feed.send("#{params['type']}", "xmlns:ti" => TI_NS, 'urn' => @ver_urn, 'workUrn' => @w_urn){
           feed.label('xml:lang' => 'eng'){feed.text(params['label'])}
           feed.description('xml:lang' => 'eng'){feed.text(params['description'])}
         }
@@ -393,13 +402,13 @@ class AtomBuild
         if has_mads?(builder)
           first_mads = builder.doc.xpath("//atom:link[@href='http://data.perseus.org/collections/#{@mads_arr[0][0]}']")
           right_entry = first_mads[0].parent
-          right_entry.add_previous_sibling(find_node("//atom:entry", mods_head.doc).clone)
+          right_entry.add_previous_sibling(find_node("//atom:entry", mods_head.doc, {"atom" => ATOM_NS}).clone)
         else
-          builder.doc.root.add_child(find_node("//atom:entry", mods_head.doc).clone)  
+          builder.doc.root.add_child(find_node("//atom:entry", mods_head.doc, {"atom" => ATOM_NS}).clone)  
           
           #for some reason the mods prefix definition is removed when adding perseus records, have to add it back
           if @ver_id =~ /perseus/
-            perseus_mods = find_node("//atom:entry/atom:content", builder.doc).child
+            perseus_mods = find_node("//atom:entry/atom:content", builder.doc, {"atom" => ATOM_NS}).child
             perseus_mods.add_namespace_definition('mods', 'http://www.loc.gov/mods/v3')
           end
 
@@ -424,7 +433,7 @@ class AtomBuild
     mads_heads = []
     @mads_arr.each do |arr|
       #@mads arr contains 0mads_urn, 1mads_num, 2mads_path, 3mads_xml
-      atom_id_node = find_node("atom:feed/atom:id", builder.doc)
+      atom_id_node = find_node("atom:feed/atom:id", builder.doc, {"atom" => ATOM_NS})
       if atom_id_node.inner_text =~ /#{@tg_urn}\/atom/
         type = "textgroup"
         atom_id = "http://data.perseus.org/catalog/#{@tg_urn}/atom#mads-#{arr[1]}"
@@ -461,7 +470,7 @@ class AtomBuild
     mads_heads.each do |head|
       num = head.doc.xpath('//atom:id').inner_text[/\d+$/]
       arr = @mads_arr.rassoc(num.to_i)
-      content = find_node("//atom:content", head.doc)
+      content = find_node("//atom:content", head.doc, {"atom" => ATOM_NS})
       content.add_child(arr[3].clone.root)
       
       #make a mads atom file
@@ -472,7 +481,7 @@ class AtomBuild
         mads_atom.close
       end
 
-      builder.doc.root.add_child(find_node("//atom:entry", head.doc).clone)
+      builder.doc.root.add_child(find_node("//atom:entry", head.doc, {"atom" => ATOM_NS}).clone)
     end
   end
 

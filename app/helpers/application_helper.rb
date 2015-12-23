@@ -11,9 +11,12 @@ module ApplicationHelper
 
   #Helper methods
 
+  MODS_NS = {"mods" => "http://www.loc.gov/mods/v3"}
+  MADS_NS = {"mads" => "http://www.loc.gov/mads/v2"}
 
 #create directory path
   def create_mods_path(ctsurn)  
+    puts "Create mods path for #{ctsurn}"
     path_name = "#{BASE_DIR}/catalog_data/mods/"
     ctsmain = ctsurn[/(greekLit|latinLit|arabicLit).+/]
     path_name << "#{ctsmain.gsub(/:|\./, "/")}"
@@ -111,19 +114,19 @@ module ApplicationHelper
 
         if f_n =~ /mods/
           work_title = nil
-          title_ns = xml_record.search("/mods:mods/mods:titleInfo")
-          title_ns = xml_record.search("./mods:titleInfo") if title_ns.empty?
+          title_ns = xml_record.search("/mods:mods/mods:titleInfo",MODS_NS)
+          title_ns = xml_record.search("./mods:titleInfo",MODS_NS) if title_ns.empty?
           title_ns.each do |title_node|
             #take uniform if it exists
             type = title_node.attribute("type")
             if type && type.value == "uniform"
-              work_title = title_node.search("./mods:title").inner_text
+              work_title = title_node.search("./mods:title",MODS_NS).inner_text
               break
             elsif work_title == nil && type == nil
-              work_title = title_node.search("./mods:title").inner_text
+              work_title = title_node.search("./mods:title",MODS_NS).inner_text
             end
             unless work_title
-              work_title = title_node.search("./mods:title").inner_text
+              work_title = title_node.search("./mods:title",MODS_NS).inner_text
             end
           end
   
@@ -131,8 +134,8 @@ module ApplicationHelper
           orig_lang = lit_abbr
           vers_langs = []
           #take language nodes from the edition not the host (need to be careful of constituent records?)
-          ed_lang_nodes = xml_record.search("/mods:mods/mods:language")
-          ed_lang_nodes = xml_record.search("./mods:language") if ed_lang_nodes.empty?
+          ed_lang_nodes = xml_record.search("/mods:mods/mods:language",MODS_NS)
+          ed_lang_nodes = xml_record.search("./mods:language",MODS_NS) if ed_lang_nodes.empty?
           #if no languages throw error
           if ed_lang_nodes.empty?
             message = "No language found for the edition, please review!"
@@ -162,14 +165,14 @@ module ApplicationHelper
         return info_hash       
       end
     rescue Exception => e
-      message = "For file #{file_path}: something went wrong, #{$!} #{e.backtrace}"
+      message = "Rescued Exception for #{file_path}: something went wrong, #{$!} #{e.backtrace}"
       error_handler(message, false)
       return nil
     end
   end
 
   def collect_rel_works(xml_record)
-    extensions = xml_record.search("/mads:mads/mads:extension")
+    extensions = xml_record.search("/mads:mads/mads:extension",MADS_NS)
     related_works = []
     extensions.children.each do |node|           
       unless node.inner_text =~ /related work identifiers/
@@ -200,48 +203,47 @@ module ApplicationHelper
 
   def find_rec_author(xml_record, file_path, f_n)
     begin
-      ns = xml_record.document.collect_namespaces
       #grab mads authority name
       if f_n =~ /mads/ 
         #handles both regular mads files and those for a work, e.g. Scriptores Historiae Augusta
-        authority_names = xml_record.search(".//mads:mads/mads:authority", ns)
+        authority_names = xml_record.search(".//mads:mads/mads:authority", MADS_NS)
         if authority_names.empty?
           #so far this is only the Appendix Vergiliana
-          name_ns = xml_record.search(".//mads:mads/mads:variant", ns)[0]
+          name_ns = xml_record.search(".//mads:mads/mads:variant", MADS_NS)[0]
         else
-          name_ns = authority_names.search(".//mads:name/mads:namePart", ns)
-          name_ns = authority_names.search(".//mads:titleInfo/mads:title", ns) if name_ns.empty?
+          name_ns = authority_names.search(".//mads:name/mads:namePart", MADS_NS)
+          name_ns = authority_names.search(".//mads:titleInfo/mads:title", MADS_NS) if name_ns.empty?
         end
         n = [] 
         unless name_ns.empty?
           name_ns.each {|x| n << x.inner_text}
           a_name = n.join(" ")
         else
-          message = "For file #{f_n} : Could not find an authority name, please check the record."
+          message = "find_rec_author failed for file #{f_n} : Could not find an authority name, please check the record."
           error_handler(message, false)
           return
         end
       else        
         names = {}     
-        name_ns = xml_record.search("/mods:mods/mods:name", ns)
-        name_ns = xml_record.search("./mods:name", ns) if name_ns.empty?
+        name_ns = xml_record.search("/mods:mods/mods:name", MODS_NS)
+        name_ns = xml_record.search("./mods:name", MODS_NS) if name_ns.empty?
         unless name_ns.empty?
           name_ns.each do |node|
-            a_type = node.search("./mods:role/mods:roleTerm", ns).inner_text
+            a_type = node.search("./mods:role/mods:roleTerm", MODS_NS).inner_text
             if a_type =~ /creator$|author|attributed/
               n = []
-              node.search("./mods:namePart", ns).each {|x| n << x.inner_text}
+              node.search("./mods:namePart", MODS_NS).each {|x| n << x.inner_text}
               names[a_type] = n.join(" ")             
             end
           end
           if names.empty?
             #if there is no name, need to take the title instead, for anonymous works
-            raw_title = xml_record.search('//mods:titleInfo[@type="uniform"]', ns).first
-            raw_title = xml_record.search('//mods:titleInfo[not(@type)]', ns).first if raw_title == nil
+            raw_title = xml_record.search('//mods:titleInfo[@type="uniform"]', MODS_NS).first
+            raw_title = xml_record.search('//mods:titleInfo[not(@type)]', MODS_NS).first if raw_title == nil
             unless raw_title == nil
               a_name = xml_clean(raw_title, " ")
             else
-              message = "For file #{f_n} : Could not find an author name, please check the record."
+              message = "find_rec_author failed for file #{f_n} : Could not find an author name, please check the record."
               error_handler(message, false)
               return
             end
@@ -254,12 +256,12 @@ module ApplicationHelper
           end
         else
           #if there is no name, need to take the title instead, for anonymous works
-          raw_title = xml_record.search('//mods:titleInfo[@type="uniform"]', ns).first
-          raw_title = xml_record.search('//mods:titleInfo[not(@type)]', ns).first if raw_title. == nil
+          raw_title = xml_record.search('//mods:titleInfo[@type="uniform"]', MODS_NS).first
+          raw_title = xml_record.search('//mods:titleInfo[not(@type)]', MODS_NS).first if raw_title. == nil
           unless raw_title.empty?
             a_name = xml_clean(raw_title, " ")
           else
-            message = "For file #{f_n} : Could not find an author name, please check the record."
+            message = "find_rec_author failed for file #{f_n} : Could not find an author name, please check the record."
             error_handler(message, false)
             return
           end
@@ -267,7 +269,7 @@ module ApplicationHelper
       end
       return a_name
     rescue
-      message = "For file #{f_n} : There was an error while trying to find the author, error message was #{$!}."
+      message = "Rescued Exception for #{f_n} : There was an error while trying to find the author, error message was #{$!}."
       error_handler(message, true)
     end
   end
@@ -276,8 +278,8 @@ module ApplicationHelper
   def find_rec_id(xml_record, file_path, f_n)
 
     begin
-      ids = f_n =~ /mads/ ? xml_record.search("/mads:mads/mads:identifier") : xml_record.search("/mods:mods/mods:identifier")
-      ids = xml_record.search("./mods:identifier") if ids.empty?
+      ids = f_n =~ /mads/ ? xml_record.search("/mads:mads/mads:identifier",MADS_NS) : xml_record.search("/mods:mods/mods:identifier",MODS_NS)
+      ids = xml_record.search("./mods:identifier",MODS_NS) if ids.empty?
       found_id = nil
       alt_ids = []
       main_type = ""
@@ -347,7 +349,7 @@ module ApplicationHelper
 
       #if no id found throw an error   
       unless found_id    
-        message = "For file #{f_n} : Could not find a suitable id, please check 
+        message = "find_rec_id failed for file #{f_n} : Could not find a suitable id, please check 
         that there is a standard id, that there are no ?'s, or that, if a mads, the mads namespace is present."
         error_handler(message, true)
         return
@@ -356,29 +358,28 @@ module ApplicationHelper
         return found_id, alt_ids.join(';')
       end
     rescue 
-      message = "For file #{f_n} : There was an error while trying to find an id, error message was #{$!}."
+      message = "Rescued Exception for #{f_n} : There was an error while trying to find an id, error message was #{$!}."
       error_handler(message, true)
       return
     end
   end
 
   def create_label_desc(mods_xml)
-    ns = mods_xml.document.collect_namespaces
-    if !mods_xml.search('//mods:relatedItem[@type="host"]/mods:titleInfo', ns).empty?
-      raw_title = mods_xml.search('//mods:relatedItem[@type="host"]/mods:titleInfo', ns).first
-    elsif !mods_xml.search('//mods:titleInfo[not(@type)]', ns).empty?
-      raw_title = mods_xml.search('//mods:titleInfo[not(@type)]', ns).first
-    elsif !mods_xml.search('//mods:titleInfo[@type="alternative"]', ns).empty?
-      raw_title = mods_xml.search('//mods:titleInfo[@type="alternative"]', ns).first
-    elsif !mods_xml.search('//mods:titleInfo[@type="translated"]', ns).empty?
-      raw_title = mods_xml.search('//mods:titleInfo[@type="translated"]', ns).first
+    if !mods_xml.search('//mods:relatedItem[@type="host"]/mods:titleInfo', MODS_NS).empty?
+      raw_title = mods_xml.search('//mods:relatedItem[@type="host"]/mods:titleInfo', MODS_NS).first
+    elsif !mods_xml.search('//mods:titleInfo[not(@type)]', MODS_NS).empty?
+      raw_title = mods_xml.search('//mods:titleInfo[not(@type)]', MODS_NS).first
+    elsif !mods_xml.search('//mods:titleInfo[@type="alternative"]', MODS_NS).empty?
+      raw_title = mods_xml.search('//mods:titleInfo[@type="alternative"]', MODS_NS).first
+    elsif !mods_xml.search('//mods:titleInfo[@type="translated"]', MODS_NS).empty?
+      raw_title = mods_xml.search('//mods:titleInfo[@type="translated"]', MODS_NS).first
     else
-      raw_title = mods_xml.search('//mods:titleInfo[@type="uniform"]', ns)                  
+      raw_title = mods_xml.search('//mods:titleInfo[@type="uniform"]', MODS_NS)                  
     end                
     
     label = xml_clean(raw_title, ' ')
 
-    names = mods_xml.search('//mods:name', ns)
+    names = mods_xml.search('//mods:name', MODS_NS)
     ed_trans_arr = []
     author_arr = []
     names.each do |m_name|
@@ -405,9 +406,9 @@ module ApplicationHelper
     auth_arr << find_rec_author(xml_record, file_path, f_n)
     auth_arr << id
     auth_arr << file_path[/PrimaryAuthors.+/]
-    alt_ids = xml_record.search("/mads:mads/mads:identifier[not(@type='Pseudo')]")
+    alt_ids = xml_record.search("/mads:mads/mads:identifier[not(@type='Pseudo')]",MADS_NS)
     auth_arr << alt_ids.join(";")
-    rel_works = xml_record.search("/mads:mads/mads:extension/mads:identifier")
+    rel_works = xml_record.search("/mads:mads/mads:extension/mads:identifier",MADS_NS)
     w_match = rel_works.collect {|rw| rw =~ id} if rel_works
     auth_arr << w_match.join(";")
     auth_arr << ["published", "", "auto_import", ""]
@@ -423,7 +424,13 @@ module ApplicationHelper
   end
 
   def xml_add_namespace(node,prefix,namespace)
-    node.add_namespace_definition(prefix,namespace)
+    if node.namespace.nil? && node.type == Nokogiri::XML::Node::ELEMENT_NODE
+      error_handler("adding namespace to #{node.name} #{node.to_s}",false)
+      node.add_namespace_definition(prefix,namespace)
+      node.name.sub!(/^.*?:/,'')
+      node.name = "#{prefix}:#{node.name}"
+      error_handler("added namespace to #{node.name} #{node.to_s} #{node.namespace.to_s}",false)
+    end
     m_chil = node.children    
     m_chil.each {|c_node| xml_add_namespace(c_node,prefix,namespace)} if m_chil
   end
