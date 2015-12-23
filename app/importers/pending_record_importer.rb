@@ -15,7 +15,7 @@ class PendingRecordImporter
 
   def import
     @error_report = File.open("#{BASE_DIR}/catalog_pending/errors/error_log#{Date.today}.txt", 'w')
-    @paths_file = File.open("#{BASE_DIR}/catalog_pending/errors/paths.txt", 'w')
+    @paths_file = File.open("#{BASE_DIR}/catalog_pending/errors/paths.txt.#{Date.today}", 'w')
     pending_mads = "#{BASE_DIR}/catalog_pending/mads"
     pending_mods = "#{BASE_DIR}/catalog_pending/mods"
     corrections = "#{BASE_DIR}/catalog_data"
@@ -55,8 +55,8 @@ class PendingRecordImporter
             new_auth = Author.get_by_id(info_hash[:canon_id])[0]
             #add cite urn to record
             id_line = mads_xml.xpath("/mads:mads/mads:identifier",{"mads" => "http://www.loc.gov/mads/v2"}).last
-            n_id = Nokogiri::XML::Node.new "mads:identifier", mads_xml
-            n_id.add_namespace_definition("mads", "http://www.loc.gov/mads/v2")
+            n_id = Nokogiri::XML::Node.new "identifier", mads_xml
+            n_id.add_namespace_definition(nil, "http://www.loc.gov/mads/v2")
             n_id.content = new_auth.urn
             n_id.set_attribute("type", "citeurn")
             id_line.add_next_sibling(n_id)
@@ -88,6 +88,7 @@ class PendingRecordImporter
         if success
           #remove the successfully imported file from catalog_pending
           FileUtils.rm(mods)
+          @paths_file << "#{mods}"
         end       
       rescue
         message = "#{mods} import failed"
@@ -253,9 +254,9 @@ class PendingRecordImporter
     const_nodes.each_with_index do |const, i|
 
       builder = Nokogiri::XML::Builder.new(:encoding => 'UTF-8') do |xml|
-        xml['mods'].mods('xmlns:mods' => 'http://www.loc.gov/mods/v3') {
-          xml['mods'].relatedItem(:type => 'host')
-        }
+          xml.mods('xmlns' => 'http://www.loc.gov/mods/v3') do
+            xml.relatedItem(:type => 'host')
+          end
       end
 
       const.children.each do |sib|
@@ -276,9 +277,11 @@ class PendingRecordImporter
           add_to_cite_tables(info_hash, builder.doc)
           add_to_vers_table(info_hash, builder.doc)
         rescue Exception => e
+          error_handler("Error added constituent to cite tables #{e.backtrace}",false)
           split_const_error(file_path, builder.doc, i)
         end
       else
+        error_handler("No info hash for #{file_path} constituent",false)
         split_const_error(file_path, builder.doc, i)
       end
     end

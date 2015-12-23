@@ -235,8 +235,8 @@ module CiteColls
     if id_line.attribute("type").value == "ctsurn"
       id_line.content = vers_urn
     else
-      n_id = Nokogiri::XML::Node.new "mods:identifier", mods_xml
-      n_id.add_namespace_definition("mods", "http://www.loc.gov/mods/v3")
+      n_id = Nokogiri::XML::Node.new "identifier", mods_xml
+      n_id.add_namespace_definition(nil,"http://www.loc.gov/mods/v3")
       n_id.content = vers_urn
       n_id.set_attribute("type", "ctsurn")
       id_line.add_next_sibling(n_id)
