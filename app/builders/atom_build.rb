@@ -129,6 +129,10 @@ class AtomBuild
             if author.urn_status == "published"         
               mads_path  = author.mads_file
               mads_xml = get_xml("#{catalog_dir}/mads/#{mads_path}")
+              # Nokogiri is doing funky things with namespaces
+              # clear them out and make sure the mods prefix is fully there
+              mads_xml.remove_namespaces!
+              add_mads_prefix(mads_xml)
               mads_urn = author.canonical_id
               @mads_arr << [mads_urn, mads_num, mads_path, mads_xml]
               mads_num += 1  
@@ -168,6 +172,12 @@ class AtomBuild
 
                   #open the mods file once we have it
                   mods_xml = get_xml("#{work_mods_dir}/#{sub_dir}/#{m_f}") if m_f =~ /\.xml/
+
+                  
+                  # Nokogiri is doing funky things with namespaces
+                  # clear them out and make sure the mods prefix is fully there
+                  mods_xml.remove_namespaces!
+                  add_mods_prefix(mods_xml)
                   
                   #TO DO: need to add a re assignment of @ver_urn if more than one mods for an ed?
                  
@@ -229,7 +239,7 @@ class AtomBuild
         work_file.close
       end
     rescue Exception => e
-      puts "Something went wrong for #{work_row.work}! #{$!}"
+      puts "Something went wrong for #{work_row.work} in build_fields! #{$!} #{e.backtrace}"
       @error_file << "#{$!}\n#{e.backtrace}\n\n"
       @error_file.close
       @error_file = File.open("#{@feed_directories}/errors.txt", 'a')
@@ -415,7 +425,7 @@ class AtomBuild
         end
       end
     rescue Exception => e
-      puts "Something went wrong for #{@w_urn}! #{$!}"
+      puts "Something went wrong for #{@w_urn} in add_mods_mode! #{$!} #{e.backtrace}"
       @error_file << "#{$!}\n#{e.backtrace}\n\n"
       @error_file.close
       @error_file = File.open("#{@feed_directories}/errors.txt", 'a')

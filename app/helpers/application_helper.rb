@@ -425,11 +425,9 @@ module ApplicationHelper
 
   def xml_add_namespace(node,prefix,namespace)
     if node.namespace.nil? && node.type == Nokogiri::XML::Node::ELEMENT_NODE
-      error_handler("adding namespace to #{node.name} #{node.to_s}",false)
       node.add_namespace_definition(prefix,namespace)
       node.name.sub!(/^.*?:/,'')
       node.name = "#{prefix}:#{node.name}"
-      error_handler("added namespace to #{node.name} #{node.to_s} #{node.namespace.to_s}",false)
     end
     m_chil = node.children    
     m_chil.each {|c_node| xml_add_namespace(c_node,prefix,namespace)} if m_chil
@@ -522,6 +520,7 @@ module ApplicationHelper
 #errors
   def error_handler(message, to_raise)
     puts message
+    @error_report = File.open("#{BASE_DIR}/catalog_pending/errors/error_log#{Date.today}.txt", 'a')  unless @error_report
     @error_report << "#{message}\n\n"
     @error_report.close
     @error_report = File.open("#{BASE_DIR}/catalog_pending/errors/error_log#{Date.today}.txt", 'a')   
