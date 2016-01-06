@@ -310,10 +310,11 @@ module ApplicationHelper
           unless f_n =~ /mads/
             test_arr = id.split(".")
             if test_arr.length == 2
-              if found_id =~ /stoa/ && id =~ /phi/
+              # use this id if if we don't have an id assigned yet
+              # or if we previously assigned a stoa id but this is a better
+              # phi id
+              if found_id.nil? || (found_id =~ /stoa/ && id =~ /phi/)
                 found_id = id
-              else
-                found_id = id 
               end
             end
           else
@@ -333,10 +334,11 @@ module ApplicationHelper
               #if the new id is lccn or viaf and the found is not don't replace
               else
                 unless id =~ /lccn|viaf/i
-                  if found_id =~ /stoa/ && id =~ /phi/
+                  # use this id if if we don't have an id assigned yet
+                  # or if we previously assigned a stoa id but this is a better
+                  # phi id
+                  if found_id.nil? || (found_id =~ /stoa/ && id =~ /phi/)
                     found_id = id
-                  else
-                    found_id = id 
                   end
                 else
                   found_id = id if found_id == nil
