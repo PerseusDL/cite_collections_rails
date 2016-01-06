@@ -146,7 +146,10 @@ module CiteColls
           end
           puts "added work"
         else
-          Work.update_row(info_hash, "auto_importer")
+          # We don't want to just blindly update the work row if it exists already 
+          # there might be some cases where we want to but we need a way to explicit about that otherwise
+          # we get a bunch of garbage
+          #Work.update_row(info_hash, "auto_importer")
         end
 
       end
