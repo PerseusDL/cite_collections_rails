@@ -310,10 +310,7 @@ module ApplicationHelper
           unless f_n =~ /mads/
             test_arr = id.split(".")
             if test_arr.length == 2
-              # use this id if if we don't have an id assigned yet
-              # or if we previously assigned a stoa id but this is a better
-              # phi id
-              if found_id.nil? || (found_id =~ /stoa/ && id =~ /phi/)
+              if found_id.nil? || override_found_id(found_id,id)
                 found_id = id
               end
             end
@@ -334,10 +331,7 @@ module ApplicationHelper
               #if the new id is lccn or viaf and the found is not don't replace
               else
                 unless id =~ /lccn|viaf/i
-                  # use this id if if we don't have an id assigned yet
-                  # or if we previously assigned a stoa id but this is a better
-                  # phi id
-                  if found_id.nil? || (found_id =~ /stoa/ && id =~ /phi/)
+                  if found_id.nil? || override_found_id(found_id,id)
                     found_id = id
                   end
                 else
@@ -517,6 +511,24 @@ module ApplicationHelper
     else
       return ""
     end
+  end
+
+  # get the preferred id
+  def override_found_id(found_id,new_id)
+    # if we previously found a stoa id, and now have a phi id
+    # phi rules
+    override = false
+    if found_id =~/stoa/ && new_id=~ /phi/
+      override = true
+    # otherwise override invalid ids with the newer id
+    else
+      found_type, found_abbr = get_lang_info(found_id)
+      new_type, new_abbr = get_lang_info(new_id)
+      if found_type.empty? && found_abbr.empty?
+        override = true
+      end 
+    end
+    return override
   end
 
 #errors
