@@ -99,7 +99,7 @@ class PendingRecordImporter
 
   def add_mods(file_path)
     puts "starting import of #{file_path}"
-    ctsurn = ""
+    ctsurn = nil
     mods_xml = ""
     begin
       mods_xml = get_xml(file_path)
@@ -110,129 +110,102 @@ class PendingRecordImporter
       it_worked = new_xml.xpath("//mods:mods/mods:titleInfo",{"mods" => "http://www.loc.gov/mods/v3"})
       if it_worked == nil || it_worked.empty?
         message = "For file #{file_path}: tried adding prefix to mods but something went wrong, please check"
-        error_handler(message, true)
+        error_handler(message, true) # raises error
       else
         mods_xml = new_xml
       end
-   
-      #dealing with modsCollections/multivolume editions
-      collection = mods_xml.xpath("//mods:mods",{"mods" => "http://www.loc.gov/mods/v3"})
-      #saving for later use
-      full_record = mods_xml
-      range_string = ""
-      if collection.length > 1
-        ids = []
-        collection.each{|x| ids << x.attribute("ID").value}
-        ids.sort!
-        range = []
-        #collect the id ranges
-        ids.each_with_index do |x, i|
-          unless i == 0
-            if i == ids.length - 1
-              range << i
-            else
-              num = x[/\d+/].to_i
-              prev = ids[i - 1][/\d+/].to_i
-              unless num == prev.next
-                range << i - 1 << i
-              end
-            end
-          end
-        end
-        range_string = ids[0]
-        unless range[0] == 0
-          range_string << "-#{ids[range[0]]}"
-        end
-        range.delete_at(0)
-        range.each_slice(2){|l, r| range_string << ", #{ids[l]}-#{ids[r]}"}
-        # we need to make a new document with the first node of the collection
-        # because otherwise nokogiri holds on to the original object and xpaths
-        # and searches operate on the original full document and not the individual node
-        new_doc = Nokogiri::XML::Document.new()
-        new_doc.add_child(collection.first.dup(1))
-        mods_xml = new_doc
-      end #end test on collections length
+      parsed = parse_collection(mods_xml) 
 
-      has_cts = mods_xml.xpath("/mods:mods/mods:identifier[@type='ctsurn']", {"mods" => "http://www.loc.gov/mods/v3"})
-     
-      unless has_cts.empty? || has_cts.inner_text == ""
-        #record already has a cts urn, could be added mods or multivolume record
-        #also need to check to make sure the ctsurn is in the correct format, doesn't just give a work urn
+      # TODO we should maybe check to see of the other records have a ctsurn if the first doesn't due to human error?
+      has_cts = parsed[:first_record].xpath("/mods:mods/mods:identifier[@type='ctsurn']", {"mods" => "http://www.loc.gov/mods/v3"})
+
+      unless (has_cts.empty? || has_cts.inner_text == "") 
         ctsurn = has_cts.inner_text
-        vers = Version.find_by_cts(ctsurn)  
-        same = nil
-        vers.each {|v| same = ((v.version == ctsurn && (v.urn_status == "published" || v.urn_status == "reserved")) ? v : nil) if v}
-        if same
-          work_row = Work.find_by_work(ctsurn[/urn:cts:\w+:\w+\.\w+/])
-          label, description = create_label_desc(mods_xml)
-          full_label = work_row.title_eng + ", " + label
-          full_label = full_label + ";" + range_string if range_string != ""
-          if same.has_mods == "false"
-            #has cite row, lacking a mods, update accordingly 
-            Version.update_row(ctsurn, full_label, description, "auto_importer", true, "published")
-            modspath = create_mods_path(ctsurn)
-            #if range_string exists?  
-            unless range_string == ""
-              move_file(modspath, full_record)
-            else
-              move_file(modspath, mods_xml)
-            end                         
-            
-          else
-            #if has row and confirmed mods, not a correction, assumed multivolume, just move to correct place
-            Version.update_row(ctsurn, full_label, description, "auto_importer", false, "published")
-            modspath = create_mods_path(ctsurn)                           
-            unless range_string == ""
-              move_file(modspath, full_record)
-            else
-              move_file(modspath, mods_xml)
-            end   
-          end
-        else # not same
-          #has a ctsurn but no cite row, for whatever reason, needs to be added
-          #check that the ctsurn has a valid structure
-          if ctsurn =~ /urn:cts:\w+:\w+\.\w+\.\w+/
-            unless mods_xml.xpath("//mods:relatedItem[@type='constituent']", {"mods" => "http://www.loc.gov/mods/v3"}).empty?
-              #has constituent items, needs to be passed to a method to create new mods
-              split_constituents(mods_xml, file_path)
-            else
-              info_hash = find_basic_info(mods_xml, file_path, ctsurn[/urn:cts:\w+:\w+\.\w+/])           
-              if info_hash
-                add_to_cite_tables(info_hash, mods_xml)
-                #add to versions table
-                puts "going into add version"
-                add_to_vers_table(info_hash, mods_xml, ctsurn, range_string, full_record)
-              else
-                message = "For file #{file_path} : No info hash returned, something has gone wrong, please check. #{$!}"
-                error_handler(message, true)
-              end
-            end
-          else # end test on cts urn
-            message = "cts urn for #{file_path}, #{ctsurn}, is not valid"
-            error_handler(message, true)
-          end
-        end
-      else # cts is empty or missing - new record
-        unless mods_xml.xpath("//mods:relatedItem[@type='constituent']",{"mods" => "http://www.loc.gov/mods/v3"}).empty?
-          #has constituent items, needs to be passed to a method to create new mods
-          split_constituents(mods_xml, file_path)
-        else
-          info_hash = find_basic_info(mods_xml, file_path)
-          #have the info from the record and cite tables, now process it
-          #:file_name,:canon_id,:a_name,:tg_id,:alt_ids,:cite_auth,:cite_tg :w_title,:w_id,:cite_work,:w_lang
-          if info_hash
-              add_to_cite_tables(info_hash, mods_xml)
-              #add to versions table
-              puts "going into add version"
-              add_to_vers_table(info_hash, mods_xml, nil, range_string, full_record)
+      end
 
-          else
-            message = "For file #{file_path} : No info hash returned, something has gone wrong, please check. #{$!}"
-            error_handler(message, true)
+      update_only = false
+      mods_files = [] 
+
+      if ctsurn != nil && cts_urn !~ /urn:cts:\w+:\w+\.\w+\.\w+/
+        #check that the ctsurn has a valid structure
+        message = "cts urn for #{file_path}, #{ctsurn}, is not valid"
+        error_handler(message, true) # raises error and aborts processing of this mods file
+      end
+
+      # if we are processing a mods file which has already a cts_urn, it should be only one of the following scenarios:
+      # 1. we are replacing an existing mods file with mods collection file
+      # 2. we are processing a mods file for a version which had a cts urn but no mods file 
+      # 3. it is a work level cts urn and a new version level urn needs to be assigned
+      if (ctsurn != nil) 
+        vers = Version.find_by_cts(ctsurn)  
+        # the mods file is for an existing cts version if # the cts urn in the mods file matches a version level cts urn of a published or reserved cts version record 
+        # @TODO WHAT HAPPENS IF WE ARE PROCESSING A MODS FILE FOR A ReJECTED OR REDIRECTED RECORD??  
+        vers.each {|v| if v && v.version == ctsurn && (v.urn_status == "published" || v.urn_status == "reserved")
+            same = v
           end
+        }
+        if same
+          # we found matching version urn in the cite tables, we just update the metadata and queue the new mods file to be added to catalog_data
+          update_only = true
+          work_row = Work.find_by_work(ctsurn[/urn:cts:\w+:\w+\.\w+/])
+          label, description = create_label_desc(parsed[:first_record])
+          full_label = work_row.title_eng + ", " + label
+          full_label = full_label + ";" + parsed[:range_string] if parsed[:range_string] != ""
+          Version.update_row(ctsurn, full_label, description, "auto_importer", true, "published")
+          mods_files << mods_xml
+        end
+      end
+ 
+      add_to_cite = []
+
+      if (! update_only)
+        # if it's not just an update, add the mods file to those that need to be added to the cite tables
+        add_to_cite = [{:ctsurn => ctsurn, :record_to_search => parsed[:first_record], :rangestr => range_string, :fullrecord => modsxml}]
+        # also check to see if we have any constituents that we need to parse - we only do this for new cite collection records not updates
+        # we explicitly only check the first record if it was a modsCollection - we don't want duplicates
+        unless (parsed[:first_record].xpath("//mods:relatedItem[@type='constituent']", {"mods" => "http://www.loc.gov/mods/v3"}).empty?)
+          #has constituent items, split them out and add them to the list to add
+          add_to_cite = split_constituents(parsed[:first_record], file_path)
         end
       end
 
+      # iterate through the records we need to add to the cite tables to gather metadata and insert into the tables
+      add_to_cite.each do |m|
+        begin
+          info_hash = find_basic_info(m[:record_to_search], file_path, m[:ctsurn].nil? ? nil : m[:ctsurn[/urn:cts:\w+:\w+\.\w+/]])           
+          # metadata calculated, so now we can proceed
+          if info_hash
+            # add/update the author tg and work metadata 
+            add_to_cite_tables(info_hash, m[:record_to_search])
+            # add this version to the versions table - if we have a ctsurn already it will be returned to us, otherwise we'll be given a new one
+            ctsurn = add_to_vers_table(info_hash, m[:record_to_search], m[:ctsurn], m[:rangestr], m[:fullrecord])
+            # add the mods file to those we need to move out of pending and into catalog_data
+            mods_files << add_to_cite[:fullrecord]
+          else
+            # metadata gathering failed, we need to report an error
+            if m[:const_num]
+              # if it was a split consituent, save a copy of what we tried to create but continue
+              split_const_error(file_path,m[:fullrecord],m[:const_num])
+            else
+              # we want to fail the entire mods file only if the main record it in failed, not a constituent
+              message = "For file #{file_path} : No info hash returned, something has gone wrong, please check. #{$!}"
+              error_handler(message, true)  
+            end
+          end
+        rescue Exception => e
+          # if it was a split consituent, save a copy of what we tried to create
+          if m[:const_num]
+            split_const_error(file_path,m[:fullrecord],m[:const_num])
+          else
+            # we want to fail the entire mods file only if the main record it in failed, not a constituent
+            message = "For file #{file_path} : No info hash returned, something has gone wrong, please check. #{$!}"
+            error_handler(message, true)  
+          end
+        end
+      end
+      mods_files.each do |m|
+        post_mods(ctsurn,m)
+      end
     rescue
       message = "The import for this file, #{file_path} failed\n#{$!}"
       error_handler(message, false)
@@ -242,14 +215,15 @@ class PendingRecordImporter
     return true
   end
 
+  def post_mods(ctsurn, xmldata)
+    modspath = create_mods_path(ctsurn)
+    move_file(modspath, xmldata)
+  end
 
 
-
-  
-
-  def split_constituents(mods_xml, file_path)
+  def split_constituents(mods_xml)
     #create a new mods file for each constituent item
-    
+    new_mods  = []
     const_nodes = mods_xml.search("//mods:relatedItem[@type='constituent']",{"mods" => "http://www.loc.gov/mods/v3"})
     const_nodes.each_with_index do |const, i|
 
@@ -270,21 +244,9 @@ class PendingRecordImporter
       end
       # make sure it's all in the mods namespace
       add_mods_prefix(builder.doc)
-
-      info_hash = find_basic_info(builder.doc, file_path)
-      if info_hash
-        begin
-          add_to_cite_tables(info_hash, builder.doc)
-          add_to_vers_table(info_hash, builder.doc)
-        rescue Exception => e
-          error_handler("Error added constituent to cite tables #{e.backtrace}",false)
-          split_const_error(file_path, builder.doc, i)
-        end
-      else
-        error_handler("No info hash for #{file_path} constituent",false)
-        split_const_error(file_path, builder.doc, i)
-      end
+      new_mods << { :ctsurn => nil, :record_to_search => builder.doc, :rangestr => "", :fullrecord => builder.doc, :const_num => i }
     end
+    return new_mods
   end
 
   def split_const_error(file_path, doc, i)
@@ -337,5 +299,45 @@ class PendingRecordImporter
     end 
   end
 
+  def parse_collection(mods_xml)
+    #dealing with modsCollections/multivolume editions
+    collection = mods_xml.xpath("//mods:mods",{"mods" => "http://www.loc.gov/mods/v3"})
+    #saving for later use
+    range_string = ""
+    if collection.length > 1
+      ids = []
+      collection.each{|x| ids << x.attribute("ID").value}
+      ids.sort!
+      range = []
+      #collect the id ranges
+      ids.each_with_index do |x, i|
+        unless i == 0
+          if i == ids.length - 1
+            range << i
+          else
+            num = x[/\d+/].to_i
+            prev = ids[i - 1][/\d+/].to_i
+            unless num == prev.next
+              range << i - 1 << i
+            end
+          end
+        end
+      end
+      range_string = ids[0]
+      unless range[0] == 0
+        range_string << "-#{ids[range[0]]}"
+      end
+      range.delete_at(0)
+      range.each_slice(2){|l, r| range_string << ", #{ids[l]}-#{ids[r]}"}
+      # we need to make a new document with the first node of the collection
+      # because otherwise nokogiri holds on to the original object and xpaths
+      # and searches operate on the original full document and not the individual node
+      new_doc = Nokogiri::XML::Document.new()
+      new_doc.add_child(collection.first.dup(1))
+      return { :range_string => range_string, :first_record = new_doc }
+    else
+      return { :range_string => "", :first_record = mods_xml }
+    end
+  end
 
 end
