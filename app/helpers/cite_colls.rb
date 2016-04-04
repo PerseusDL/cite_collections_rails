@@ -209,20 +209,11 @@ module CiteColls
         v_values = ["#{vers_cite}", "#{vers_urn}", "#{full_label}", "#{vers_desc}", "#{vers_type}", 'true', 'published','','','auto_importer', '']
         Version.add_cite_row(v_values)
         unless cts_urn
-          unless range_string == ""
-              full_record.search("//mods:mods",ApplicationHelper::MODS_NS).each do |part|
-              add_cts_urn(part, vers_urn)
-            end
-          else
-            add_cts_urn(mods_xml, vers_urn)
+          full_record.search("//mods:mods",ApplicationHelper::MODS_NS).each do |part|
+            add_cts_urn(part, vers_urn)
           end
         end
-        modspath = create_mods_path(vers_urn)                           
-        unless range_string == ""
-          move_file(modspath, full_record)
-        else
-          move_file(modspath, mods_xml)
-        end 
+        return vers_urn
       end
     rescue Exception => e
       message = "For file #{info_hash[:file_name]} : There was an error while trying to save the version, error message was: #{$!}. \n\n #{e.backtrace}"

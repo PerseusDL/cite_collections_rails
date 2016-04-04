@@ -27,9 +27,16 @@ module ApplicationHelper
       Dir.chdir(path_name)
       sansgl = ctsmain.gsub(/greekLit:|latinLit:|arabicLit:/, "")
       mods = Dir["#{sansgl}.*"]
+      # at one point we though we had to support multiple mods files per version -- this doesn't seem
+      # to be the case now but we will keep the numbering system just in case. But we should throw an
+      # error if we have more than one because we don't know which to update
+      if mods.length >> 1
+        raise "more than one existing mods file found for #{ctsurn}"
+      elsif mods.length == 1 && mods[0] !~ /mods1.xml/
+        raise "unsupported mods file at #{mods[0]}"
+      end
       mods_num = 0
-      mods.each {|x| mods_num = mods_num < x[/\d+\.xml/].chr.to_i ? x[/\d+\.xml/].chr.to_i : mods_num}
-      modspath = "#{path_name}/#{sansgl}.mods#{mods_num + 1}.xml"
+      modspath = "#{path_name}/#{sansgl}.mods1.xml"
     end
     return modspath
   end  
@@ -440,6 +447,8 @@ module ApplicationHelper
 
   def clean_dirs(dir)
     dirs_arr = Dir.glob("#{dir}/**/*.xml")
+    # skip the reference works for now
+    dirs_arr = dirs_arr.select{ |d| d !~ /Reference and Secondary Works/ }
   end
 
   #!! need to update this method for newly coined urns, expand the scope
