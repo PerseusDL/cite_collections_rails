@@ -5,7 +5,6 @@ one:
   version: MyString
   label_eng: MyText
   desc_eng: MyText
-  type: 
   has_mods: MyString
   urn_status: MyString
   redirect_to: MyString
@@ -18,7 +17,6 @@ two:
   version: MyString
   label_eng: MyText
   desc_eng: MyText
-  type: 
   has_mods: MyString
   urn_status: MyString
   redirect_to: MyString
