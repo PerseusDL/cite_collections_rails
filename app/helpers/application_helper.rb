@@ -17,32 +17,34 @@ module ApplicationHelper
 #create directory path
   def create_mods_path(ctsurn)  
     puts "Create mods path for #{ctsurn}"
-    path_name = "#{BASE_DIR}/catalog_data/mods/"
-    ctsmain = ctsurn[/(greekLit|latinLit|arabicLit).+/]
-    path_name << "#{ctsmain.gsub(/:|\./, "/")}"
-    unless File.exists?(path_name)
-      FileUtils.mkdir_p(path_name)
+    pathinfo = urn_to_mods_path(ctsurn) 
+    unless File.exists?(pathinfo[:dir])
+      FileUtils.mkdir_p(pathinfo[:dir])
     end
-    if File.exists?(path_name)
-      Dir.chdir(path_name)
-      sansgl = ctsmain.gsub(/greekLit:|latinLit:|arabicLit:/, "")
-      mods = Dir["#{sansgl}.*"]
-      # at one point we though we had to support multiple mods files per version -- this doesn't seem
-      # to be the case now but we will keep the numbering system just in case. But we should throw an
-      # error if we have more than one because we don't know which to update
-      if mods.length >> 1
-        raise "more than one existing mods file found for #{ctsurn}"
-      elsif mods.length == 1 && mods[0] !~ /mods1.xml/
-        raise "unsupported mods file at #{mods[0]}"
-      end
-      mods_num = 0
-      modspath = "#{path_name}/#{sansgl}.mods1.xml"
+    Dir.chdir(pathinfo[:dir])
+    mods = Dir["#{pathinfo[:basename]}.*"]
+    # at one point we though we had to support multiple mods files per version -- this doesn't seem
+    # to be the case now but we will keep the numbering system just in case. But we should throw an
+    # error if we have more than one because we don't know which to update
+    if mods.length > 1
+      raise "more than one existing mods file found for #{ctsurn}"
+    elsif mods.length == 1 && mods[0] !~ /mods1.xml/
+      raise "unsupported mods file at #{mods[0]}"
     end
-    return modspath
+    return pathinfo[:modsfile]
   end  
 
+  def urn_to_mods_path(ctsurn)
+    path_name = "#{@base_dir}/catalog_data/mods/"
+    ctsmain = ctsurn[/(greekLit|latinLit|arabicLit).+/]
+    path_name << "#{ctsmain.gsub(/:|\./, "/")}"
+
+    sansgl = ctsmain.gsub(/greekLit:|latinLit:|arabicLit:/, "")
+    return { :dir => path_name,  :basename => sansgl, :modsfile => "#{path_name}/#{sansgl}.mods1.xml"}
+  end
+
   def create_mads_path(old_path)
-    path_name = "#{BASE_DIR}/catalog_data/mads/PrimaryAuthors/"
+    path_name = "#{@base_dir}/catalog_data/mads/PrimaryAuthors/"
     op_parts = old_path.split("/")
     file_n = op_parts.pop
     name = op_parts.pop
@@ -190,7 +192,7 @@ module ApplicationHelper
   end
 
   def get_lang_info(id)
-    ids_file = File.read("#{BASE_DIR}/cite_collections_rails/data/id_to_lang.csv").split("\n")
+    ids_file = File.read("#{Rails.root}/data/id_to_lang.csv").split("\n")
     lang = ""
     lang_abbr = ""
     ids_file.each do |line|
@@ -543,10 +545,8 @@ module ApplicationHelper
 #errors
   def error_handler(message, to_raise)
     puts message
-    @error_report = File.open("#{BASE_DIR}/catalog_pending/errors/error_log#{Date.today}.txt", 'a')  unless @error_report
+    @error_report = File.open("#{@base_dir}/catalog_pending/errors/error_log#{Date.today}.txt", 'w') unless @error_report
     @error_report << "#{message}\n\n"
-    @error_report.close
-    @error_report = File.open("#{BASE_DIR}/catalog_pending/errors/error_log#{Date.today}.txt", 'a')   
     raise if to_raise
     #`mv "#{file_path}" "#{BASE_DIR}/catalog_pending/errors/#{f_n}"`
   end

@@ -13,12 +13,13 @@ class PendingRecordImporter
   include ApplicationHelper
   require 'fileutils'
 
-  def import
-    @error_report = File.open("#{BASE_DIR}/catalog_pending/errors/error_log#{Date.today}.txt", 'w')
-    @paths_file = File.open("#{BASE_DIR}/catalog_pending/errors/paths.txt.#{Date.today}", 'w')
-    pending_mads = "#{BASE_DIR}/catalog_pending/mads"
-    pending_mods = "#{BASE_DIR}/catalog_pending/mods"
-    corrections = "#{BASE_DIR}/catalog_data"
+  def import(base_dir)
+    @base_dir = base_dir.nil? ? BASE_DIR : base_dir
+    @error_report = File.open("#{@base_dir}/catalog_pending/errors/error_log#{Date.today}.txt", 'w')
+    @paths_file = File.open("#{@base_dir}/catalog_pending/errors/paths.txt.#{Date.today}", 'w')
+    pending_mads = "#{@base_dir}/catalog_pending/mads"
+    pending_mods = "#{@base_dir}/catalog_pending/mods"
+    corrections = "#{@base_dir}/catalog_data"
 
     #update_git_dir("catalog_pending") UNCOMMENT THIS
     #update_from_catalog_data(corrections)
@@ -90,9 +91,9 @@ class PendingRecordImporter
           FileUtils.rm(mods)
           @paths_file << "#{mods}"
         end       
-      rescue
+      rescue Exception => e
         message = "#{mods} import failed"
-        error_handler(message, false)
+        error_handler(message + e.backtrace.inspect, false)
       end
     end
   end
@@ -160,7 +161,7 @@ class PendingRecordImporter
 
       if (! update_only)
         # if it's not just an update, add the mods file to those that need to be added to the cite tables
-        add_to_cite = [{:ctsurn => ctsurn, :record_to_search => parsed[:first_record], :rangestr => range_string, :fullrecord => modsxml}]
+        add_to_cite = [{:ctsurn => ctsurn, :record_to_search => parsed[:first_record], :rangestr => parsed[:range_string], :fullrecord => mods_xml}]
         # also check to see if we have any constituents that we need to parse - we only do this for new cite collection records not updates
         # we explicitly only check the first record if it was a modsCollection - we don't want duplicates
         unless (parsed[:first_record].xpath("//mods:relatedItem[@type='constituent']", {"mods" => "http://www.loc.gov/mods/v3"}).empty?)
@@ -180,7 +181,7 @@ class PendingRecordImporter
             # add this version to the versions table - if we have a ctsurn already it will be returned to us, otherwise we'll be given a new one
             ctsurn = add_to_vers_table(info_hash, m[:record_to_search], m[:ctsurn], m[:rangestr], m[:fullrecord])
             # add the mods file to those we need to move out of pending and into catalog_data
-            mods_files << add_to_cite[:fullrecord]
+            mods_files << m[:fullrecord]
           else
             # metadata gathering failed, we need to report an error
             if m[:const_num]
@@ -206,9 +207,9 @@ class PendingRecordImporter
       mods_files.each do |m|
         post_mods(ctsurn,m)
       end
-    rescue
-      message = "The import for this file, #{file_path} failed\n#{$!}"
-      error_handler(message, false)
+    rescue Exception => e
+      message = "The import for this file, #{file_path} failed\n#{e}"
+      error_handler(message + e.backtrace.inspect, false)
       return false
     end
     puts "successful import of #{file_path}"
@@ -250,7 +251,7 @@ class PendingRecordImporter
   end
 
   def split_const_error(file_path, doc, i)
-    new_path = file_path.chomp(".xml") + "const#{i}.xml"
+    new_path = file_path.chomp(".xml") + "const#{i.to_s}.xml"
     move_file(new_path, doc)
     new_name = new_path[/(\/[a-zA-Z0-9\s\.\(\)-]+)?\.xml/]
     message = "For file #{new_path}: constituent failed, saving new constituent record"
@@ -334,9 +335,9 @@ class PendingRecordImporter
       # and searches operate on the original full document and not the individual node
       new_doc = Nokogiri::XML::Document.new()
       new_doc.add_child(collection.first.dup(1))
-      return { :range_string => range_string, :first_record = new_doc }
+      return { :range_string => range_string, :first_record => new_doc }
     else
-      return { :range_string => "", :first_record = mods_xml }
+      return { :range_string => "", :first_record => mods_xml }
     end
   end
 
