@@ -93,7 +93,7 @@ class PendingRecordImporter
         end       
       rescue Exception => e
         message = "#{mods} import failed"
-        error_handler(message + e.backtrace.inspect, false)
+        error_handler(message + "#{e.backtrace}", false)
       end
     end
   end
@@ -127,7 +127,7 @@ class PendingRecordImporter
       update_only = false
       mods_files = [] 
 
-      if ctsurn != nil && cts_urn !~ /urn:cts:\w+:\w+\.\w+\.\w+/
+      if ctsurn != nil && ctsurn !~ /urn:cts:\w+:\w+\.\w+\.\w+/
         #check that the ctsurn has a valid structure
         message = "cts urn for #{file_path}, #{ctsurn}, is not valid"
         error_handler(message, true) # raises error and aborts processing of this mods file
@@ -141,22 +141,24 @@ class PendingRecordImporter
         vers = Version.find_by_cts(ctsurn)  
         # the mods file is for an existing cts version if # the cts urn in the mods file matches a version level cts urn of a published or reserved cts version record 
         # @TODO WHAT HAPPENS IF WE ARE PROCESSING A MODS FILE FOR A ReJECTED OR REDIRECTED RECORD??  
-        vers.each {|v| if v && v.version == ctsurn && (v.urn_status == "published" || v.urn_status == "reserved")
-            same = v
+        vers.each {|v| 
+          if v && v.version == ctsurn && (v.urn_status == "published" || v.urn_status == "reserved")
+            update_only = true
           end
         }
-        if same
+        if update_only
           # we found matching version urn in the cite tables, we just update the metadata and queue the new mods file to be added to catalog_data
-          update_only = true
           work_row = Work.find_by_work(ctsurn[/urn:cts:\w+:\w+\.\w+/])
           label, description = create_label_desc(parsed[:first_record])
           full_label = work_row.title_eng + ", " + label
           full_label = full_label + ";" + parsed[:range_string] if parsed[:range_string] != ""
-          Version.update_row(ctsurn, full_label, description, "auto_importer", true, "published")
-          mods_files << mods_xml
+          Version.transaction do
+            Version.update_row(ctsurn, full_label, description, "auto_importer", true, "published")
+            post_mods(ctsurn,mods_xml)
+          end
         end
       end
- 
+
       add_to_cite = []
 
       if (! update_only)
@@ -174,14 +176,16 @@ class PendingRecordImporter
       add_to_cite.each do |m|
         begin
           info_hash = find_basic_info(m[:record_to_search], file_path, m[:ctsurn].nil? ? nil : m[:ctsurn[/urn:cts:\w+:\w+\.\w+/]])           
-          # metadata calculated, so now we can proceed
+        # metadata calculated, so now we can proceed
           if info_hash
             # add/update the author tg and work metadata 
-            add_to_cite_tables(info_hash, m[:record_to_search])
-            # add this version to the versions table - if we have a ctsurn already it will be returned to us, otherwise we'll be given a new one
-            ctsurn = add_to_vers_table(info_hash, m[:record_to_search], m[:ctsurn], m[:rangestr], m[:fullrecord])
+            ActiveRecord::Base.transaction do
+              add_to_cite_tables(info_hash, m[:record_to_search])
+              # add this version to the versions table - if we have a ctsurn already it will be returned to us, otherwise we'll be given a new one
+              ctsurn = add_to_vers_table(info_hash, m[:record_to_search], m[:ctsurn], m[:rangestr], m[:fullrecord])
             # add the mods file to those we need to move out of pending and into catalog_data
-            mods_files << m[:fullrecord]
+              post_mods(ctsurn,m[:fullrecord])
+            end
           else
             # metadata gathering failed, we need to report an error
             if m[:const_num]
@@ -194,7 +198,7 @@ class PendingRecordImporter
             end
           end
         rescue Exception => e
-          # if it was a split consituent, save a copy of what we tried to create
+       # if it was a split consituent, save a copy of what we tried to create
           if m[:const_num]
             split_const_error(file_path,m[:fullrecord],m[:const_num])
           else
@@ -204,12 +208,9 @@ class PendingRecordImporter
           end
         end
       end
-      mods_files.each do |m|
-        post_mods(ctsurn,m)
-      end
     rescue Exception => e
       message = "The import for this file, #{file_path} failed\n#{e}"
-      error_handler(message + e.backtrace.inspect, false)
+      error_handler(message + "#{e.backtrace}", false)
       return false
     end
     puts "successful import of #{file_path}"

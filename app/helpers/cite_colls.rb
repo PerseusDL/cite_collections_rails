@@ -171,7 +171,6 @@ module CiteColls
       #vers_col = "urn, version, label_eng, desc_eng, type, has_mods, urn_status, redirect_to, member_of, created_by, edited_by"           
       #two (or more) languages listed, create more records
       info_hash[:v_langs].each do |lang|
-        puts "in add version for #{info_hash.inspect}"
         vers_label, vers_desc = create_label_desc(mods_xml)
         full_label = info_hash[:w_title] + ", " + vers_label
         full_label = full_label + ";" + range_string if range_string != ""

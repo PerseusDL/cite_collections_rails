@@ -160,6 +160,10 @@ module ApplicationHelper
               vers_langs << x.inner_text
             end
           end
+          if (vers_langs.size == 0)
+            message = "Unable to parse language from mods:language elements, please review!"
+            error_handler(message, true)
+          end 
           info_hash.merge!(:w_title => work_title,
                         :w_id => w_id,
                         :cite_work => work_row,
