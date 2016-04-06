@@ -1,23 +1,34 @@
 # Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/Fixtures.html
 
 one:
-  urn: MyString
-  textgroup: MyString
+  urn: "urn:cite:perseus:tg.1.1"
+  textgroup: "urn:cts:greekLit:tlg0037"
   groupname_eng: MyString
-  has_mads: MyString
+  has_mads: "false"
   mads_possible: MyString
   notes: MyText
-  urn_status: MyString
+  urn_status: "published"
   created_by: MyString
   edited_by: MyString
 
 two:
-  urn: MyString
-  textgroup: MyString
+  urn: "urn:cite:perseus:tg.1.1"
+  textgroup: "urn:cts:greekLit:fhg0274"
   groupname_eng: MyString
-  has_mads: MyString
+  has_mads: "false"
   mads_possible: MyString
   notes: MyText
-  urn_status: MyString
+  urn_status: "published"
+  created_by: MyString
+  edited_by: MyString
+
+three:
+  urn: "urn:cite:perseus:tg.1.1"
+  textgroup: "urn:cts:greekLit:tlg0016"
+  groupname_eng: "Herodotus"
+  has_mads: "false"
+  mads_possible: MyString
+  notes: MyText
+  urn_status: "published"
   created_by: MyString
   edited_by: MyString
