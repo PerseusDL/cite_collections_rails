@@ -162,14 +162,16 @@ class PendingRecordImporter
       add_to_cite = []
 
       if (! update_only)
-        # if it's not just an update, add the mods file to those that need to be added to the cite tables
-        add_to_cite = [{:ctsurn => ctsurn, :record_to_search => parsed[:first_record], :rangestr => parsed[:range_string], :fullrecord => mods_xml}]
-        # also check to see if we have any constituents that we need to parse - we only do this for new cite collection records not updates
+        # check to see if we have any constituents that we need to parse - we only do this for new cite collection records not updates
         # we explicitly only check the first record if it was a modsCollection - we don't want duplicates
         unless (parsed[:first_record].xpath("//mods:relatedItem[@type='constituent']", {"mods" => "http://www.loc.gov/mods/v3"}).empty?)
           #has constituent items, split them out and add them to the list to add
-          add_to_cite = split_constituents(parsed[:first_record], file_path)
+          add_to_cite = split_constituents(parsed[:first_record])
         end
+        # add the parent mods file to those that potentially need to be added to the cite tables
+        # but add it at the end, because it's possible that only the constituents are what we want and we don't want to 
+        # fail those if we fail to create a record for the parent
+        add_to_cite << {:ctsurn => ctsurn, :record_to_search => parsed[:first_record], :rangestr => parsed[:range_string], :fullrecord => mods_xml}
       end
 
       # iterate through the records we need to add to the cite tables to gather metadata and insert into the tables

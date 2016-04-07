@@ -28,13 +28,15 @@ class PendingRecordImporterTest < ActiveSupport::TestCase
     # scenario six: version update with a modsCollection
     @file_six = File.join(@tmp_dir,'catalog_data','mods','greekLit','tlg0016','tlg001','opp-grc1','tlg0016.tlg001.opp-grc1.mods1.xml')
 
-    # scenario seven: version update with constituent records
+    # scenario seven: new modsCollection with constituent records
+    @file_seven_a = File.join(@tmp_dir,'catalog_data','mods','greekLit','tlg0527','tlg027','opp-grc1','tlg0527.tlg027.opp-grc1.mods1.xml')
+    @file_seven_b = File.join(@tmp_dir,'catalog_data','mods','greekLit','tlg0527','tlg028','opp-grc1','tlg0527.tlg028.opp-grc1.mods1.xml')
 
-    # scenario eight: version update with constituents that fail
+    # scenario eight: version update with constituent records
 
-    # scenario nine: version update that fails with invalid cts
+    # scenario nine: version update with constituents that fail
 
-    # scenario ten: new modsCollection with constituent records
+    # scenario ten: version update that fails with invalid cts
 
     # scenario eleven: new mods without constituent records
 
@@ -78,6 +80,12 @@ class PendingRecordImporterTest < ActiveSupport::TestCase
    # six precheck
     assert ! File.exists?(@file_six)
     assert_equal "MyText", Version.find_by_cts("urn:cts:greekLit:tlg0016.tlg001.opp-grc1")[0].label_eng
+
+   # seven precheck
+    assert ! File.exists?(@file_seven_a)
+    assert ! File.exists?(@file_seven_b)
+    assert_equal 0, Version.find_by_cts("urn:cts:greekLit:tlg0527.tlg027.opp-grc1").size
+    assert_equal 0, Version.find_by_cts("urn:cts:greekLit:tlg0527.tlg028.opp-grc1").size
 
 
     # do the import
@@ -136,6 +144,12 @@ class PendingRecordImporterTest < ActiveSupport::TestCase
     # six postcheck
     assert File.exists?(@file_six)
     assert_equal "Historiae, Herodoti Historiarum libri IX Volume 1;mods1-mods2", Version.find_by_cts("urn:cts:greekLit:tlg0016.tlg001.opp-grc2")[0].label_eng
+
+   # seven postcheck
+    assert File.exists?(@file_seven_a)
+    assert File.exists?(@file_seven_b)
+    assert_equal 1, Version.find_by_cts("urn:cts:greekLit:tlg0527.tlg027.opp-grc1").size
+    assert_equal 1, Version.find_by_cts("urn:cts:greekLit:tlg0527.tlg028.opp-grc1").size
   end
 
 
