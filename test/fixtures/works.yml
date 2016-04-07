@@ -1,19 +1,38 @@
 # Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/Fixtures.html
 
 one:
-  urn: MyString
-  work: MyString
+  urn: "urn:cite:perseus:catwk.1.1"
+  work: "urn:cts:greekLit:tlg0037.tlg001"
+  title_eng: "Epistulae"
+  notes: MyText
+  urn_status: "published"
+  created_by: "feed_aggregator"
+  edited_by: "feed_aggregator"
+
+two:
+  urn: "urn:cite:perseus:catwk.2.1"
+  work: "urn:cts:greekLit:fhg0274.fhg001"
   title_eng: MyText
   notes: MyText
-  urn_status: MyString
+  urn_status: "published"
   created_by: MyString
   edited_by: MyString
 
-two:
-  urn: MyString
-  work: MyString
-  title_eng: MyText
+three:
+  urn: "urn:cite:perseus:catwk.3.1"
+  work: "urn:cts:greekLit:tlg0016.tlg001"
+  title_eng: "Histories"
   notes: MyText
-  urn_status: MyString
+  urn_status: "published"
   created_by: MyString
   edited_by: MyString
+
+four:
+  urn: "urn:cite:perseus:catwk.4.1"
+  work: "urn:cts:latinLit:stoa0299.stoa001"
+  title_eng: MyText
+  notes: MyText
+  urn_status: "published"
+  created_by: MyString
+  edited_by: MyString
+

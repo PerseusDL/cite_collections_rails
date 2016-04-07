@@ -1,27 +1,61 @@
 # Read about fixtures at http://api.rubyonrails.org/classes/ActiveRecord/Fixtures.html
 
 one:
-  urn: MyString
-  version: MyString
-  label_eng: MyText
-  desc_eng: MyText
-  type: 
-  has_mods: MyString
-  urn_status: MyString
-  redirect_to: MyString
-  member_of: MyString
-  created_by: MyString
-  edited_by: MyString
+  urn: "urn:cite:perseus:catver.1.1"
+  version: "urn:cts:greekLit:tlg0037.tlg001.opp-lat1"
+  label_eng: "No label"
+  desc_eng: "No description"
+  has_mods: "false"
+  urn_status: "published"
+  redirect_to: ""
+  member_of: ""
+  created_by: "feed_aggregator"
+  edited_by: "title_corrector"
 
 two:
-  urn: MyString
-  version: MyString
+  urn: "urn:cite:perseus:catver.2.1"
+  version: "urn:cts:greekLit:fhg0274.fhg001.opp-lat1"
   label_eng: MyText
   desc_eng: MyText
-  type: 
-  has_mods: MyString
-  urn_status: MyString
-  redirect_to: MyString
-  member_of: MyString
-  created_by: MyString
-  edited_by: MyString
+  has_mods: "true"
+  urn_status: "published"
+  redirect_to: ""
+  member_of: ""
+  created_by: "feed_aggregator"
+  edited_by: "feed_aggregator"
+
+three:
+  urn: "urn:cite:perseus:catver.3.1"
+  version: "urn:cts:greekLit:fhg0274.fhg001.opp-grc1"
+  label_eng: MyText
+  desc_eng: MyText
+  has_mods: "true"
+  urn_status: "published"
+  redirect_to: ""
+  member_of: ""
+  created_by: "feed_aggregator"
+  edited_by: "feed_aggregator"
+
+four:
+  urn: "urn:cite:perseus:catver.4.1"
+  version: "urn:cts:greekLit:tlg0016.tlg001.opp-grc1"
+  label_eng: MyText
+  desc_eng: MyText
+  has_mods: "true"
+  urn_status: "published"
+  redirect_to: ""
+  member_of: ""
+  created_by: "feed_aggregator"
+  edited_by: "feed_aggregator"
+
+five:
+  urn: "urn:cite:perseus:catver.5.1"
+  version: "urn:cts:latinLit:stoa0299.stoa001.opp-lat3"
+  label_eng: MyText
+  desc_eng: MyText
+  has_mods: "false"
+  urn_status: "published"
+  redirect_to: ""
+  member_of: ""
+  created_by: "feed_aggregator"
+  edited_by: "feed_aggregator"
