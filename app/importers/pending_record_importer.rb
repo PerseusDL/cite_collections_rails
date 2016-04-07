@@ -49,9 +49,9 @@ class PendingRecordImporter
         end
         #if it already exists we don't need to add it to the table again
         if info_hash
-          puts "update author #{info_hash.inspect}"
           unless info_hash[:cite_auth].empty?
             Author.update_row(info_hash, "auto_importer")
+            @paths_file << "Updated #{info_hash[:cite_auth]}, #{mads}\n\n"
           else
             add_to_cite_tables(info_hash)
 
@@ -65,7 +65,7 @@ class PendingRecordImporter
             id_line.add_next_sibling(n_id)
 
             madspath = create_mads_path(mads)
-            @paths_file << "#{new_auth.urn}, #{madspath}\n\n"
+            @paths_file << "Added #{new_auth.urn}, #{madspath}\n\n"
             move_file(madspath, mads_xml)
           end
           #remove the successfully imported file from catalog_pending
@@ -75,7 +75,7 @@ class PendingRecordImporter
           error_handler(message, true)
         end
       rescue Exception => e
-        message = "caught the lower exceptions #{e.backtrace}"
+        message = "caught the lower exceptions #{e} #{e.backtrace}"
         error_handler(message, false)
       end
     end
