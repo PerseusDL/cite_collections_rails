@@ -21,8 +21,10 @@ class PendingRecordImporter
     pending_mods = "#{@base_dir}/catalog_pending/mods"
     corrections = "#{@base_dir}/catalog_data"
 
-    #update_git_dir("catalog_pending") UNCOMMENT THIS
-    #update_from_catalog_data(corrections)
+    #update_git_dir("catalog_pending") UNCOMMENT THIS ??
+    # We are explicitly disabling the update of the cite collections from the catalog data
+    # for now. Fixes can be made directly in the cite collections tables
+    # update_from_catalog_data(corrections) 
     mads_import(pending_mads)
     mods_import(pending_mods)
 
@@ -47,9 +49,9 @@ class PendingRecordImporter
         end
         #if it already exists we don't need to add it to the table again
         if info_hash
+          puts "update author #{info_hash.inspect}"
           unless info_hash[:cite_auth].empty?
             Author.update_row(info_hash, "auto_importer")
-            next
           else
             add_to_cite_tables(info_hash)
 
@@ -65,9 +67,9 @@ class PendingRecordImporter
             madspath = create_mads_path(mads)
             @paths_file << "#{new_auth.urn}, #{madspath}\n\n"
             move_file(madspath, mads_xml)
-            #remove the successfully imported file from catalog_pending
-            FileUtils.rm(mads)
           end
+          #remove the successfully imported file from catalog_pending
+          FileUtils.rm(mads)
         else
           message = "For file #{mads} : No info hash returned, something has gone wrong, please check."
           error_handler(message, true)
@@ -89,7 +91,7 @@ class PendingRecordImporter
         if success
           #remove the successfully imported file from catalog_pending
           FileUtils.rm(mods)
-          @paths_file << "#{mods}"
+          @paths_file << "#{mods}\n\n"
         end       
       rescue Exception => e
         message = "#{mods} import failed"
@@ -175,6 +177,7 @@ class PendingRecordImporter
       end
 
       # iterate through the records we need to add to the cite tables to gather metadata and insert into the tables
+      constituents_added = 0
       add_to_cite.each do |m|
         begin
           info_hash = find_basic_info(m[:record_to_search], file_path, m[:ctsurn].nil? ? nil : m[:ctsurn[/urn:cts:\w+:\w+\.\w+/]])           
@@ -187,6 +190,9 @@ class PendingRecordImporter
               ctsurn = add_to_vers_table(info_hash, m[:record_to_search], m[:ctsurn], m[:rangestr], m[:fullrecord])
             # add the mods file to those we need to move out of pending and into catalog_data
               post_mods(ctsurn,m[:fullrecord])
+              if m[:const_num]
+                constituents_added = constituents_added + 1
+              end
             end
           else
             # metadata gathering failed, we need to report an error
@@ -195,7 +201,7 @@ class PendingRecordImporter
               split_const_error(file_path,m[:fullrecord],m[:const_num])
             else
               # we want to fail the entire mods file only if the main record it in failed, not a constituent
-              message = "For file #{file_path} : No info hash returned, something has gone wrong, please check. #{$!}"
+              message = "For file #{file_path} : No info hash returned, something has gone wrong, please check. (Constituents successfully added: #{constituents_added})"
               error_handler(message, true)  
             end
           end
@@ -205,13 +211,13 @@ class PendingRecordImporter
             split_const_error(file_path,m[:fullrecord],m[:const_num])
           else
             # we want to fail the entire mods file only if the main record it in failed, not a constituent
-            message = "For file #{file_path} : No info hash returned, something has gone wrong, please check. #{$!}"
+            message = "For file #{file_path} : No info hash returned, something has gone wrong, please check."
             error_handler(message, true)  
           end
         end
       end
     rescue Exception => e
-      message = "The import for this file, #{file_path} failed\n#{e}"
+      message = "The import for this file, #{file_path} may have failed. Constituents added: #{constituents_added}\n"
       error_handler(message + "#{e.backtrace}", false)
       return false
     end

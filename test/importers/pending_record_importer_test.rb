@@ -28,27 +28,25 @@ class PendingRecordImporterTest < ActiveSupport::TestCase
     # scenario six: version update with a modsCollection
     @file_six = File.join(@tmp_dir,'catalog_data','mods','greekLit','tlg0016','tlg001','opp-grc1','tlg0016.tlg001.opp-grc1.mods1.xml')
 
-    # scenario seven: new modsCollection with constituent records
+    # scenario seven: new modsCollection with constituent records and parent has no identifier - only constituents created
     @file_seven_a = File.join(@tmp_dir,'catalog_data','mods','greekLit','tlg0527','tlg027','opp-grc1','tlg0527.tlg027.opp-grc1.mods1.xml')
     @file_seven_b = File.join(@tmp_dir,'catalog_data','mods','greekLit','tlg0527','tlg028','opp-grc1','tlg0527.tlg028.opp-grc1.mods1.xml')
 
     # scenario eight: version update with constituent records
+    @file_eight = File.join(@tmp_dir,'catalog_data','mods','latinLit','stoa0299','stoa001','opp-lat3','stoa0299.stoa001.opp-lat3.mods1.xml')
 
-    # scenario nine: version update with constituents that fail
+    # scenario nine: version update with constituents that succeed and fail
+    @file_nine = File.join(@tmp_dir,'catalog_data','mods','latinLit','stoa0299','stoa001','opp-lat4','stoa0299.stoa001.opp-lat4.mods1.xml')
+    @file_nine_a = File.join(@tmp_dir,'catalog_data','mods','latinLit','phi0687','phi001','opp-lat1','phi0687.phi001.opp-lat1.mods1.xml')
 
-    # scenario ten: version update that fails with invalid cts
-
-    # scenario eleven: new mods without constituent records
-
-    # scenario twelve: new mads
-
-    # scenario thirteen: mads update
+    # scenario mads one: new mads
+    @file_mads_one = File.join(@tmp_dir,'catalog_data','mads','PrimaryAuthors','A', 'Amyntas', 'viaf17613782.mads.xml')
 
   end
 
 
   teardown do
-    #FileUtils.rm_r @tmp_dir
+    FileUtils.rm_r @tmp_dir
   end
 
   test "the files are imported" do 
@@ -87,6 +85,23 @@ class PendingRecordImporterTest < ActiveSupport::TestCase
     assert_equal 0, Version.find_by_cts("urn:cts:greekLit:tlg0527.tlg027.opp-grc1").size
     assert_equal 0, Version.find_by_cts("urn:cts:greekLit:tlg0527.tlg028.opp-grc1").size
 
+    # eight precheck
+    assert ! File.exists?(@file_eight)
+    assert_equal "false", Version.find_by_cts("urn:cts:latinLit:stoa0299.stoa001.opp-lat3")[0].has_mods
+    assert_equal "MyText", Version.find_by_cts("urn:cts:latinLit:stoa0299.stoa001.opp-lat3")[0].label_eng
+    assert_nil Work.find_by_work("urn:cts:latinLit:phi0686.phi001")
+
+    # nine precheck
+    assert ! File.exists?(@file_nine)
+    assert ! File.exists?(@file_nine_a)
+    assert_equal 0, Version.find_by_cts("urn:cts:greekLit:phi0687.phi001.opp-lat1").size;
+
+    # mads one precheck
+    assert ! File.exists?(@file_mads_one)
+    assert_equal 0, Author.get_by_id('tlg2649').size
+
+    # mads two precheck
+    assert_equal "", Author.get_by_id('tlg1891')[0].related_works
 
     # do the import
     cpi.import(@tmp_dir)
@@ -150,6 +165,27 @@ class PendingRecordImporterTest < ActiveSupport::TestCase
     assert File.exists?(@file_seven_b)
     assert_equal 1, Version.find_by_cts("urn:cts:greekLit:tlg0527.tlg027.opp-grc1").size
     assert_equal 1, Version.find_by_cts("urn:cts:greekLit:tlg0527.tlg028.opp-grc1").size
+
+    # eight postcheck
+    assert File.exists?(@file_eight)
+    assert_equal "true", Version.find_by_cts("urn:cts:latinLit:stoa0299.stoa001.opp-lat3")[0].has_mods
+    assert_match /Poetae latini/, Version.find_by_cts("urn:cts:latinLit:stoa0299.stoa001.opp-lat3")[0].label_eng
+    # still shouldn't have a work record for the constiuent
+    assert_nil Work.find_by_work("urn:cts:latinLit:phi0686.phi001")
+
+    # nine postcheck
+    assert File.exists?(@file_nine)
+    assert File.exists?(@file_nine_a)
+    assert_match /Senecae Epigrammata/, Version.find_by_cts("urn:cts:latinLit:stoa0299.stoa001.opp-lat4")[0].label_eng
+    # the good constituent was added
+    assert_equal 1, Version.find_by_cts("urn:cts:latinLit:phi0687.phi001.opp-lat1").size;
+
+    # mads one postcheck
+    assert File.exists?(@file_mads_one)
+    assert_equal 1, Author.get_by_id('tlg2649').size
+
+    # mads two ppostcheck
+    assert_equal "tlg1891.tlg001", Author.get_by_id('tlg1891')[0].related_works
   end
 
 

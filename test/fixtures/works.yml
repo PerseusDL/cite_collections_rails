@@ -27,3 +27,12 @@ three:
   created_by: MyString
   edited_by: MyString
 
+four:
+  urn: "urn:cite:perseus:catwk.4.1"
+  work: "urn:cts:latinLit:stoa0299.stoa001"
+  title_eng: MyText
+  notes: MyText
+  urn_status: "published"
+  created_by: MyString
+  edited_by: MyString
+

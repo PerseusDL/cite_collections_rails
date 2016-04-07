@@ -47,3 +47,15 @@ four:
   member_of: ""
   created_by: "feed_aggregator"
   edited_by: "feed_aggregator"
+
+five:
+  urn: "urn:cite:perseus:catver.5.1"
+  version: "urn:cts:latinLit:stoa0299.stoa001.opp-lat3"
+  label_eng: MyText
+  desc_eng: MyText
+  has_mods: "false"
+  urn_status: "published"
+  redirect_to: ""
+  member_of: ""
+  created_by: "feed_aggregator"
+  edited_by: "feed_aggregator"
