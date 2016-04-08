@@ -1,0 +1,1 @@
+the error log directory
