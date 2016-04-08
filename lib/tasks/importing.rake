@@ -13,7 +13,7 @@ desc "import records in catalog_pending"
 task :catalog_pending_import => :environment do 
   #need option to specify who is editing?
   cpi = PendingRecordImporter.new
-  cpi.import
+  cpi.import(BASE_DIR)
 end
 
 

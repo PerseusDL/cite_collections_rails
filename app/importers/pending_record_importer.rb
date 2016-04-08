@@ -48,13 +48,14 @@ class PendingRecordImporter
           info_hash = find_basic_info(mads_xml, mads)
         end
         #if it already exists we don't need to add it to the table again
+        madspath = create_mads_path(mads)
         if info_hash
           unless info_hash[:cite_auth].empty?
+            info_hash[:mads_file] = madspath[/PrimaryAuthors.+\.xml/]         
+            #update the path to the mads file
             Author.update_row(info_hash, "auto_importer")
-            @paths_file << "Updated #{info_hash[:cite_auth]}, #{mads}\n\n"
           else
             add_to_cite_tables(info_hash)
-
             new_auth = Author.get_by_id(info_hash[:canon_id])[0]
             #add cite urn to record
             id_line = mads_xml.xpath("/mads:mads/mads:identifier",{"mads" => "http://www.loc.gov/mads/v2"}).last
@@ -63,11 +64,8 @@ class PendingRecordImporter
             n_id.content = new_auth.urn
             n_id.set_attribute("type", "citeurn")
             id_line.add_next_sibling(n_id)
-
-            madspath = create_mads_path(mads)
-            @paths_file << "Added #{new_auth.urn}, #{madspath}\n\n"
-            move_file(madspath, mads_xml)
           end
+          move_file(madspath, mads_xml)
           #remove the successfully imported file from catalog_pending
           FileUtils.rm(mads)
         else
