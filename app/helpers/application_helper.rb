@@ -90,21 +90,17 @@ module ApplicationHelper
       if ctsurn
         id = ctsurn
       end
-      #this and the find_rec_id will need to be updated to accommodate different ids
-      unless f_n =~ /mads/
-        lit_type, lit_abbr = get_lang_info(id)
-        if lit_type.empty? && lit_abbr.empty?
-          message = "Unrecognized id type, #{id}"
-          error_handler(message, true)
-        end
-        w_id = id =~ /cts/ ? id[/urn:cts:\w+:\w+\.\w+/] : "urn:cts:#{lit_type}Lit:#{id}"
-        tg_id = w_id[/urn:cts:\w+:\w+/]
-        canon_id = tg_id[/\w+$/]
-      else
-        w_id = nil
-        tg_id = nil
-        canon_id = id[/\w+$/]
+      # since ids are used for updating, regardless of what file type we are processing
+      # we always need to be sure we have a recognized id type - all registered id types
+      # should should parse through get_lang_info
+      lit_type, lit_abbr = get_lang_info(id)
+      if lit_type.empty? || lit_abbr.empty?
+        message = "Unrecognized id type, #{id}"
+        error_handler(message, true)
       end
+      w_id = id =~ /cts/ ? id[/urn:cts:\w+:\w+\.\w+/] : "urn:cts:#{lit_type}Lit:#{id}"
+      tg_id = w_id[/urn:cts:\w+:\w+/]
+      canon_id = tg_id[/\w+$/]
       if id
         #search for and compare author values
         auth_name = find_rec_author(xml_record, file_path, f_n)

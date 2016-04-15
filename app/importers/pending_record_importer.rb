@@ -162,16 +162,20 @@ class PendingRecordImporter
       add_to_cite = []
 
       if (! update_only)
+        parent_mods = {:ctsurn => ctsurn, :record_to_search => parsed[:first_record], :rangestr => parsed[:range_string], :fullrecord => mods_xml}
         # check to see if we have any constituents that we need to parse - we only do this for new cite collection records not updates
         # we explicitly only check the first record if it was a modsCollection - we don't want duplicates
         unless (parsed[:first_record].xpath("//mods:relatedItem[@type='constituent']", {"mods" => "http://www.loc.gov/mods/v3"}).empty?)
           #has constituent items, split them out and add them to the list to add
           add_to_cite = split_constituents(parsed[:first_record])
+          # if we have constiuents, we want to mark the parent record as being optional because it might be used only as a vehicle for
+          # the consituents
+          parent_mods[:optional] = true
         end
         # add the parent mods file to those that potentially need to be added to the cite tables
         # but add it at the end, because it's possible that only the constituents are what we want and we don't want to 
         # fail those if we fail to create a record for the parent
-        add_to_cite << {:ctsurn => ctsurn, :record_to_search => parsed[:first_record], :rangestr => parsed[:range_string], :fullrecord => mods_xml}
+        add_to_cite << parent_mods
       end
 
       # iterate through the records we need to add to the cite tables to gather metadata and insert into the tables
@@ -197,9 +201,12 @@ class PendingRecordImporter
             if m[:const_num]
               # if it was a split consituent, save a copy of what we tried to create but continue
               split_const_error(file_path,m[:fullrecord],m[:const_num])
+            elsif m[:optional]
+              message = "For file #{file_path} : No info hash returned for parent mods but consituents were parsed. (Constituents successfully added: #{constituents_added})"
+              error_handler(message, false)  
             else
               # we want to fail the entire mods file only if the main record it in failed, not a constituent
-              message = "For file #{file_path} : No info hash returned, something has gone wrong, please check. (Constituents successfully added: #{constituents_added})"
+              message = "For file #{file_path} : No info hash returned, something has gone wrong, please check."
               error_handler(message, true)  
             end
           end
@@ -207,15 +214,18 @@ class PendingRecordImporter
        # if it was a split consituent, save a copy of what we tried to create
           if m[:const_num]
             split_const_error(file_path,m[:fullrecord],m[:const_num])
+          elsif m[:optional]
+            message = "Parent mods failure caught and ignored because it has constituents #{file_path} : #{e}."
+            error_handler(message, false)  
           else
             # we want to fail the entire mods file only if the main record it in failed, not a constituent
-            message = "For file #{file_path} : No info hash returned, something has gone wrong, please check."
+            message = "Error for file #{file_path} : #{e}."
             error_handler(message, true)  
           end
         end
       end
     rescue Exception => e
-      message = "The import for this file, #{file_path} may have failed. Constituents added: #{constituents_added}\n"
+      message = "The import for this file, #{file_path} failed.";
       error_handler(message + "#{e.backtrace}", false)
       return false
     end
