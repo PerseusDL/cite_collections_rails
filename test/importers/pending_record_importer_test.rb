@@ -29,6 +29,7 @@ class PendingRecordImporterTest < ActiveSupport::TestCase
     @file_six = File.join(@tmp_dir,'catalog_data','mods','greekLit','tlg0016','tlg001','opp-grc1','tlg0016.tlg001.opp-grc1.mods1.xml')
 
     # scenario seven: new modsCollection with constituent records and parent has no identifier - only constituents created
+    @file_seven_pending = File.join(@tmp_dir,'catalog_pending','mods','seven','bible.poetici.stuttgart.pers.mods.xml')
     @file_seven_a = File.join(@tmp_dir,'catalog_data','mods','greekLit','tlg0527','tlg027','opp-grc1','tlg0527.tlg027.opp-grc1.mods1.xml')
     @file_seven_b = File.join(@tmp_dir,'catalog_data','mods','greekLit','tlg0527','tlg028','opp-grc1','tlg0527.tlg028.opp-grc1.mods1.xml')
 
@@ -39,12 +40,15 @@ class PendingRecordImporterTest < ActiveSupport::TestCase
     @file_nine = File.join(@tmp_dir,'catalog_data','mods','latinLit','stoa0299','stoa001','opp-lat4','stoa0299.stoa001.opp-lat4.mods1.xml')
     @file_nine_a = File.join(@tmp_dir,'catalog_data','mods','latinLit','phi0687','phi001','opp-lat1','phi0687.phi001.opp-lat1.mods1.xml')
 
+    # scenario ten: mods file no valid identifier
+    @file_ten_pending = File.join(@tmp_dir,'catalog_pending','mods','ten','missingidentifier.mods.xml')
+
     # scenario mads one: new mads
     @file_mads_one = File.join(@tmp_dir,'catalog_data','mads','PrimaryAuthors','A', 'Amyntas', 'viaf17613782.mads.xml')
 
     # scenario mads two: update mads
     @file_mads_two = File.join(@tmp_dir,'catalog_data','mads','PrimaryAuthors','A', 'Abas Historicus', 'viaf49613664.mads.xml')
-
+    
   end
 
 
@@ -98,6 +102,9 @@ class PendingRecordImporterTest < ActiveSupport::TestCase
     assert ! File.exists?(@file_nine)
     assert ! File.exists?(@file_nine_a)
     assert_equal 0, Version.find_by_cts("urn:cts:greekLit:phi0687.phi001.opp-lat1").size;
+
+    # ten precheck
+    assert File.exists?(@file_ten_pending)
 
     # mads one precheck
     assert ! File.exists?(@file_mads_one)
@@ -170,6 +177,8 @@ class PendingRecordImporterTest < ActiveSupport::TestCase
     assert File.exists?(@file_seven_b)
     assert_equal 1, Version.find_by_cts("urn:cts:greekLit:tlg0527.tlg027.opp-grc1").size
     assert_equal 1, Version.find_by_cts("urn:cts:greekLit:tlg0527.tlg028.opp-grc1").size
+    # parent mods should not remain in catalog pending
+    assert ! File.exists?(@file_seven_pending)
 
     # eight postcheck
     assert File.exists?(@file_eight)
@@ -184,6 +193,13 @@ class PendingRecordImporterTest < ActiveSupport::TestCase
     assert_match /Senecae Epigrammata/, Version.find_by_cts("urn:cts:latinLit:stoa0299.stoa001.opp-lat4")[0].label_eng
     # the good constituent was added
     assert_equal 1, Version.find_by_cts("urn:cts:latinLit:phi0687.phi001.opp-lat1").size;
+
+    # ten postcheck
+    # mods file should remain in catalog_pending
+    assert File.exists?(@file_ten_pending)
+    # we shouldn't have an author with this id
+    assert_equal 0, Author.get_by_id('0090.001').size
+    assert_equal 0, Author.get_by_id('thg0090.thg001').size
 
     # mads one postcheck
     assert File.exists?(@file_mads_one)

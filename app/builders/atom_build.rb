@@ -126,7 +126,11 @@ class AtomBuild
         @mads_arr =[]
         unless mads_cts.empty?
           mads_cts.each do |author| 
-            if author.urn_status == "published"         
+            if author.urn_status == "published" 
+              if (author.mads_file == "" || author.mads_file.nil?) 
+                puts "No mads file for #{author.urn}"
+                next
+              end
               mads_path  = author.mads_file
               mads_xml = get_xml("#{catalog_dir}/mads/#{mads_path}")
               # Nokogiri is doing funky things with namespaces
@@ -259,7 +263,8 @@ class AtomBuild
       atom_name ="#{dir_base}/#{@tg_id}.#{@w_id}.#{@ver_id}.atom.xml"
     end 
 
-    unless File.exists?(atom_name)  
+    # write the feed unless it already exists with a non zero size
+    unless File.exists?(atom_name) && File.size?(atom_name)  
       feed = build_feed_head(type)
       feed_file = File.new(atom_name, 'w')
       feed_file << feed.to_xml
