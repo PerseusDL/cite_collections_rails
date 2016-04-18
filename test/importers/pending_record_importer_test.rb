@@ -42,6 +42,9 @@ class PendingRecordImporterTest < ActiveSupport::TestCase
     # scenario mads one: new mads
     @file_mads_one = File.join(@tmp_dir,'catalog_data','mads','PrimaryAuthors','A', 'Amyntas', 'viaf17613782.mads.xml')
 
+    # scenario mads two: update mads
+    @file_mads_two = File.join(@tmp_dir,'catalog_data','mads','PrimaryAuthors','A', 'Abas Historicus', 'viaf49613664.mads.xml')
+
   end
 
 
@@ -101,7 +104,9 @@ class PendingRecordImporterTest < ActiveSupport::TestCase
     assert_equal 0, Author.get_by_id('tlg2649').size
 
     # mads two precheck
+    assert File.exists?(@file_mads_two)
     assert_equal "", Author.get_by_id('tlg1891')[0].related_works
+    assert_equal "", Author.get_by_id('tlg1891')[0].mads_file
 
     # do the import
     cpi.import(@tmp_dir)
@@ -185,7 +190,9 @@ class PendingRecordImporterTest < ActiveSupport::TestCase
     assert_equal 1, Author.get_by_id('tlg2649').size
 
     # mads two ppostcheck
+    assert File.exists?(@file_mads_two)
     assert_equal "tlg1891.tlg001", Author.get_by_id('tlg1891')[0].related_works
+    assert_equal "PrimaryAuthors/A/Abas Historicus/viaf49613664.mads.xml", Author.get_by_id('tlg1891')[0].mads_file
   end
 
 
