@@ -43,7 +43,7 @@ class PendingRecordImporter
         if (f_n !~ /mads/)
           # later tests use the file name to determine if we have a mads or mods file
           # so we better make sure not to process a mads file that doesn't
-          error_handler("We expect the filename to match 'mods\d?\.xml'", true) 
+          error_handler("Invalid Filename: doesn't contain 'mads'", true) 
         end
         mads_xml = get_xml(mads)
         has_cts = mads_xml.xpath("/mads:mads/mads:identifier[@type='ctsurn']", {"mads" => "http://www.loc.gov/mads/v2"})
@@ -113,7 +113,7 @@ class PendingRecordImporter
       if (f_n !~ /mods/)
         # later tests use the file name to determine if we have a mads or mods file
         # so we better make sure not to process a mads file that doesn't
-        error_handler("We expect the filename to match 'mods\d?\.xml'", true) 
+        error_handler("Invalid filename: doesn't contain 'mods'", true) 
       end
       mods_xml = get_xml(file_path)
       # make sure the file is fully in the mods namespace
