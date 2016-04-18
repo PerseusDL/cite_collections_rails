@@ -43,6 +43,9 @@ class PendingRecordImporterTest < ActiveSupport::TestCase
     # scenario ten: mods file no valid identifier
     @file_ten_pending = File.join(@tmp_dir,'catalog_pending','mods','ten','missingidentifier.mods.xml')
 
+    # eleven: incorrectly named mods file
+    @file_eleven_pending = File.join(@tmp_dir,'catalog_pending','mods','eleven','badfile.xml')
+
     # scenario mads one: new mads
     @file_mads_one = File.join(@tmp_dir,'catalog_data','mads','PrimaryAuthors','A', 'Amyntas', 'viaf17613782.mads.xml')
 
@@ -209,6 +212,9 @@ class PendingRecordImporterTest < ActiveSupport::TestCase
     assert File.exists?(@file_mads_two)
     assert_equal "tlg1891.tlg001", Author.get_by_id('tlg1891')[0].related_works
     assert_equal "PrimaryAuthors/A/Abas Historicus/viaf49613664.mads.xml", Author.get_by_id('tlg1891')[0].mads_file
+
+    # eleven postcheck
+    assert File.exists?(@file_eleven_pending)
   end
 
 
