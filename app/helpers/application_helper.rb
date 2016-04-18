@@ -447,10 +447,13 @@ module ApplicationHelper
 
 #cleaning data
 
-  def clean_dirs(dir)
+  def clean_dirs(dir,type)
     dirs_arr = Dir.glob("#{dir}/**/*.xml")
     # skip the reference works for now
     dirs_arr = dirs_arr.select{ |d| d !~ /Reference and Secondary Works/ }
+    # we require the type (mods or mads) as the last part of the filename before the xml extension
+    # mods files may have a const suffix if they were previously split from a parent record
+    dirs_arr = dirs_arr.select{ |f| f =~ /\.#{type}(const)?(\d*)\.xml/ }
   end
 
   #!! need to update this method for newly coined urns, expand the scope
