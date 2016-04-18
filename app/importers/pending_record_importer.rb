@@ -39,6 +39,12 @@ class PendingRecordImporter
     all_mads_dirs.each {|file| mads_files << file unless file =~ /marc/}
     mads_files.each do |mads|
       begin
+        f_n = mads[/(\/[\w\s\.\(\)-]+)?\.xml/]
+        if (f_n !~ /mads/)
+          # later tests use the file name to determine if we have a mads or mods file
+          # so we better make sure not to process a mads file that doesn't
+          error_handler("We expect the filename to match 'mods\d?\.xml'", true) 
+        end
         mads_xml = get_xml(mads)
         has_cts = mads_xml.xpath("/mads:mads/mads:identifier[@type='ctsurn']", {"mads" => "http://www.loc.gov/mads/v2"})
         unless has_cts.empty? || has_cts.inner_text == ""
@@ -103,6 +109,12 @@ class PendingRecordImporter
     ctsurn = nil
     mods_xml = ""
     begin
+      f_n = file_path[/(\/[\w\s\.\(\)-]+)?\.xml/]
+      if (f_n !~ /mods/)
+        # later tests use the file name to determine if we have a mads or mods file
+        # so we better make sure not to process a mads file that doesn't
+        error_handler("We expect the filename to match 'mods\d?\.xml'", true) 
+      end
       mods_xml = get_xml(file_path)
       # make sure the file is fully in the mods namespace
       add_mods_prefix(mods_xml)
