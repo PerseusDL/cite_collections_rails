@@ -31,12 +31,15 @@ class Author < ActiveRecord::Base
   def self.update_row(info_hash, editor)
     info_hash[:cite_auth].each do |auth|
       auth_hash = {}  
-      unless (auth.canonical_id != info_hash[:canon_id]) && (info_hash[:canon_id] =~ /#{auth.alt_ids}/)        
+
+      # we should never only update the canonical id if we didn't have one already
+      if (auth.canonical_id == "" || ! auth.canonical_id) 
         auth_hash[:canonical_id] = info_hash[:canon_id] 
-        auth_hash[:alt_ids] = info_hash[:alt_ids] if auth.alt_ids != info_hash[:alt_ids]
       end 
+      auth_hash[:alt_ids] = info_hash[:alt_ids] if auth.alt_ids != info_hash[:alt_ids]
       auth_hash[:authority_name] = info_hash[:a_name] if auth.authority_name != info_hash[:a_name]     
       auth_hash[:related_works] = info_hash[:related_works] if auth.related_works != info_hash[:related_works]
+      auth_hash[:mads_file] = info_hash[:mads_file] if info_hash[:mads_file] && auth.mads_file != info_hash[:mads_file]
 
       unless auth_hash.empty?
         auth_hash[:edited_by] = editor
