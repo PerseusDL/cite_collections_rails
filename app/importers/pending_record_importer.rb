@@ -189,11 +189,18 @@ class PendingRecordImporter
             ActiveRecord::Base.transaction do
               add_to_cite_tables(info_hash, m[:record_to_search])
               # add this version to the versions table - if we have a ctsurn already it will be returned to us, otherwise we'll be given a new one
-              ctsurn = add_to_vers_table(info_hash, m[:record_to_search], m[:ctsurn], m[:rangestr], m[:fullrecord])
-            # add the mods file to those we need to move out of pending and into catalog_data
-              post_mods(ctsurn,m[:fullrecord])
-              if m[:const_num]
-                constituents_added = constituents_added + 1
+              ctsurns = add_to_vers_table(info_hash, m[:record_to_search], m[:ctsurn], m[:rangestr], m[:fullrecord])
+              # add the mods file to those we need to move out of pending and into catalog_data
+              # multiple urns may have been created if it was a multilang record
+              ctsurns.each do |u|
+                # make sure the mods file has the ctsurn in it
+                m[:fullrecord].search("//mods:mods",ApplicationHelper::MODS_NS).each do |part|
+                  add_cts_urn(part, u)
+                end
+                post_mods(u,m[:fullrecord])
+                if m[:const_num]
+                  constituents_added = constituents_added + 1
+                end
               end
             end
           else

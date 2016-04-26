@@ -170,6 +170,7 @@ module CiteColls
     begin      
       #vers_col = "urn, version, label_eng, desc_eng, type, has_mods, urn_status, redirect_to, member_of, created_by, edited_by"           
       #two (or more) languages listed, create more records
+      vers_urns = []
       info_hash[:v_langs].each do |lang|
         vers_label, vers_desc = create_label_desc(mods_xml)
         full_label = info_hash[:w_title] + ", " + vers_label
@@ -207,13 +208,9 @@ module CiteColls
         puts "got cite urn #{vers_cite} for #{vers_urn}"
         v_values = ["#{vers_cite}", "#{vers_urn}", "#{full_label}", "#{vers_desc}", "#{vers_type}", 'true', 'published','','','auto_importer', '']
         Version.add_cite_row(v_values)
-        unless cts_urn
-          full_record.search("//mods:mods",ApplicationHelper::MODS_NS).each do |part|
-            add_cts_urn(part, vers_urn)
-          end
-        end
-        return vers_urn
+        vers_urns << vers_urn
       end
+      return vers_urns
     rescue Exception => e
       message = "For file #{info_hash[:file_name]} : There was an error while trying to save the version, error message was: #{$!}. \n\n #{e.backtrace}"
       error_handler(message, true)

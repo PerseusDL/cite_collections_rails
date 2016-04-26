@@ -46,6 +46,11 @@ class PendingRecordImporterTest < ActiveSupport::TestCase
     # eleven: incorrectly named mods file
     @file_eleven_pending = File.join(@tmp_dir,'catalog_pending','mods','eleven','badfile.xml')
 
+    # thirteen - multilang mods
+    @file_thirteen_a = File.join(@tmp_dir,'catalog_data','mods','latinLit','phi0893','phi004','opp-ger1','phi0893.phi004.opp-ger1.mods1.xml')
+    @file_thirteen_b = File.join(@tmp_dir,'catalog_data','mods','latinLit','phi0893','phi004','opp-lat1','phi0893.phi004.opp-lat1.mods1.xml')
+
+
     # scenario mads one: new mads
     @file_mads_one = File.join(@tmp_dir,'catalog_data','mads','PrimaryAuthors','A', 'Amyntas', 'viaf17613782.mads.xml')
 
@@ -108,6 +113,13 @@ class PendingRecordImporterTest < ActiveSupport::TestCase
 
     # ten precheck
     assert File.exists?(@file_ten_pending)
+
+    # thirteen precheck
+    assert ! File.exists?(@file_thirteen_a)
+    assert ! File.exists?(@file_thirteen_b)
+    assert_equal 0, Version.find_by_cts("urn:cts:latinLit:phi0893.phi004.opp-ger1").size
+    assert_equal 0, Version.find_by_cts("urn:cts:latinLit:phi0893.phi004.opp-lat1").size
+
 
     # mads one precheck
     assert ! File.exists?(@file_mads_one)
@@ -215,6 +227,24 @@ class PendingRecordImporterTest < ActiveSupport::TestCase
 
     # eleven postcheck
     assert File.exists?(@file_eleven_pending)
+
+    # thirteen postcheck
+    assert File.exists?(@file_thirteen_a)
+    assert File.exists?(@file_thirteen_b)
+    assert_equal 1, Version.find_by_cts("urn:cts:latinLit:phi0893.phi004.opp-ger1").size
+    assert_equal 1, Version.find_by_cts("urn:cts:latinLit:phi0893.phi004.opp-lat1").size
+    fa = File.open(@file_thirteen_a)
+    fb = File.open(@file_thirteen_a)
+    falines = fa.readlines
+    fblines = fb.readlines
+    ctsaina = falines.select{|l| l =~ /urn:cts:latinLit:phi0893.phi004.opp-ger1/}
+    ctsbina = falines.select{|l| l =~ /urn:cts:latinLit:phi0893.phi004.opp-lat1/}
+    ctsbinb = falines.select{|l| l =~ /urn:cts:latinLit:phi0893.phi004.opp-ger1/}
+    ctsainb = falines.select{|l| l =~ /urn:cts:latinLit:phi0893.phi004.opp-lat1/}
+    assert_equal 1, ctsaina.size 
+    assert_equal 0, ctsbina.size 
+    assert_equal 1, ctsbinb.size 
+    assert_equal 0, ctsainb.size 
   end
 
 
