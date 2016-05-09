@@ -58,6 +58,18 @@ module Api
       respond_with(@response, except: :id)
     end
 
+    def redirect
+      @response = Version.where(:version = ActiveRecord::Base.sanitize(params[:version]))
+      if @response[:redirect_to] =~ /^urn:cite/
+        @redirected = Version.where(:urn => @response[:redirect_to])
+      elsif @response[:redirect_to] =~ /^urn:cts/
+        @redirected = Version.where(:version => @response[:redirect_to])
+      else
+        @redirected = @response
+      end
+      respond_with(@redirected, only: :version)
+    end
+
     private
       # Use callbacks to share common setup or constraints between actions.
       def set_version
