@@ -59,14 +59,20 @@ module Api
     end
 
     def redirect
-      @response = Version.where(:version = ActiveRecord::Base.sanitize(params[:version]))
-      if @response[:redirect_to] =~ /^urn:cite/
-        @redirected = Version.where(:urn => @response[:redirect_to])
-      elsif @response[:redirect_to] =~ /^urn:cts/
-        @redirected = Version.where(:version => @response[:redirect_to])
-      else
-        @redirected = @response
+      @response = Version.where(:version => params[:version])
+      @redirected = []
+      if (@response.length == 1) 
+        if @response[0][:redirect_to] =~ /^urn:cite/
+          @redirected = Version.where(:urn => @response[0][:redirect_to])
+        elsif @response[0][:redirect_to] && @response[0][:redirect_to] =~ /^urn:cts/
+          @redirected = Version.where(:version => @response[0][:redirect_to])
+        else
+          @redirected = @response[0]
+        end
       end
+      #TODO this should resppond with a 404 if none found
+      # and should responds with a 500? if > 1 found
+      # and ideally would only ever return just the urn and not an array
       respond_with(@redirected, only: :version)
     end
 
