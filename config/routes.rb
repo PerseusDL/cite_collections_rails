@@ -39,6 +39,7 @@ CiteCollections::Application.routes.draw do
         get 'first'
         get 'last'
         get 'search'
+        get 'redirect'
       end
       member do
         get 'previous'
