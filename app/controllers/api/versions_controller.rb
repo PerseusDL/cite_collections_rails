@@ -70,7 +70,7 @@ module Api
           elsif @response[0][:redirect_to] && @response[0][:redirect_to] =~ /^urn:cts/
             @redirected = Version.where(:version => @response[0][:redirect_to])
           else
-            @redirected = @response[0]
+            @redirected = [@response[0]]
           end
         end
       end
