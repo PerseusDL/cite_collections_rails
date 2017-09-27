@@ -207,8 +207,16 @@ module CiteColls
         vers_cite = Version.generate_urn
         puts "got cite urn #{vers_cite} for #{vers_urn}"
         v_values = ["#{vers_cite}", "#{vers_urn}", "#{full_label}", "#{vers_desc}", "#{vers_type}", 'true', 'published','','','auto_importer', '']
-        Version.add_cite_row(v_values)
-        vers_urns << vers_urn
+        # let's be sure it isn't otherwise an exact match 
+        dups = Version.has_match(v_values)
+        if dups.size > 0
+          message = "For file #{info_hash[:file_name]} : there was a matching version for language #{lang}: #{dups.join(',')}. A new record will not be added."
+          # we will not make this a fatal error because we might be reprocessing a mods record containing multiple language versions
+          error_handler(message, false)
+        else 
+          Version.add_cite_row(v_values)
+          vers_urns << vers_urn
+        end
       end
       return vers_urns
     rescue Exception => e

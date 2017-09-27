@@ -43,6 +43,22 @@ class Version < ActiveRecord::Base
     end
   end
 
+  def self.is_match(
+    #0urn, 1version, 2label_eng, 3desc_eng, 4type, 5has_mods, 6urn_status, 
+    #7redirect_to, 8member_of, 9created_by, 10edited_by
+    urn_match = v[0].sub(/\d+/,'')
+    found = Version.where(:conditions => 
+      { "version rlike ?" =>  urn_match, 
+        "label_eng" => v[2],
+        "desc_eng" => v[3],
+        "ver_type" => v[4],
+        "has_mods" => v[5],
+        "urn_status" => v[6],
+        "member_of" => v[8]
+      })
+    return found
+  end
+
   def self.add_cite_row(v)
     #0urn, 1version, 2label_eng, 3desc_eng, 4type, 5has_mods, 6urn_status, 
     #7redirect_to, 8member_of, 9created_by, 10edited_by
